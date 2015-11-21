@@ -1,0 +1,144 @@
+---
+### File - cbt.yml
+#   Prepare a Ceph Benchmark Tool client
+#   
+#   Created By:   Karl Vietmeier
+#
+
+- hosts: test
+  remote_user: root
+
+  vars:
+   mirror: http://mirror.hmc.edu/fedora/linux/releases/22/Everything/x86_64/os/Packages
+   cbt_dir: ~/cbt_files
+   git_dir: ~/git
+   fio_dir: ~/git/fio
+   bin_dir: ~/bin
+
+  tasks:
+  - name: Upgrade all packages
+    yum: name=* state=latest
+    tags:
+       - yum 
+       
+  - name: install the 'Development tools' package group
+    yum: name="@Development tools" state=present
+    tags:
+       - yum 
+         
+  - name: Install Required Packages
+    # Packages defined in CBT setup.sh
+    yum: name={{ item }} state=installed
+    with_items:
+     - psmisc 
+     - util-linux 
+     - coreutils
+     - xfsprogs
+     - e2fsprogs
+     - findutils
+     - git 
+     - wget 
+     - bzip2 
+     - make 
+     - automake 
+     - gcc 
+     - gcc-c++ 
+     - kernel-devel 
+     - perf 
+     - blktrace 
+     - lsof
+     - redhat-lsb
+     - sysstat
+     - screen
+     - python-yaml
+     - ipmitool
+     - dstat 
+     - zlib-devel
+     - ntp 
+     - collectl
+    tags:
+       - yum 
+    
+  - name: Create Project Directory 
+    file: path={{ cbt_dir }} state=directory mode=755
+    tags:
+       - extra_pkgs
+
+  - name: Get Non-Standard Packages 
+    get_url: url={{ mirror }}/{{ item }} dest={{ cbt_dir }} mode=0440 
+    with_items:
+     - /p/pdsh-2.31-3.fc22.x86_64.rpm
+     - /p/pdsh-rcmd-ssh-2.31-3.fc22.x86_64.rpm
+     - /i/iftop-1.0-0.9.pre4.fc22.x86_64.rpm
+     - /i/iperf3-3.0.10-1.fc22.x86_64.rpm
+    tags:
+       - extra_pkgs
+
+  - name: Install parallel ssh
+    # Workaround for circular dependency and no "localinstall" in yum module
+    command: yum localinstall --skip-broken {{ cbt_dir }}/pdsh-rcmd-ssh-2.31-3.fc22.x86_64.rpm {{ cbt_dir }}/pdsh-2.31-3.fc22.x86_64.rpm -y
+    tags:
+       - extra_pkgs
+
+  - name: Install iftop-1.0-0.9.pre4.fc22.x86_64.rpm
+    command: yum localinstall {{ cbt_dir }}/iftop-1.0-0.9.pre4.fc22.x86_64.rpm -y
+    tags:
+       - extra_pkgs
+
+  - name: Install iperf3-3.0.10-1.fc22.x86_64.rpm
+    command: yum localinstall {{ cbt_dir }}/iperf3-3.0.10-1.fc22.x86_64.rpm -y
+    tags:
+       - extra_pkgs
+
+  - name: Clone FIO from git
+    git: 
+      repo=https://github.com/axboe/fio.git  
+      dest={{ git_dir }}/fio 
+      clone=yes
+      force=yes
+    tags:
+      - fio
+
+  # Compile FIO
+  - name: Compile FIO
+    command: "{{ item }} chdir={{ fio_dir }}"
+    with_items:
+     - ./configure
+     - /usr/bin/make
+     - /usr/bin/make install
+    tags:
+      - fio  
+
+  - name: Clone pmu-tools from git
+    git: 
+      repo=https://github.com/andikleen/pmu-tools.git
+      dest={{ bin_dir }}/pmu
+      clone=yes
+      force=yes
+    tags:
+      - pmu
+
+  - name: Clone FlameGraph from git
+    git: 
+      repo=https://github.com/brendangregg/FlameGraph
+      dest={{ bin_dir }}/flame
+      clone=yes
+      force=yes
+    tags:
+      - flame
+
+  - name: Disable Services
+    service: name={{ item }} state=stopped enabled=no
+    with_items:
+      - irqbalance
+      - firewalld
+    tags:
+       - services
+
+  - name: Enable Services
+    service: name={{ item }} state=running enabled=yes
+    with_items:
+      - ntpd 
+    tags:
+       - services
+
