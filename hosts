@@ -1,0 +1,18 @@
+###  ATC Inventory
+[oshift]
+dev-openshift-1
+dev-openshift-2
+
+[oshift=:vars]
+ansible_user=root
+
+###  Vagrant Inventory
+[centosvms]
+centos01
+centos02
+centos03
+centos04
+centos05
+
+[centosvms:vars]
+ansible_user=vagrant

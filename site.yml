@@ -1,0 +1,81 @@
+---
+### File - cbt.yml
+#   Prepare a Basic Lab Server
+#   
+#   Created By:   Karl Vietmeier
+#
+
+- hosts: test
+  remote_user: root
+
+  vars:
+   bin_dir: ~/bin
+   project_dir: ~/temp
+   mirror: http://mirror.hmc.edu/fedora/linux/releases/22/Everything/x86_64/os/Packages
+
+  tasks:
+  - name: Upgrade all packages
+    yum: name=* state=latest
+    tags:
+       - yum 
+       
+  - name: install the 'Development tools' package group
+    yum: name="@Development tools" state=present
+    tags:
+       - yum 
+         
+  - name: Install Required Packages
+    # Packages defined in CBT setup.sh
+    yum: name={{ item }} state=installed
+    with_items:
+     - psmisc 
+     - util-linux 
+     - coreutils
+     - xfsprogs
+     - e2fsprogs
+     - findutils
+     - git 
+     - wget 
+     - bzip2 
+     - kernel-devel 
+     - perf 
+     - blktrace 
+     - lsof
+     - redhat-lsb
+     - sysstat
+     - python-yaml
+     - ipmitool
+     - dstat 
+     - zlib-devel
+     - ntp 
+     - collectl
+     - tree
+     - screen
+    tags:
+       - yum 
+    
+  - name: Create Project Directory 
+    file: path={{ project_dir }} state=directory mode=755
+    tags:
+       - setupenv
+
+  - name: Install iperf3-3.0.10-1.fc22.x86_64.rpm
+    command: yum localinstall {{ project_dir }}/iperf3-3.0.10-1.fc22.x86_64.rpm -y
+    tags:
+       - extra_pkgs
+
+  - name: Disable Services
+    service: name={{ item }} state=stopped enabled=no
+    with_items:
+      - irqbalance
+      - firewalld
+    tags:
+       - services
+
+  - name: Enable Services
+    service: name={{ item }} state=running enabled=yes
+    with_items:
+      - ntpd 
+    tags:
+       - services
+
