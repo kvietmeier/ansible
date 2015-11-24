@@ -1,12 +1,12 @@
 ---
-### File - vagrant.yml
-#   Configure Vagarant created vms
+### File - cbt.yml
+#   Prepare a Basic Lab Server
 #   
 #   Created By:   Karl Vietmeier
 #
 
-- hosts: vagrant
-  remote_user: vagrant
+- hosts: test
+  remote_user: root
 
   vars:
    bin_dir: ~/bin

@@ -8,10 +8,11 @@
      - yum
 
 - name: Install Required Packages
-  # Packages defined in CBT setup.sh
+  # A set of useful packages you will likely need to install anyway
   yum: name={{ item }} state=installed
   with_items:
    - psmisc
+   - yum-utils
    - coreutils
    - xfsprogs
    - findutils
@@ -26,6 +27,7 @@
    - tree
    - ipmitool
    - dstat
+   - mlocate
   tags:
      - yum
 

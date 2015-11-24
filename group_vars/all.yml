@@ -10,4 +10,9 @@ centos_ntp:
 
 timezone: America/Los_Angeles
 
+bin_dir: ~/bin
+pkg_dir: ~/temp
+fedora_mirror: http://mirror.hmc.edu/fedora/linux/releases/22/Everything/x86_64/os/Packages
+
+
 ...
