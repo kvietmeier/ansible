@@ -8,10 +8,7 @@
 255.255.255.255	broadcasthost
 ::1             localhost 
 
-### Vagrant VMs
-172.16.0.10	centos
-172.16.0.100	centos01
-172.16.0.101	centos02
-172.16.0.102	centos03
-172.16.0.110	centos04
-172.16.0.111	centos05
+### ATC Systems
+10.255.152.151    dev-openshift-1
+10.255.152.152    dev-openshift-2
+

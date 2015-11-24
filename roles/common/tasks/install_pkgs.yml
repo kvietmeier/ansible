@@ -1,0 +1,37 @@
+---
+# File roles/common/tasks/install_pkgs.yml
+# Update system and install extra packages
+
+- name: install the 'Development tools' package group
+  yum: name="@Development tools" state=present
+  tags:
+     - yum
+
+- name: Install Required Packages
+  # Packages defined in CBT setup.sh
+  yum: name={{ item }} state=installed
+  with_items:
+   - psmisc
+   - coreutils
+   - xfsprogs
+   - findutils
+   - git
+   - wget
+   - bzip2
+   - perf
+   - blktrace
+   - lsof
+   - sysstat
+   - screen
+   - tree
+   - ipmitool
+   - dstat
+  tags:
+     - yum
+
+- name: Upgrade all packages
+  yum: name=* state=latest
+  tags:
+     - yum
+
+...
