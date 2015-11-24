@@ -5,6 +5,8 @@
 #   Created By:   Karl Vietmeier
 #
 
-- hosts: test
-  remote_user: root
+- hosts: centosvms
+  remote_user: vagrant
+  roles:
+     - common
 

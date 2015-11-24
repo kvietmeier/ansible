@@ -14,6 +14,7 @@
    - psmisc
    - yum-utils
    - coreutils
+   - net-tools
    - xfsprogs
    - findutils
    - git
