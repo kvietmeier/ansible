@@ -21,6 +21,10 @@
 #    - restart ntpd
 #  tags: ntp
 
+- name: Be sure ntpd is stopped and enabled
+  service: name=ntpd state=stopped enabled=yes
+  tags: ntp
+
 - name: Run ntpdate to set the correct time/date
   command: /sbin/ntpdate 0.centos.pool.ntp.org
   tags: ntp  

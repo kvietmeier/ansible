@@ -9,4 +9,6 @@
   remote_user: vagrant
   roles:
      - common
+  remote_user: vagrant
+  sudo: yes
 
