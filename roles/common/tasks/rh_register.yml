@@ -1,0 +1,24 @@
+---
+# File roles/common/tasks/rh_register.yml
+# Register system with RHN and enable extra repos
+
+- name: Register Boxes
+  redhat_subscription: state=present
+                       username={{ rh_username }}
+                       password={{ rh_password }}
+                       autosubscribe=true
+  tags: rhn-common
+
+- name: Enable RH Server Optional Repo
+  command: /usr/sbin/subscription-manager repos --enable=rhel-7-server-optional-rpms
+  tags: rhn-common
+
+#- name: Enable RH Ceph Installer Repo
+#  command: /usr/sbin/subscription-manager repos --enable=rhel-7-server-rhceph-1.2-installer-rpms
+#  tags: ceph-common
+#
+#- name: Enable RH Ceph Mon Repo
+#  command: /usr/sbin/subscription-manager repos --enable=rhel-7-server-rhceph-1.2-mon-rpms
+#  tags: ceph-common
+
+...

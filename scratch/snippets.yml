@@ -1,0 +1,130 @@
+---
+# File - scratch/snippets
+# Misc pieces of Ansible code
+
+#--- Remove the requiretty directive from /etc/sudoers
+  - name: Remove requiretty
+    lineinfile: dest=/etc/sudoers regexp="^Defaults.*requiretty" line='Defaults !requiretty'  backup=yes state=present validate='visudo -cf %s'
+    become: yes
+    become_method: sudo
+    tags:
+       - sudo
+
+
+#--- SSH Keys
+  - name: Copy rsa keys to user root
+    authorized_key: user=root
+                    key="{{ item }}"
+    become: yes
+    become_method: sudo
+    with_file:
+      - roles/common/files/auth/tools_root.isa.pub
+      - roles/common/files/auth/ceph1admin.rsa.pub
+    tags:
+       - sudo
+
+
+#--- Clone and Compile iperf3
+  - name: Clone iperf from git
+    git:
+      repo={{ iperf_repo }}
+      dest={{ git_dir }}/iperf
+      clone=yes
+      force=yes
+    tags:
+      - iperf
+
+  - name: Compile iperf3
+    command: "{{ item }} chdir={{ iperf_dir }}"
+    become: yes
+    become_method: sudo
+    with_items:
+     - ./configure
+     - /usr/bin/make
+     - /usr/bin/make install
+     - /usr/sbin/ldconfig
+    tags:
+      - iperf
+
+
+#--- Clone and Compile FIO
+  - name: Clone FIO from git
+    git:
+      repo={{ fio_repo }}
+      dest={{ git_dir }}/fio
+      clone=yes
+      force=yes
+    tags:
+      - fio
+
+  - name: Compile FIO
+    command: "{{ item }} chdir={{ fio_dir }}"
+    become: yes
+    become_method: sudo
+    with_items:
+     - ./configure
+     - /usr/bin/make
+     - /usr/bin/make install
+    tags:
+      - fio
+
+
+#--- Partition and mount a volume in guest
+  - name: Create Label
+    command: parted -s /dev/vdb mklabel gpt
+    become: yes
+    become_method: sudo
+    tags:
+       - mpoint
+
+  - name: Partition Disk
+    command: parted -a optimal /dev/vdb mkpart primary xfs 0% 100%
+    become: yes
+    become_method: sudo
+    tags:
+       - mpoint
+
+  - name: Make XFS
+    filesystem: fstype=xfs dev=/dev/vdb1
+    become: yes
+    become_method: sudo
+    tags:
+       - mpoint
+
+  - name: Create Mountpoint
+    file: path=/iotest/mnt1 state=directory mode=777
+    become: yes
+    become_method: sudo
+    tags:
+       - mpoint
+
+#  - name: Update fstab  ("mount" will update /etc/fstab for you)
+#    lineinfile: dest=/etc/fstab line="/dev/vdb1    /iotest/mnt1    xfs    defaults    1 1"
+#    become: yes
+#    become_method: sudo
+#    tags:
+#       -mpoint
+
+  - name: Mount Filesystem and update /etc/fstab
+    mount: name=/iotest/mnt1 fstype=xfs src=/dev/vdb1 state=mounted opts=defaults
+    become: yes
+    become_method: sudo
+    tags:
+       - mpoint
+
+#--- Install a local rpm with yum
+  - name: Install parallel ssh
+    # Workaround for circular dependency and no "localinstall" in yum module
+    command: yum localinstall --skip-broken {{ cbt_dir }}/pdsh-rcmd-ssh-2.31-3.fc22.x86_64.rpm {{ cbt_dir }}/pdsh-2.31-3.fc22.x86_64.rpm -y
+    become: yes
+    become_method: sudo
+    tags:
+       - extra_pkgs
+
+  - name: Install iftop-1.0-0.9.pre4.fc22.x86_64.rpm
+    command: yum localinstall {{ cbt_dir }}/iftop-1.0-0.9.pre4.fc22.x86_64.rpm -y
+    become: yes
+    become_method: sudo
+    tags:
+       - extra_pkgs
+

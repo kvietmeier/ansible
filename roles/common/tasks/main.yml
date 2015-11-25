@@ -1,6 +1,8 @@
 ---
 # File roles/common/tasks/main.yml
 
+# Checkl some basic pararmetres to see if we should even proceed.
+- include: check_os.yml
 
 # Setup ntp
 - include: ntp.yml
