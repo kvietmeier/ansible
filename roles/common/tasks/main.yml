@@ -1,13 +1,17 @@
 ---
 # File roles/common/tasks/main.yml
 
-# Checkl some basic pararmetres to see if we should even proceed.
+# Checkl some basic parameters to see if we should even proceed.
 - include: check_os.yml
+
+# Setup Users Environment
+- include: user_config.yml 
 
 # Setup ntp
 - include: ntp.yml
 
 # Run yum, update packages
 - include: install_pkgs.yml
+
 
 ...

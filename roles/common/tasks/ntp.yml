@@ -1,33 +1,38 @@
 ---
-# File roles/common/tasks/ntp.yml
-# Install and configure ntp
+# File: roles/common/tasks/ntp.yml
+# Install and configure ntp, and other clock related tasks
 
-
-# Setup ntp
-- name: Be sure ntp is installed
-  yum: name=ntp state=installed
-  tags: ntp
-
+# Set the Timezone for the west coast
 - name: Set the correct timezone.
   file:
     src: "/usr/share/zoneinfo/{{ timezone }}"
     dest: /etc/localtime
     state: link
     force: yes
+  tags: ntp
 
-#- name: Be sure ntp is configured
-#  template: src=ntp.conf.j2 dest=/etc/ntp.conf
+# Install ntp
+- name: Be sure ntp is installed
+  yum: name=ntp state=installed
+  tags: ntp
+
+- name: Be sure ntp is configured
+  template: src=etc/ntp.conf.j2 dest=/etc/ntp.conf
 #  notify:
 #    - restart ntpd
-#  tags: ntp
+  tags: ntp
 
-- name: Be sure ntpd is stopped and enabled
+- name: Stop ntpd so ntpdate can be run to force an update to the clock
   service: name=ntpd state=stopped enabled=yes
   tags: ntp
 
 - name: Run ntpdate to set the correct time/date
   command: /sbin/ntpdate 0.centos.pool.ntp.org
   tags: ntp  
+
+- name: Force an update of the HW Clock (not required in RHEL 7)
+  command: hwclock --systohc
+  tags: ntp 
 
 - name: Be sure ntpd is running and enabled
   service: name=ntpd state=running enabled=yes

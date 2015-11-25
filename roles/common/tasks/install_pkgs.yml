@@ -1,5 +1,5 @@
 ---
-# File roles/common/tasks/install_pkgs.yml
+# File: roles/common/tasks/install_pkgs.yml
 # Update system and install extra packages
 
 - name: install the 'Development tools' package group
@@ -7,28 +7,9 @@
   tags:
      - yum
 
-- name: Install Required Packages
-  # A set of useful packages you will likely need to install anyway
+- name: Install Bunch of Useful Packages
   yum: name={{ item }} state=installed
-  with_items:
-   - psmisc
-   - yum-utils
-   - coreutils
-   - net-tools
-   - xfsprogs
-   - findutils
-   - git
-   - wget
-   - bzip2
-   - perf
-   - blktrace
-   - lsof
-   - sysstat
-   - screen
-   - tree
-   - ipmitool
-   - dstat
-   - mlocate
+  with_items: "{{xtra_pkgs}}"
   tags:
      - yum
 
