@@ -13,12 +13,4 @@
   command: /usr/sbin/subscription-manager repos --enable=rhel-7-server-optional-rpms
   tags: rhn-common
 
-#- name: Enable RH Ceph Installer Repo
-#  command: /usr/sbin/subscription-manager repos --enable=rhel-7-server-rhceph-1.2-installer-rpms
-#  tags: ceph-common
-#
-#- name: Enable RH Ceph Mon Repo
-#  command: /usr/sbin/subscription-manager repos --enable=rhel-7-server-rhceph-1.2-mon-rpms
-#  tags: ceph-common
-
 ...

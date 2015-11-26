@@ -1,0 +1,6 @@
+---
+# File roles/ceph/main.yml
+# Placeholder for Ceph roles
+
+# Register Nodes and add Ceph channels
+- include: rhn_reg_ceph.yml
