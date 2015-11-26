@@ -3,8 +3,8 @@
 dev-openshift-1
 dev-openshift-2
 
-[oshift=:vars]
-ansible_user=root
+[oshift:vars]
+ansible_ssh_user=root
 
 ###  Vagrant Inventory
 [centosvms]
@@ -15,4 +15,6 @@ centos04
 centos05
 
 [centosvms:vars]
-ansible_user=vagrant
+ansible_ssh_user=vagrant
+ansible_sudo_user=root
+ansible_sudo=yes

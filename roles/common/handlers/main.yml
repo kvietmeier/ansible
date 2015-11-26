@@ -1,7 +1,12 @@
 ---
 # File: roles/common/handlers/main.yml
 # Handlers for common services
+# See http://docs.ansible.com/playbooks_intro.html for more information about handlers.
 
-# ntpd
 - name: restart ntpd
   service: name=ntpd state=restarted
+
+- name: restart iptables
+  service: name=iptables state=restarted
+
+...

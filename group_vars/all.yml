@@ -10,6 +10,12 @@ centos_ntp_dict:
   server2: 2.centos.pool.ntp.org
   server3: 3.centos.pool.ntp.org
 
+rhel_ntp_dict:
+  server0: 0.rhel.pool.ntp.org
+  server1: 1.rhel.pool.ntp.org
+  server2: 2.rhel.pool.ntp.org
+  server3: 3.rhel.pool.ntp.org
+
 centos_ntp:
   - 0.centos.pool.ntp.org
   - 1.centos.pool.ntp.org
@@ -17,10 +23,10 @@ centos_ntp:
   - 3.centos.pool.ntp.org
 
 rhel_ntp:
-  server0: 0.rhel.pool.ntp.org
-  server1: 1.rhel.pool.ntp.org
-  server2: 2.rhel.pool.ntp.org
-  server3: 3.rhel.pool.ntp.org
+  - 0.rhel.pool.ntp.org
+  - 1.rhel.pool.ntp.org
+  - 2.rhel.pool.ntp.org
+  - 3.rhel.pool.ntp.org
 
 timezone: America/Los_Angeles
 
@@ -29,7 +35,6 @@ timezone: America/Los_Angeles
 bin_dir: ~/bin
 pkg_dir: ~/temp
 git_dir: ~/git
-fedora_mirror: http://mirror.hmc.edu/fedora/linux/releases/22/Everything/x86_64/os/Packages
 
 
 ### Package Information
@@ -67,6 +72,9 @@ xtra_pkgs:
    - openssh-clients
    - ftp
    - python
+
+
+fedora_mirror: http://mirror.hmc.edu/fedora/linux/releases/22/Everything/x86_64/os/Packages
 
 
 ...
