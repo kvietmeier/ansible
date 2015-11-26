@@ -1,4 +1,6 @@
 # 
-My Ansible testing area, not much here yet.
+My Ansible testing area
 
-cbt.yml is a playbook for prepping a server to be a client for the Ceph Benchmark Tool.
+Current set of roles/tasks will bootstrap a basic server.
+
+The xcratch directory has some snippets of code and a playbook to prep a node for runninng CBT.
