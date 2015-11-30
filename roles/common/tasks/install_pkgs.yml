@@ -2,24 +2,51 @@
 # File: roles/common/tasks/install_pkgs.yml
 # Update system and install extra packages
 
-- name: install the 'Development tools' package group
+# RHEL/Centos
+- name: Install the 'Development tools' package group
+  when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
   yum: name="@Development tools" state=present
   tags:
-     - yum
+     - pkgs
 
 - name: Install Bunch of Useful Packages
+  when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
   yum: name={{ item }} state=installed
   with_items: "{{xtra_pkgs}}"
   tags:
-     - yum
+     - pkgs
+
+#- name: Upgrade all packages
+#  when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
+#  yum: name=* state=latest
+#  tags:
+#     - pkgs
+
+- name: Update Man Page Database
+  when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
+  command: mandb
+  tags: pkgs
+
+
+# Ubuntu 
+- name: Update Ubuntu System
+  when: ansible_distribution == 'Ubuntu'
+  apt: update_cache=yes
+  tags: pkgs
+
+- name: Upgrade Ubuntu System
+  when: ansible_distribution == 'Ubuntu'
+  apt: upgrade=dist
+  tags: pkgs
+
+- name: Install Development Tools
+  when: ansible_distribution == 'Ubuntu'
+  apt: name=build-essential state=present
+  tags: pkgs
 
 - name: Upgrade all packages
   yum: name=* state=latest
   tags:
-     - yum
+     - pkgs
 
-- name: Update Man Page Database
-  command: mandb
-  tags: yum
 
-...

@@ -1,20 +1,30 @@
 ###  ATC Inventory
-[oshift]
-dev-openshift-1
-dev-openshift-2
-
-[oshift:vars]
-ansible_ssh_user=root
+#[oshift]
+#dev-openshift-1
+#dev-openshift-2
+#
+#[oshift:vars]
+#ansible_ssh_user=root
 
 ###  Vagrant Inventory
+# Centos
 [centosvms]
 centos01
 centos02
 centos03
-centos04
-centos05
 
 [centosvms:vars]
+ansible_ssh_user=vagrant
+ansible_sudo_user=root
+ansible_sudo=yes
+
+# Ubuntu
+[ubuntuvms]
+ubuntu01
+ubuntu02
+ubuntu03
+
+[ubuntuvms:vars]
 ansible_ssh_user=vagrant
 ansible_sudo_user=root
 ansible_sudo=yes
