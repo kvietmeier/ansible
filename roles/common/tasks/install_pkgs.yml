@@ -3,7 +3,7 @@
 # Update system and install extra packages
 
 # RHEL/Centos
-- name: Install the 'Development tools' package group
+- name: Install the RHEL/Centos 'Development Tools' package group
   when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
   yum: name="@Development tools" state=present
   tags:
@@ -16,16 +16,11 @@
   tags:
      - pkgs
 
-#- name: Upgrade all packages
-#  when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
-#  yum: name=* state=latest
-#  tags:
-#     - pkgs
-
-- name: Update Man Page Database
+- name: Upgrade all packages
   when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
-  command: mandb
-  tags: pkgs
+  yum: name=* state=latest
+  tags:
+     - pkgs
 
 
 # Ubuntu 
@@ -39,14 +34,19 @@
   apt: upgrade=dist
   tags: pkgs
 
-- name: Install Development Tools
+- name: Install Ubuntu Development Tools
   when: ansible_distribution == 'Ubuntu'
   apt: name=build-essential state=present
   tags: pkgs
 
-- name: Upgrade all packages
+- name: Upgrade all Ubuntu packages
   yum: name=* state=latest
   tags:
      - pkgs
 
+
+# All Distros
+- name: Update Man Page Database
+  command: mandb
+  tags: pkgs
 
