@@ -67,7 +67,7 @@ xtra_pkgs:
 
 
 ### RHEL/Centos Packages
-rhel_pks:
+rhel_pkgs:
    - epel-release
    - openssh-clients
    - yum-utils
