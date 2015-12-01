@@ -1,6 +1,7 @@
 ---
 # File: roles/common/tasks/install_pkgs.yml
-# Update system and install extra packages
+# Update the system and install extra packages
+# Uses conditionals to check for OS version and state files
 
 # Upgrade RHEL/Centos Based Systems
 - name: "RHEL: Install the RHEL/Centos 'Development Tools' package group"
@@ -69,7 +70,26 @@
 
 - name: "Ubuntu: Reboot the server"
   when: (ansible_distribution == 'Ubuntu') and (file.stat.exists == true)
-  command: /sbin/reboot
+  notify: 
+    - Restart Server
+    - Wait for server to restart
   tags: pkgs
 
 
+handlers:
+ - name: Restart server
+   command: shutdown -r now "Reboot triggered by Ansible"
+   async: 0
+   poll: 0
+   ignore_errors: true
+ - name: Wait for server to restart
+   local_action:
+     module: wait_for
+       host={{ inventory_hostname }}
+       port=22
+       delay=1
+       timeout=300
+     sudo: false
+
+#--- End File
+...
