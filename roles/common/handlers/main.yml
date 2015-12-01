@@ -3,10 +3,22 @@
 # Handlers for common services
 # See http://docs.ansible.com/playbooks_intro.html for more information about handlers.
 
+# Services
 - name: restart ntpd
   service: name=ntpd state=restarted
 
 - name: restart iptables
   service: name=iptables state=restarted
 
+# Wait for a server after reboot
+- name: Wait for restart
+  local_action:
+    module: wait_for
+      host={{ inventory_hostname }}
+      port=22
+      delay=1
+      timeout=300
+    sudo: false
+
 ...
+
