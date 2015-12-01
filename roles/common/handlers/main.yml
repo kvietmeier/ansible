@@ -16,8 +16,8 @@
     module: wait_for
       host={{ inventory_hostname }}
       port=22
-      delay=1
-      timeout=300
+      delay=10
+      #timeout=300
     sudo: false
 
 ...
