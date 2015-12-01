@@ -2,6 +2,7 @@
 # File: roles/common/tasks/install_pkgs.yml
 # Update the system and install extra packages
 # Uses conditionals to check for OS version and state files
+# Created by: Karl Vietmeier
 
 # Upgrade RHEL/Centos Based Systems
 - name: "RHEL: Install the RHEL/Centos 'Development Tools' package group"
