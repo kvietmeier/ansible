@@ -69,8 +69,9 @@
   tags: pkgs
 
 - name: "Ubuntu: Reboot the server"
-  #when: (ansible_distribution == 'Ubuntu') and (file.stat.exists == true)
-  when: ansible_distribution == 'Ubuntu'
+  # need the sleep statement as shell - https://github.com/ansible/ansible/issues/10616
+  when: (ansible_distribution == 'Ubuntu') and (file.stat.exists == true)
+  #when: ansible_distribution == 'Ubuntu'
   shell: sleep 2 && shutdown -r now "Reboot triggered by Ansible"
   async: 1
   poll: 0
