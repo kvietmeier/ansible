@@ -2,51 +2,76 @@
 # File: roles/common/tasks/install_pkgs.yml
 # Update system and install extra packages
 
-# RHEL/Centos
-- name: Install the RHEL/Centos 'Development Tools' package group
+# Upgrade RHEL/Centos Based Systems
+- name: "RHEL: Install the RHEL/Centos 'Development Tools' package group"
   when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
   yum: name="@Development tools" state=present
   tags:
      - pkgs
 
-- name: Install Bunch of Useful Packages
+- name: "RHEL: Install a Bunch of Useful Packages you will need eventually"
   when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
-  yum: name={{ item }} state=installed
+  yum: name={{ item }} state=present
   with_items: "{{xtra_pkgs}}"
   tags:
      - pkgs
 
-- name: Upgrade all packages
+- name: "RHEL: Install RHEL Specific Useful Packages"
+  when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
+  yum: name={{ item }} state=present
+  with_items: "{{rhel_pkgs}}"
+  tags:
+     - pkgs
+
+- name: "RHEL: Upgrade all packages"
   when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
   yum: name=* state=latest
   tags:
      - pkgs
 
 
-# Ubuntu 
-- name: Update Ubuntu System
-  when: ansible_distribution == 'Ubuntu'
-  apt: update_cache=yes
-  tags: pkgs
-
-- name: Upgrade Ubuntu System
-  when: ansible_distribution == 'Ubuntu'
-  apt: upgrade=dist
-  tags: pkgs
-
-- name: Install Ubuntu Development Tools
+# Upgrade Debian/Ubuntu based systems and reboot if necessary.
+- name: "Ubuntu: Install Ubuntu Development Tools"
   when: ansible_distribution == 'Ubuntu'
   apt: name=build-essential state=present
   tags: pkgs
 
-- name: Upgrade all Ubuntu packages
-  yum: name=* state=latest
-  tags:
-     - pkgs
+- name: "Ubuntu: Install Bunch of Useful Packages"
+  when: ansible_distribution == 'Ubuntu'
+  apt: name={{ item }} state=present
+  with_items: "{{xtra_pkgs}}"
+  tags: pkgs
+
+- name: "Ubuntu: Check if there are packages available to be installed/upgraded"
+  when: ansible_distribution == 'Ubuntu'
+  command: /usr/lib/update-notifier/apt-check --package-names
+  register: packages
+  tags: pkgs
+
+- name: "Ubuntu: Upgrade all packages to the latest version"
+  when: ansible_distribution == 'Ubuntu'
+  apt: update_cache=yes upgrade=dist
+  when: packages.stderr != ""
+  tags: pkgs
 
 
 # All Distros
-- name: Update Man Page Database
+- name: "All: Update Man Page Database"
   command: mandb
   tags: pkgs
+
+
+# Reboot Ubuntu server if required (because Ubuntu is lame)
+- name: "Ubuntu: Check if a reboot is required"
+  when: ansible_distribution == 'Ubuntu'
+  register: file
+  stat: path=/var/run/reboot-required get_md5=no
+  tags: pkgs
+
+- name: "Ubuntu: Reboot the server"
+  when: ansible_distribution == 'Ubuntu'
+  command: /sbin/reboot
+  when: file.stat.exists == true
+  tags: pkgs
+
 

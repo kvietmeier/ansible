@@ -1,21 +1,13 @@
 ---
 ### File - site.yml
-#   Setup ATC Servers
+#   Top level playbook to "bootstrap" servers
 #   
 #   Created By:   Karl Vietmeier
 #
 
-- hosts: centosvms
+- hosts: centosvms:ubuntuvms
   remote_user: vagrant
   roles:
      - common
   remote_user: vagrant
   sudo: yes
-
-- hosts: ubuntuvms
-  remote_user: vagrant
-  roles:
-     - common
-  remote_user: vagrant
-  sudo: yes
-

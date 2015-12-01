@@ -40,22 +40,15 @@ git_dir: ~/git
 ### Package Information
 xtra_pkgs:
    - psmisc
-   - epel-release
-   - yum-utils
-   - yum-plugin-priorities.noarch
    - coreutils
-   - sg3_utils
    - sysfsutils
-   - bind-utils
-   - nfs-utils
    - findutils
    - net-tools
-   - xfsprogs
    - util-linux
+   - xfsprogs
    - git
    - wget
    - bzip2
-   - perf
    - blktrace
    - lsof
    - sysstat
@@ -69,12 +62,23 @@ xtra_pkgs:
    - sdparm
    - smartmontools
    - rpcbind
-   - openssh-clients
    - ftp
    - python
 
 
-fedora_mirror: http://mirror.hmc.edu/fedora/linux/releases/22/Everything/x86_64/os/Packages
+### RHEL/Centos Packages
+rhel_pks:
+   - epel-release
+   - openssh-clients
+   - yum-utils
+   - yum-plugin-priorities.noarch
+   - sg3_utils
+   - perf
+   - bind-utils
+   - nfs-utils
+   
 
+### Mirrors
+fedora_mirror: http://mirror.hmc.edu/fedora/linux/releases/22/Everything/x86_64/os/Packages
 
 ...
