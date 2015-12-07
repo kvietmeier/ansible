@@ -3,7 +3,7 @@
 # Update the system and install extra packages
 # Uses conditionals to check for OS version and state files
 # Created by: Karl Vietmeier
-
+#
 # Upgrade RHEL/Centos Based Systems
 - name: "RHEL: Install the RHEL/Centos 'Development Tools' package group"
   when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
@@ -60,6 +60,12 @@
 - name: "All: Update Man Page Database"
   command: mandb
   tags: pkgs
+
+- name: "Print variables"
+  debug: 
+    msg: var=rhn_login.stdout
+    #msg: "Red Hat Login is {{ rhn_login }} Password is {{ rhn_pass }}"
+  when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
 
 
 # Reboot Ubuntu server if required (because Ubuntu is lame)
