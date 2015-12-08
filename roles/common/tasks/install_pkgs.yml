@@ -4,13 +4,8 @@
 # Uses conditionals to check for OS version and state files
 # Created by: Karl Vietmeier
 #
-# Upgrade RHEL/Centos Based Systems
-- name: "RHEL: Install the RHEL/Centos 'Development Tools' package group"
-  when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
-  yum: name="@Development tools" state=present
-  tags:
-     - pkgs
 
+# Common Packages For both OS
 - name: "RHEL: Install a Bunch of Useful Packages you will need eventually"
   when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
   yum: name={{ item }} state=present
@@ -18,10 +13,31 @@
   tags:
      - pkgs
 
+- name: "Ubuntu: Install a Bunch of Useful Packages you will need eventually"
+  when: ansible_distribution == 'Ubuntu'
+  apt: name={{ item }} state=present
+  with_items: "{{xtra_pkgs}}"
+  tags:
+     - pkgs
+
+
+# Upgrade RHEL/Centos Based Systems
+- name: "RHEL: Install the RHEL/Centos 'Development Tools' package group"
+  when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
+  yum: name="@Development tools" state=present
+  tags:
+     - pkgs
+
 - name: "RHEL: Install RHEL Specific Useful Packages"
   when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
   yum: name={{ item }} state=present
   with_items: "{{rhel_pkgs}}"
+  tags:
+     - pkgs
+
+- name: Disable epel until you really need it
+  when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
+  command: sed -i -e "s/^enabled=1/enabled=0/" /etc/yum.repos.d/epel.repo
   tags:
      - pkgs
 
@@ -33,47 +49,55 @@
 
 
 # Upgrade Debian/Ubuntu based systems and reboot if necessary.
+# Ubuntu seemd kind of flaky here - can end up with an unusable system
 - name: "Ubuntu: Install Ubuntu Development Tools"
   when: ansible_distribution == 'Ubuntu'
   apt: name=build-essential state=present
-  tags: pkgs
+  tags: 
+     - pkgs
 
 - name: "Ubuntu: Install Bunch of Useful Packages"
   when: ansible_distribution == 'Ubuntu'
-  apt: name={{ item }} state=present
-  with_items: "{{xtra_pkgs}}"
-  tags: pkgs
+  apt: name={{ item }} state=present update_cache=yes
+  with_items: "{{ubuntu_pkgs}}"
+  tags: 
+      - pkgs
 
 - name: "Ubuntu: Check if there are packages available to be installed/upgraded"
   when: ansible_distribution == 'Ubuntu'
   command: /usr/lib/update-notifier/apt-check --package-names
   register: packages
-  tags: pkgs
+  tags:
+     - pkgs
+
+- name: "Update apt cache"
+  when: (ansible_distribution == 'Ubuntu')
+  apt: update_cache=yes cache_valid_time=3600
+  tags:
+     - pkgs
 
 - name: "Ubuntu: Upgrade all packages to the latest version"
   when: (ansible_distribution == 'Ubuntu') and (packages.stderr != "")
-  apt: update_cache=yes upgrade=dist
-  tags: pkgs
+  apt: upgrade=dist
+  tags:
+    - pkgs
 
 
 # All Distros
 - name: "All: Update Man Page Database"
   command: mandb
-  tags: pkgs
-
-- name: "Print variables"
-  debug: 
-    msg: var=rhn_login.stdout
-    #msg: "Red Hat Login is {{ rhn_login }} Password is {{ rhn_pass }}"
-  when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
+  tags:
+     - pkgs
 
 
+### Ubuntu Again
 # Reboot Ubuntu server if required (because Ubuntu is lame)
 - name: "Ubuntu: Check if a reboot is required"
   when: ansible_distribution == 'Ubuntu'
   register: file
   stat: path=/var/run/reboot-required get_md5=no
-  tags: pkgs
+  tags:
+    - pkgs
 
 - name: "Ubuntu: Reboot the server"
   # need the sleep statement as shell - https://github.com/ansible/ansible/issues/10616
@@ -85,7 +109,8 @@
   ignore_errors: true
   notify: 
     - Wait for restart
-  tags: pkgs
+  tags:
+     - pkgs
 
 
 #--- End File

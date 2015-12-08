@@ -12,6 +12,22 @@
   tags:
      - usercfg
 
+- name: Enable wheel group in Centos/RHEL to issue all commands with NOPASSWD
+  when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
+  lineinfile: "dest=/etc/sudoers state=present backup=yes regexp='^%wheel.*NOPASSWD' line='%wheel ALL=(ALL) NOPASSWD: ALL' validate='visudo -cf %s'"
+  become: yes
+  become_method: sudo
+  tags:
+     - usercfg
+
+- name:  Remove wheel lines in Ubuntu sudoers - remove when done testing
+  when: ansible_distribution == 'Ubuntu'
+  lineinfile: "dest=/etc/sudoers state=absent backup=yes regexp='^%wheel.*NOPASSWD' line='%wheel ALL=(ALL) NOPASSWD: ALL' validate='visudo -cf %s'"
+  become: yes
+  become_method: sudo
+  tags:
+     - usercfg
+
 
 #--- SSH Keys
 - name: Copy rsa keys to user root
@@ -23,27 +39,6 @@
     - roles/common/files/auth/foobar.id_rsa.pub
   tags:
      - usercfg
-
-
-
-###
-# Sudoers file stuff -
-
-## Allows people in group wheel to run all commands
-#%wheel  ALL=(ALL)       ALL
-
-## Same thing without a password
-# %wheel        ALL=(ALL)       NOPASSWD: ALL
-
-# this specifically calls outr a user rather than hte group - probably safer.
-#vagrant ALL=(ALL) NOPASSWD:ALL
-
-# Not sure the above will work in all cases if the Defaults line is commented out 
-# Defaults    requiretty
-
-
-# Fully quoted because of the ': ' on the line. See the Gotchas in the YAML docs.
-#- lineinfile: "dest=/etc/sudoers state=present regexp='^%wheel' line='%wheel ALL=(ALL) NOPASSWD: ALL'"
 
 
 # Validate the sudoers file before saving

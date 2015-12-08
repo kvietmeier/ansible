@@ -31,7 +31,22 @@ rhel_ntp:
 timezone: America/Los_Angeles
 
 
-### User Environment
+
+# Users
+users:
+  - atcuser01
+  - atcuser02
+  - atcuser03
+
+usershell: /bin/bash
+# Password: 0pen31ack
+userpass:  $1$rYGbgDG4$SG77KjjfdmlBiFfZt.Ocg1
+generate_ssh_key: yes
+ssh_key_bits: 2048 
+ssh_key_comment: yes
+ssh_key_type: rsa
+
+# Directories
 bin_dir: ~/bin
 pkg_dir: ~/temp
 git_dir: ~/git
@@ -76,7 +91,26 @@ rhel_pkgs:
    - perf
    - bind-utils
    - nfs-utils
+   - openldap
+   - openldap-clients
+   - nss_ldap
    
+### Ubuntu Packages
+ubuntu_pkgs:
+   - sg3-utils
+   - ssh
+   - nfs-common
+   - nfs-kernel-server
+   - linux-tools-lowlatency
+   - linux-tools-virtual
+   - linux-tools-common
+   - linux-tools-generic
+   - dnsutils
+   - ldap-utils
+   - libpam-ldap
+   - libnss-ldap
+   - nslcd
+
 
 ### Mirrors
 fedora_mirror: http://mirror.hmc.edu/fedora/linux/releases/22/Everything/x86_64/os/Packages
