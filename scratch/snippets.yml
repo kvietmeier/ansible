@@ -135,9 +135,72 @@
         password={{ password }}
         comment="Comment"
 
-- name: Create Deploy user
-  user: name={{ deploy }} comment="Deploy User" groups="sudo,admin,{{ deploy }}"
-  sudo: yes
+
+
+# Test for OS  
+ when: ansible_distribution == 'Ubuntu'
+ when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
+
+Print variables:
+- name: "Print variables"
+  debug: 
+    msg: var=rhn_login.stdout
+    msg: "Red Hat Login is {{ rhn_login }} Password is {{ rhn_pass }}"
+  when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
+  tags: pkgs
+
+
+## Register RH boxes
+- name: Register Boxes
+  redhat_subscription: state=present
+                       username={{ rh_username }}
+                       password={{ rh_password }}
+                       autosubscribe=true
+  tags: redstone-common
+
+- name: Enable RH Server Optional Repo
+  command: /usr/sbin/subscription-manager repos --enable=rhel-7-server-optional-rpms
+  tags: redstone-common
+
+- name: Enable RH Ceph Installer Repo
+  command: /usr/sbin/subscription-manager repos --enable=rhel-7-server-rhceph-1.2-installer-rpms
+  tags: redstone-common
+
+- name: Enable RH Ceph Mon Repo
+  command: /usr/sbin/subscription-manager repos --enable=rhel-7-server-rhceph-1.2-mon-rpms
+  tags: redstone-common
+
+# Disable epel
+sed -i -e "s/^enabled=1/enabled=0/" /etc/yum.repos.d/epel.repo
+
+# Disable any confgured repos
+subscription-manager repos --disable "*"
+
+
+
+
+###
+# Sudoers file stuff -
+
+## Allows people in group wheel to run all commands
+#%wheel  ALL=(ALL)       ALL
+
+## Same thing without a password
+# %wheel        ALL=(ALL)       NOPASSWD: ALL
+
+# this specifically calls outr a user rather than hte group - probably safer.
+#vagrant ALL=(ALL) NOPASSWD:ALL
+
+# Not sure the above will work in all cases if the Defaults line is commented out 
+# Defaults    requiretty
+
+
+# Fully quoted because of the ': ' on the line. See the Gotchas in the YAML docs.
+#- lineinfile: "dest=/etc/sudoers state=present regexp='^%wheel' line='%wheel ALL=(ALL) NOPASSWD: ALL'"
+
+
+
+
 
 
 ...

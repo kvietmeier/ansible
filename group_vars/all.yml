@@ -30,6 +30,10 @@ rhel_ntp:
 
 timezone: America/Los_Angeles
 
+### Repos and Such
+rhel7_optional: rhel-7-server-optional-rpms
+ceph_repo: rhel-7-server-rhceph-1.2-installer-rpms
+cephmon_repo: rhel-7-server-rhceph-1.2-mon-rpms
 
 
 # Users
@@ -39,7 +43,6 @@ users:
   - atcuser03
 
 usershell: /bin/bash
-# Password: 0pen31ack
 userpass:  $1$rYGbgDG4$SG77KjjfdmlBiFfZt.Ocg1
 generate_ssh_key: yes
 ssh_key_bits: 2048 
