@@ -1,10 +1,10 @@
 ###  ATC Inventory
-#[oshift]
-#dev-openshift-1
-#dev-openshift-2
-#
-#[oshift:vars]
-#ansible_ssh_user=root
+[oshift]
+dev-openshift-1
+dev-openshift-2
+
+[oshift:vars]
+ansible_ssh_user=root
 
 ###  Vagrant Inventory
 # Centos

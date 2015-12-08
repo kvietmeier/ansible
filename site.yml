@@ -5,12 +5,19 @@
 #   Created By:   Karl Vietmeier
 #
 
-- hosts: centosvms:ubuntuvms
-  remote_user: vagrant
+#- hosts: centosvms:ubuntuvms
+#  roles:
+#     - common
+#  remote_user: vagrant
+#  sudo: yes
+#  vars_files:
+#     # Include Red Hat login info - not pushed up to git
+#     - group_vars/vault.yml
+
+- hosts: oshift
   roles:
      - common
-  remote_user: vagrant
-  sudo: yes
+  remote_user: root
   vars_files:
      # Include Red Hat login info - not pushed up to git
      - group_vars/vault.yml

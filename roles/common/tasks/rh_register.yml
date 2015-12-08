@@ -2,11 +2,29 @@
 # File roles/common/tasks/rh_register.yml
 # Register system with RHN and enable extra repos
 
-- name: Register Boxes
+# Clean up a system properly
+
+- name: Remove all Subscriptions
+  command: /usr/sbin/subscription-manager remove --all
+  tags: rhn-common
+
+- name: Unregister Servers from Red Hat
+  redhat_subscription: state=absent
+  tags: rhn-common
+
+- name: Clean the cache
+  command: /usr/sbin/subscription-manager clean
+  tags: rhn-common
+
+- name: Register Servers with Red Hat
   redhat_subscription: state=present
-                       username={{ rh_username }}
-                       password={{ rh_password }}
-                       autosubscribe=true
+                       username={{ rhn_login }}
+                       password={{ rhn_pass }}
+                       autosubscribe=false
+  tags: rhn-common
+
+- name: Attach to a Pool
+  command: /usr/sbin/subscription-manager attach --pool {{ rhel_virt }}
   tags: rhn-common
 
 - name: Enable RH Server Optional Repo
