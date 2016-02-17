@@ -2,6 +2,8 @@
 # File - scratch/snippets
 # Misc pieces of Ansible code
 
+
+####=======  Configuring Users
 #--- Remove the requiretty directive from /etc/sudoers
 - name: Remove requiretty
   lineinfile: dest=/etc/sudoers regexp="^Defaults.*requiretty" line='Defaults !requiretty'  backup=yes state=present validate='visudo -cf %s'
@@ -20,7 +22,59 @@
     - roles/common/files/auth/tools_root.isa.pub
     - roles/common/files/auth/ceph1admin.rsa.pub
   tags:
-     - sudo
+     - users
+
+
+- name: configure members of wheel group for passwordless sudo
+  sudo: yes
+  lineinfile:
+    dest: /etc/sudoers
+    regexp: "^%wheel"
+    line: "%wheel ALL=(ALL) NOPASSWD: ALL"
+    state: present
+  tags:
+    - users
+
+- name: Create Users
+  sudo: yes
+  user:
+    name: "{{ item.name }}"
+    groups: wheel
+  when: item.enabled is defined and item.enabled == 1
+  with_items: users
+  tags:
+    - users
+
+- name: set ssh key for users
+  sudo: yes
+  authorized_key: "user={{ item.0.name }} key='{{ item.1 }}'"
+  when: item.1 is defined and item.0.enabled == 1
+  with_subelements:
+    - users|default([])
+    - pubkeys
+  tags:
+    - users
+
+- name: delete os users
+  sudo: yes
+  user:
+    name: "{{ item.name }}"
+    state: absent
+    remove: yes
+  when: item.enabled is defined and item.enabled == 0
+  with_items: users
+  tags:
+    - users
+
+
+- name: create a new user
+  user: name=user
+        state=present
+        group=primary-group
+        groups="sudo"
+        password={{ password }}
+        comment="Comment"
+
 
 
 #--- Clone and Compile iperf3
@@ -127,14 +181,6 @@
   tags:
      - extra_pkgs
 
-- name: create a new user
-  user: name=user
-        state=present
-        group=primary-group
-        groups="sudo"
-        password={{ password }}
-        comment="Comment"
-
 
 
 # Test for OS  
@@ -156,19 +202,19 @@ Print variables:
                        username={{ rh_username }}
                        password={{ rh_password }}
                        autosubscribe=true
-  tags: redstone-common
+  tags: ceph-common
 
 - name: Enable RH Server Optional Repo
   command: /usr/sbin/subscription-manager repos --enable=rhel-7-server-optional-rpms
-  tags: redstone-common
+  tags: ceph-common
 
 - name: Enable RH Ceph Installer Repo
   command: /usr/sbin/subscription-manager repos --enable=rhel-7-server-rhceph-1.2-installer-rpms
-  tags: redstone-common
+  tags: ceph-common
 
 - name: Enable RH Ceph Mon Repo
   command: /usr/sbin/subscription-manager repos --enable=rhel-7-server-rhceph-1.2-mon-rpms
-  tags: redstone-common
+  tags: ceph-common
 
 # Disable epel
 sed -i -e "s/^enabled=1/enabled=0/" /etc/yum.repos.d/epel.repo

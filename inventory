@@ -1,4 +1,4 @@
-###  ATC Inventory
+###------  ATC Inventory ------###
 [oshift]
 dev-openshift-1
 dev-openshift-2
@@ -6,7 +6,8 @@ dev-openshift-2
 [oshift:vars]
 ansible_ssh_user=root
 
-###  Vagrant Inventory
+
+###------  Vagrant Inventory ------###
 # Centos
 [centosvms]
 centos01
@@ -25,6 +26,19 @@ ubuntu02
 ubuntu03
 
 [ubuntuvms:vars]
+ansible_ssh_user=vagrant
+ansible_sudo_user=root
+ansible_sudo=yes
+
+# Cookbook
+[cookbook]
+controller
+network
+compute
+swift
+cinder
+
+[cookbook:vars]
 ansible_ssh_user=vagrant
 ansible_sudo_user=root
 ansible_sudo=yes
