@@ -1,0 +1,45 @@
+127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
+::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
+### Minio Builders Lab Hosts
+
+### 10Gb Interfaces
+# Server Nodes
+10.10.0.65	 sys01
+10.10.0.43	 sys02
+10.10.0.46	 sys03
+10.10.0.64	 sys04
+10.10.0.49	 sys05
+10.10.0.50	 sys06
+10.10.0.52	 sys07
+10.10.0.66	 sys08
+
+# Clients
+10.10.0.58	 r22sys4-1
+10.10.0.60	 r22sys4-2
+10.10.0.57	 r22sys4-3
+10.10.0.59	 r22sys4-4
+10.10.0.55	 r22sys5-1
+10.10.0.54	 r22sys5-2
+10.10.0.68	 r22sys5-3
+10.10.0.62	 r22sys5-4
+
+### 40Gb Interfaces - Storage Network
+# Server Nodes
+172.16.1.101	minio-01
+172.16.1.102	minio-02
+172.16.1.103	minio-03
+172.16.1.104	minio-04
+172.16.1.105	minio-05
+172.16.1.106	minio-06
+172.16.1.107	minio-07
+172.16.1.108	minio-08
+
+# Clients
+172.16.1.109	client01
+172.16.1.110	client02
+172.16.1.111	client03
+172.16.1.112	client04
+172.16.1.113	client05
+172.16.1.114	client06
+172.16.1.115	client07
+172.16.1.116	client08

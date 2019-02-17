@@ -35,6 +35,8 @@ rhel7_optional: rhel-7-server-optional-rpms
 ceph_repo: rhel-7-server-rhceph-1.2-installer-rpms
 cephmon_repo: rhel-7-server-rhceph-1.2-mon-rpms
 
+### Versions
+ceph_ver: 3
 
 # Users
 users:

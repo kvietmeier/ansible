@@ -1,0 +1,83 @@
+---
+### File - bonding.yml
+#  Remove Bonding
+
+- hosts: servers
+  remote_user: root
+
+  vars:
+   net_dir: /etc/sysconfig/network-scripts
+   if_prefix: ifcfg-
+   nic: 175
+
+
+  tasks:
+  
+  - name: Backup ifcfg-bond0
+    copy:
+      remote_src: True
+      src: "{{ net_dir }}/ifcfg-bond0"
+      dest: "{{ net_dir }}/orig-ifcfg-bond0"
+    tags:
+       - remove_bonds
+
+  - name: Delete ifcfg-bond0
+    file:
+      path: "{{ net_dir }}/ifcfg-bond0"
+      state: absent
+    tags:
+       - remove_bonds
+
+  - name: Backup bonding slave ifcfg-enp175s0f0
+    copy:
+      remote_src: True
+      src: "{{ net_dir }}/ifcfg-enp175s0f0"
+      dest: "{{ net_dir }}/orig-ifcfg-enp175s0f0-bond"
+    tags:
+       - remove_bonds
+
+  - name: Backup bonding slave ifcfg-enp175s0f1
+    copy:
+      remote_src: True
+      src: "{{ net_dir }}/ifcfg-enp175s0f1"
+      dest: "{{ net_dir }}/orig-ifcfg-enp175s0f1-bond"
+    tags:
+       - remove_bonds
+
+  - name: Delete ifcfg-enp175s0f0
+    file:
+      path: "{{ net_dir }}/ifcfg-enp175s0f0"
+      state: absent
+    tags:
+       - remove_bonds
+
+  - name: Delete ifcfg-enp175s0f1
+    file:
+      path: "{{ net_dir }}/ifcfg-enp175s0f1"
+      state: absent
+    tags:
+       - remove_bonds
+
+  - name: Restore original ifcfg-enp175s0f1
+    copy:
+      remote_src: True
+      src: "{{ net_dir }}/orig-ifcfg-enp175s0f1"
+      dest: "{{ net_dir }}/ifcfg-enp175s0f1"
+    tags:
+       - remove_bonds
+
+  - name: Restore original ifcfg-enp175s0f0
+    copy:
+      remote_src: True
+      src: "{{ net_dir }}/orig-ifcfg-enp175s0f0"
+      dest: "{{ net_dir }}/ifcfg-enp175s0f0"
+    tags:
+       - remove_bonds
+
+
+
+  # Need to restart network
+  - name: Restart Network
+    systemd: name=network state=restarted
+    tags:
+       -bonding

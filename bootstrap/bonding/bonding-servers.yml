@@ -1,0 +1,29 @@
+---
+### File - bonding.yml
+#  Fix bonding
+
+- hosts: servers
+  remote_user: root
+
+  tasks:
+  - name: Copy ifcfg-enp175s0f0
+    copy:
+      src: files/ifcfg-enp175s0f0
+      dest: /etc/sysconfig/network-scripts
+      owner: root
+      group: root
+      mode: 0644
+      backup: yes
+    tags:
+       - bonding
+
+  - name: Add NM_CONTROLLED=no to eno2
+    lineinfile:
+      path: /etc/sysconfig/network-scripts/ifcfg-eno2
+      line: NM_CONTROLLED=no
+
+  - name: Restart Network
+    systemd: name=network state=restarted
+    tags:
+       -bonding
+
