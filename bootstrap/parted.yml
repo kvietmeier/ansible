@@ -1,0 +1,67 @@
+---
+### File parted.yml
+##   Partition a set of NVMe drives
+##   Created By:   Karl Vietmeier
+##
+####
+
+
+- hosts: all
+  remote_user: root
+
+
+  tasks:
+
+  # Partition and label the drives for Minio
+  - name:
+    parted:
+      device: "{{ item.name }}"
+      label: gpt
+      align: optimal
+      number: 1
+      part_start: 0%
+      part_end: 100%
+      state: present
+    with_items:
+      - { name: '/dev/nvme2n1' }
+      - { name: '/dev/nvme3n1' }
+      - { name: '/dev/nvme4n1' }
+      - { name: '/dev/nvme5n1' }
+    tags: parted
+
+  - name: Create XFS filesystem
+    filesystem:
+      fstype: xfs
+      dev: "{{ item.name }}"
+    with_items:
+       - { name: '/dev/nvme2n1p1' }
+       - { name: '/dev/nvme3n1p1' }
+       - { name: '/dev/nvme4n1p1' }
+       - { name: '/dev/nvme5n1p1' }
+    tags: mkfs
+
+  - name: Create the mountpoints
+    file:
+      path: "{{ item.name }}"
+      state: directory
+    with_items:
+       - { name: '/mnt/minio-vol1' }
+       - { name: '/mnt/minio-vol2' }
+       - { name: '/mnt/minio-vol3' }
+       - { name: '/mnt/minio-vol4' }
+    tags: mkdir
+
+  - name: Mount the partitions
+    mount:
+      src: "{{ item.blockdev }}"
+      path: "{{ item.dir }}"
+      fstype: xfs
+      opts: defaults
+      state: mounted
+    with_items:
+       - { blockdev: '/dev/nvme2n1p1', dir: '/mnt/minio-vol1'}
+       - { blockdev: '/dev/nvme3n1p1', dir: '/mnt/minio-vol2'}
+       - { blockdev: '/dev/nvme4n1p1', dir: '/mnt/minio-vol3'}
+       - { blockdev: '/dev/nvme5n1p1', dir: '/mnt/minio-vol4'}
+    tags: mount
+    

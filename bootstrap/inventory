@@ -1,25 +1,15 @@
-### Minio Builders Lab Hosts ###
+### Swindon TSS Lab Hosts ###
 ###     10Gb Interfaces      ###
 
-[servers]
-sys01
-sys02
-sys03
-sys04
-sys05
-sys06
-sys07
-sys08
+[mynodes]
+tssnode1
+tssnode4
+tssnode5
 
-[clients]
-r22sys4-1
-r22sys4-2
-r22sys4-3
-#r22sys4-4
-r22sys5-1
-r22sys5-2
-r22sys5-3
-r22sys5-4
+[josh]
+tssnode2
+tssnode3
+
 
 [all:vars]
 ansible_ssh_user=root

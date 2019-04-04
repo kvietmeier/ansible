@@ -1,4 +1,5 @@
 #!/bin/bash
+# Testing
 
 GOVERNOR=performance
 for CPUFREQ in /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor
