@@ -23,6 +23,8 @@
       part_end: 100%
       state: present
     with_items:
+      - { name: '/dev/nvme0n1' }
+      - { name: '/dev/nvme1n1' }
       - { name: '/dev/nvme2n1' }
       - { name: '/dev/nvme3n1' }
       - { name: '/dev/nvme4n1' }
@@ -34,6 +36,8 @@
       fstype: xfs
       dev: "{{ item.name }}"
     with_items:
+       - { name: '/dev/nvme0n1p1' }
+       - { name: '/dev/nvme1n1p1' }
        - { name: '/dev/nvme2n1p1' }
        - { name: '/dev/nvme3n1p1' }
        - { name: '/dev/nvme4n1p1' }
