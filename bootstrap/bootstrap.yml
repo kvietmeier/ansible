@@ -123,6 +123,7 @@
         - virt-install
         - virt-viewer
         - cloud-utils
+        - genisoimage
       state: present
     tags: yum_kvm
 
