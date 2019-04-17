@@ -97,7 +97,12 @@
   - name: Install collectd Packages
     yum:
       name:
+        - mcelog
+        - smartmontools
         - collectd
+        - collectd-ipmi
+        - collectd-mcelog
+        - collectd-smart
         - collectd-rrdtool
         - rrdtool
         - rrdtool-devel
@@ -150,7 +155,6 @@
       state: present
     tags: docker
 
-
   - name: Install Docker CE
     yum:
       name: 
@@ -162,6 +166,10 @@
       update_cache: yes
     tags: docker
 
+  - name: Disable swap
+    shell: swapoff -a
+    tags: k8s
+
   - name: add Kubernetes' YUM repository
     yum_repository:
       name: Kubernetes
@@ -169,7 +177,39 @@
       baseurl: https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
       gpgkey: https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
       gpgcheck: yes
-    tags: k8s_repo
+    tags: k8s
+
+  - name: Install Kubernetes Packages
+    yum:
+      name: 
+        - kubelet
+        - kubeadm
+        - kubectl
+      state: present
+      update_cache: yes
+    tags: k8s
+
+  # Start Docker and K8s
+  - name: Enable Docker and K8S Services
+    service: name={{ item }} state=started enabled=yes
+    with_items:
+      - docker
+      - kubelet
+    tags:
+       - k8s
+
+  - name: Set K8S system tuning parameters
+    sysctl:
+      name: "{{ item.property }}"
+      value: "{{ item.value }}"
+      sysctl_file: /etc/sysctl.d/k8s.conf
+      state: present
+      sysctl_set: yes
+      reload: yes
+    with_items:
+      - { property: 'net.bridge.bridge-nf-call-ip6tables', value: '1' }
+      - { property: 'net.bridge.bridge-nf-call-iptables', value: '1' }
+    tags: k8s
 
 
   ###--- User environment setup
@@ -183,15 +223,31 @@
        - sudo
 
   #--- SSH Keys
-  #- name: Copy rsa keys to user root
-  #  authorized_key: user=root key={{ item }}
-  #  become: yes
-  #  become_method: sudo
-  #  with_file:
-  #    - roles/common/files/auth/tools_root.isa.pub
-  #    - roles/common/files/auth/ceph1admin.rsa.pub
-  #  tags:
-  #     - users
+  - name: Copy rsa keys to user root
+    authorized_key:
+      user: tss01 
+      state: present  
+      key: '{{ item }}'
+    with_file:
+      - karlv01.root.isa.pub
+      - karlv03.root.isa.pub
+    tags:
+       - users
+
+  - name: Add a non-root user and put them in the qemu/kvm groups - password=n0mad1c
+    user:
+      name: tss01
+      shell: /bin/bash
+      groups: wheel,qemu,kvm
+      append: yes
+      generate_ssh_key: yes
+      ssh_key_bits: 2048
+      ssh_key_file: .ssh/id_rsa
+      password: $1$z.0hhKJ0$CIfrsuyuTDcoEo4s4jnXF.
+      state: present
+    tags: users
+
+
 
   - name: configure members of wheel group for passwordless sudo
   #sudo: yes
