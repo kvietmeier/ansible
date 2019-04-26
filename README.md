@@ -1,7 +1,7 @@
 # 
 Ansible Playbook Repo
 
-Working on a set of roles/tasks to bootstrap some basic server parameters to prep for overlaying apps..
+A set of roles/tasks to bootstrap some basic server parameters to prep for overlaying apps..
 
 The scratch directory has some snippets of code and a playbook to prep a node for runninng CBT.
 
