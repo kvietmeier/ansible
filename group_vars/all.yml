@@ -34,18 +34,31 @@ timezone: America/Los_Angeles
 rhel7_optional: rhel-7-server-optional-rpms
 ceph_repo: rhel-7-server-rhceph-1.2-installer-rpms
 cephmon_repo: rhel-7-server-rhceph-1.2-mon-rpms
+fedora_mirror: http://mirror.hmc.edu/fedora/linux/releases/22/Everything/x86_64/os/Packages
+
+# collectd vars
+cllctd_git: https://github.com/httpdss/collectd-web.git
+cllctd_install_dir: /usr/local
+cllctd_config_dir: /etc/collectd
+cllctd_conf: https://raw.githubusercontent.com/JoshHilliker/Telemetry-Infra/master/collectd.conf
+
+# FIO and iperf
+fio_repo: https://github.com/axboe/fio.git
+git_dir: ~/git
+fio_dir: ~/git/fio
 
 ### Versions
 ceph_ver: 3
 
-# Users
+# Users (password n0mad1c)
 users:
-  - atcuser01
-  - atcuser02
-  - atcuser03
+  - tss01
+  - tss02
+  - tss03
 
 usershell: /bin/bash
-userpass:  $1$rYGbgDG4$SG77KjjfdmlBiFfZt.Ocg1
+userpass: $1$z.0hhKJ0$CIfrsuyuTDcoEo4s4jnXF. 
+groups: wheel
 generate_ssh_key: yes
 ssh_key_bits: 2048 
 ssh_key_comment: yes
@@ -60,35 +73,47 @@ git_dir: ~/git
 ### Package Information
 xtra_pkgs:
    - psmisc
-   - coreutils
-   - sysfsutils
-   - findutils
-   - net-tools
    - util-linux
+   - coreutils
    - xfsprogs
+   - e2fsprogs
+   - findutils
+   - sysfsutils
+   - hwloc
+   - hwloc-gui
    - git
    - wget
    - bzip2
+   - kernel-devel
+   - perf
    - blktrace
    - lsof
+   - redhat-lsb
    - sysstat
-   - screen
-   - tree
+   - python-yaml
    - ipmitool
    - dstat
-   - mlocate
-   - lsscsi
+   - zlib-devel
+   - ntp
+   - collectl
+   - tree
+   - screen
+   - tmux
+   - nvme-cli
+   - numactl
    - hdparm
+   - sdparm
+   - iperf
+   - vim
+
+### RHEL/Centos Packages
+rhel_pkgs:
+   - epel-release
    - sdparm
    - smartmontools
    - rpcbind
    - ftp
    - python
-
-
-### RHEL/Centos Packages
-rhel_pkgs:
-   - epel-release
    - openssh-clients
    - yum-utils
    - yum-plugin-priorities.noarch
@@ -116,8 +141,5 @@ ubuntu_pkgs:
    - libnss-ldap
    - nslcd
 
-
-### Mirrors
-fedora_mirror: http://mirror.hmc.edu/fedora/linux/releases/22/Everything/x86_64/os/Packages
 
 ...

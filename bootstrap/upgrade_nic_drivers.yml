@@ -15,10 +15,10 @@
 
   ###----------------------- Variables ---------------------------###
   vars:
-   driver_file: i40e-2.7.27.tar.gz
-   fw_file: XL710_NVMUpdatePackage_v6_80_Linux.tar
+   driver_file: i40e-2.9.21.tar.gz
+   fw_file: 700Series_NVMUpdatePackage_v7_00_Linux.tar
    root_dir: /root
-   compile_dir: /root/temp/i40e-2.7.27/src
+   compile_dir: /root/temp/i40e-2.9.21/src
    compile_chk: i40e.7.gz
 
   ###-------------------------- Tasks ----------------------------###
@@ -46,11 +46,40 @@
     tags:
        - nic_driver
 
+  ###-- Copy FW and driver files to remote host
+  - name: Copy over the FW tarball
+    copy:
+      remote_src: no
+      src: "{{ fw_file }}"
+      dest: "{{ root_dir }}"
+    when: not fw_pkg.stat.exists
+     
+  - name: Reset FW file exists flag
+    stat:
+      path: "{{ root_dir }}/{{ fw_file }}"
+    register: fw_pkg
+    tags:
+       - nic_driver
 
-  ### Add copy and untar/unzip commands here to move them over
+  - name: Copy over the Driver package
+    copy:
+      remote_src: no
+      src: "{{ driver_file }}"
+      dest: "{{ root_dir }}"
+    when: not driver_file_pkg.stat.exists
 
+  - name: Reset Driver file exists flag
+    stat:
+      path: "{{ root_dir }}/{{ driver_file }}"
+    register: driver_file_pkg
+    tags:
+       - nic_driver
 
-  ### - Compile Drivers
+  #
+  ###--- Copy files
+  #
+
+  ###- Compile Drivers
   - name: Untar Driver File
     unarchive:
       remote_src: yes
@@ -88,6 +117,9 @@
 
   - name: Reboot the Node
     reboot:
+      reboot_timeout: 3600
+      msg: "Reboot to restart drivers"
+  
     tags:
       - nic_driver
 

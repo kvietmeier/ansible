@@ -42,10 +42,10 @@
     tags:
        - yum
 
-  #- name: Upgrade all packages
-  #  yum: name=* state=latest
-  #  tags:
-  #     - yum
+  - name: Upgrade all packages
+    yum: name=* state=latest
+    tags:
+       - yum
 
   - name: install the 'Development tools' package group
     yum: name="@Development tools" state=present
@@ -62,6 +62,7 @@
         - xfsprogs
         - e2fsprogs
         - findutils
+        - sshpass
         - sysfsutils
         - hwloc
         - hwloc-gui
@@ -70,13 +71,15 @@
         - bzip2
         - kernel-devel
         - perf
+        - dstat
+        - sysstat
         - blktrace
         - lsof
         - redhat-lsb
-        - sysstat
         - python-yaml
+        - python-pip
+        - python-wheel
         - ipmitool
-        - dstat
         - zlib-devel
         - ntp
         - collectl
@@ -91,7 +94,21 @@
         - vim
       state: present
     tags:
-       - yum
+      - yum
+
+  # Need these for Ceph bootstrap
+  - name: Install Ceph Required Packages
+    yum:
+      name:
+        - snappy
+        - leveldb
+        - python-argparse
+        - gperftools-libs
+        - python-distribute
+        - librbd1-devel
+      state: present
+    tags:
+      - yum
 
   # Need these for collectd telemetry
   - name: Install collectd Packages
@@ -112,7 +129,7 @@
         - perl-CGI-Session
       state: present
     tags:
-       - yum_collectd
+      - yum
 
   # Need these for collectd telemetry
   - name: Install libvirt/KVM Packages
@@ -130,14 +147,16 @@
         - cloud-utils
         - genisoimage
       state: present
-    tags: yum_kvm
+    tags:
+      - yum_kvm
 
   # Docker-ce Install
   - name: Import Docker CE repository gpg key
     rpm_key:
       key: https://download.docker.com/linux/centos/gpg
       state: present
-    tags: docker
+    tags: 
+      - docker
 
   - name: Add Docker CE repository
     get_url:
@@ -147,13 +166,15 @@
       owner: root
       group: root
       mode: 0644
-    tags: docker
+    tags: 
+      - docker
 
   - name: Install selinux pacxkage
     yum:
       name: http://mirror.centos.org/centos/7/extras/x86_64/Packages/container-selinux-2.68-1.el7.noarch.rpm
       state: present
-    tags: docker
+    tags: 
+      - docker
 
   - name: Install Docker CE
     yum:
@@ -164,11 +185,13 @@
         - docker-ce
       state: present
       update_cache: yes
-    tags: docker
+    tags: 
+      - docker
 
   - name: Disable swap
     shell: swapoff -a
-    tags: k8s
+    tags:
+      - k8s
 
   - name: add Kubernetes' YUM repository
     yum_repository:
@@ -177,7 +200,8 @@
       baseurl: https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
       gpgkey: https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
       gpgcheck: yes
-    tags: k8s
+    tags:
+      - k8s
 
   - name: Install Kubernetes Packages
     yum:
@@ -187,7 +211,8 @@
         - kubectl
       state: present
       update_cache: yes
-    tags: k8s
+    tags:
+      - k8s
 
   # Start Docker and K8s
   - name: Enable Docker and K8S Services
@@ -209,7 +234,8 @@
     with_items:
       - { property: 'net.bridge.bridge-nf-call-ip6tables', value: '1' }
       - { property: 'net.bridge.bridge-nf-call-iptables', value: '1' }
-    tags: k8s
+    tags:
+      - k8s
 
 
   ###--- User environment setup
@@ -220,37 +246,39 @@
     #become: yes
     #become_method: sudo
     tags:
-       - sudo
+      - baseline
 
   #--- SSH Keys
-  - name: Copy rsa keys to user root
-    authorized_key:
-      user: tss01 
-      state: present  
-      key: '{{ item }}'
-    with_file:
-      - karlv01.root.isa.pub
-      - karlv03.root.isa.pub
-    tags:
-       - users
-
   - name: Add a non-root user and put them in the qemu/kvm groups - password=n0mad1c
     user:
       name: tss01
       shell: /bin/bash
-      groups: wheel,qemu,kvm
+      groups: wheel
+      #groups: wheel,qemu,kvm
       append: yes
       generate_ssh_key: yes
       ssh_key_bits: 2048
       ssh_key_file: .ssh/id_rsa
       password: $1$z.0hhKJ0$CIfrsuyuTDcoEo4s4jnXF.
       state: present
-    tags: users
+    tags: 
+      - users
 
+
+  - name: Copy rsa keys to user tss01
+    authorized_key:
+      user: tss01 
+      state: present  
+      key: '{{ item }}'
+    with_file:
+      - karlv01.id_rsa.pub
+      - karlv03.id_rsa.pub
+    tags:
+      - keys
 
 
   - name: configure members of wheel group for passwordless sudo
-  #sudo: yes
+    #sudo: yes
     lineinfile:
       dest: /etc/sudoers
       regexp: "^%wheel"
@@ -300,7 +328,7 @@
     selinux:
       state: disabled
     tags:
-      -selinux
+      - baseline
          
   - name: Disable Services
     service: name={{ item }} state=stopped enabled=no
@@ -308,15 +336,14 @@
       - irqbalance
       - firewalld
     tags:
-       - dservices
+       - baseline
 
   - name: Enable Services
     service: name={{ item }} state=started enabled=yes
     with_items:
       - ntpd
-      - libvirtd
     tags:
-       - eservices
+       - baseline
 
   - name: Update PCI IDs
     command: update-pciids
@@ -330,13 +357,26 @@
       mode: 0644
       backup: yes
     tags:
-       - hostfile
+       - baseline
+
+  - name: Fix locale issues
+    blockinfile: 
+      path: /etc/environment
+      block: |
+        LANG=en_US.utf-8
+        LC_ALL=en_US.utf-8
+      create: yes
+      group: root
+      owner: root
+      backup: yes
+    tags:
+       - baseline
 
   - name: Set system tuning parameters
     sysctl:
       name: "{{ item.name }}"
       value: "{{ item.value }}"
-      sysctl_file: /root/sysctl_test.conf
+      sysctl_file: /etc/sysctl.conf
       state: present
       sysctl_set: yes
       reload: no
@@ -370,7 +410,7 @@
       - { name: 'net.ipv4.conf.all.accept_redirects', value: '0' }
       - { name: 'net.ipv4.conf.all.accept_source_route', value: '0' }
       - { name: 'vm.min_free_kbytes', value: '1000000' }
-    tags: sysctl
+    tags: baseline
 
 
   ###--- Applications
