@@ -1,35 +1,17 @@
-### Swindon TSS Lab Hosts ###
-###     10Gb Interfaces      ###
+### Linux Hosts - Ubuntu
+### Running on Azure VMs
+[dpdk]
+dpdk01
+dpdk02
+dpdk03
+dpdk04
 
-[mynodes]
-#tssnode1
-#tssnode4
-#tssnode5
+[master]
+k8smaster
 
-[josh]
-#tssnode2
-#tssnode3
-
-[tivit_ceph]
-tivitmaster
-tivit1
-tivit2
-tivit3
-tivit4
-tivit5
-
-[tivit_loadgen]
-tivitload1
-tivitload2
-tivitload3
-tivitload4
-
-[tivit_osd]
-tivit1
-tivit2
-tivit3
-tivit4
-tivit5
+[workers]
+worker01
+worker02
 
 [all:vars]
 ansible_ssh_user=root

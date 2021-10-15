@@ -1,6 +1,6 @@
 ---
 ### File - bootstrap.yml
-#   Prepare a Basic Lab Server
+#   Prepare a Basic Lab Server with a single Playbook
 #   Created By:   Karl Vietmeier
 #
 ###
@@ -14,6 +14,7 @@
    temp_dir: ~/temp
    project_dir: ~/testing_output
    mirror: http://mirror.hmc.edu/fedora/linux/releases/22/Everything/x86_64/os/Packages
+
    # collectd vars
    cllctd_git: https://github.com/httpdss/collectd-web.git
    cllctd_install_dir: /usr/local

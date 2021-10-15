@@ -1,0 +1,30 @@
+###===========  Multi Server Environment Example ========###
+### Swindon TSS Lab Hosts ###
+###     10Gb Interfaces      ###
+
+[mynodes]
+tssnode1
+tssnode4
+tssnode5
+
+[josh]
+tssnode2
+tssnode3
+
+[tivit_ceph]
+cephmaster
+ceph1
+ceph2
+ceph3
+ceph4
+ceph5
+
+[tivit_loadgen]
+cephload1
+cephload2
+cephload3
+cephload4
+
+
+[all:vars]
+ansible_ssh_user=root
