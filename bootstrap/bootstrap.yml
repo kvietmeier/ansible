@@ -118,9 +118,9 @@
   #--- Add a user
   - name: Add a non-root user and put them in wheel - password=n0mad1c
     user:
-      name: azureuser01
+      name: labuser01
       shell: /bin/bash
-      groups: wheel
+      groups: sudo
       append: yes
       generate_ssh_key: yes
       ssh_key_bits: 2048
@@ -149,6 +149,21 @@
   ###--- System Configuration
 
   # Configure basic services
+  #
+
+  # Grab list of running/present services
+  #- name: 'Populate service facts'
+  #  service_facts:
+
+   #- name: 'Disable firewalld Services'
+   # service:
+   #   name: "{{item}}"
+   #   state: stopped
+   #   enabled: no
+   # loop:
+   #  - firewalld
+   # when: ansible_facts.services[item] is defined
+   # ignore_errors: yes
   
   #- name: Enable firewalld
   #  service: name=firewalld state=started enabled=yes
@@ -163,20 +178,20 @@
   #     - firewalld
 
 
-  - name: Disable Services
-    service: name={{ item }} state=stopped enabled=no
-    with_items:
-      - irqbalance
-      - firewalld
-    tags:
-       - baseline
+  #- name: Disable Services
+  #service: name={{ item }} state=stopped enabled=no
+  #with_items:
+  #  - irqbalance
+  #  - firewalld
+  #tags:
+  #   - baseline
 
-  - name: Enable Services
-    service: name={{ item }} state=started enabled=yes
-    with_items:
-      - ntpd
-    tags:
-       - baseline
+  #- name: Enable Services
+  #  service: name={{ item }} state=started enabled=yes
+  #  with_items:
+  #    - ntpd
+  #  tags:
+  #     - baseline
 
   - name: Update PCI IDs
     command: update-pciids
