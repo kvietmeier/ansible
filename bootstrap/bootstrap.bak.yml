@@ -1,0 +1,478 @@
+---
+### File - bootstrap.yml
+#   Prepare a Basic Lab Server with a single Playbook
+#   Created By:   Karl Vietmeier
+#
+###
+
+- hosts: all
+  remote_user: root
+
+  # Variable Assignment
+  vars:
+   bin_dir: ~/bin
+   temp_dir: ~/temp
+   project_dir: ~/testing_output
+   mirror: http://mirror.hmc.edu/fedora/linux/releases/22/Everything/x86_64/os/Packages
+
+   # collectd vars
+   cllctd_git: https://github.com/httpdss/collectd-web.git
+   cllctd_install_dir: /usr/local
+   cllctd_config_dir: /etc/collectd
+   cllctd_conf: https://raw.githubusercontent.com/JoshHilliker/Telemetry-Infra/master/collectd.conf
+
+   fio_repo: https://github.com/axboe/fio.git
+   git_dir: ~/git
+   fio_dir: ~/git/fio
+
+  tasks:
+
+  # Package Management
+  - name: Add epel Repo
+    # Always need this
+    yum:
+      name: epel-release
+      state: present
+    tags:
+       - yum
+
+  - name: Update CA Certs
+    yum:
+      name: ca-certificates
+      state: latest
+    tags:
+       - yum
+
+  - name: Upgrade all packages
+    yum: name=* state=latest
+    tags:
+       - yum
+
+  - name: install the 'Development tools' package group
+    yum: name="@Development tools" state=present
+    tags:
+      - yum
+       
+  # Packages we all usually need
+  - name: Install a bunch of stuff we need/want
+    yum:
+      name: 
+        - psmisc
+        - util-linux
+        - coreutils
+        - xfsprogs
+        - e2fsprogs
+        - findutils
+        - sshpass
+        - sysfsutils
+        - hwloc
+        - hwloc-gui
+        - git
+        - wget
+        - bzip2
+        - kernel-devel
+        - perf
+        - dstat
+        - sysstat
+        - blktrace
+        - lsof
+        - redhat-lsb
+        - python-yaml
+        - python-pip
+        - python-wheel
+        - ipmitool
+        - zlib-devel
+        - ntp
+        - collectl
+        - tree
+        - screen
+        - tmux  
+        - nvme-cli
+        - numactl
+        - hdparm
+        - sdparm
+        - iperf
+        - vim
+      state: present
+    tags:
+      - yum
+
+  # Need these for Ceph bootstrap
+  - name: Install Ceph Required Packages
+    yum:
+      name:
+        - snappy
+        - leveldb
+        - python-argparse
+        - gperftools-libs
+        - python-distribute
+        - librbd1-devel
+      state: present
+    tags:
+      - yum
+
+  # Need these for collectd telemetry
+  - name: Install collectd Packages
+    yum:
+      name:
+        - mcelog
+        - smartmontools
+        - collectd
+        - collectd-ipmi
+        - collectd-mcelog
+        - collectd-smart
+        - collectd-rrdtool
+        - rrdtool
+        - rrdtool-devel
+        - rrdtool-perl
+        - perl-HTML-Parser
+        - perl-JSON
+        - perl-CGI-Session
+      state: present
+    tags:
+      - yum
+
+  # Need these for collectd telemetry
+  - name: Install libvirt/KVM Packages
+    yum:
+      name:
+        - kvm
+        - virt-manager
+        - libvirt
+        - libvirt-python
+        - qemu-kvm
+        - qemu-img
+        - libvirt-client
+        - virt-install
+        - virt-viewer
+        - cloud-utils
+        - genisoimage
+      state: present
+    tags:
+      - yum_kvm
+
+  # Docker-ce Install
+  - name: Import Docker CE repository gpg key
+    rpm_key:
+      key: https://download.docker.com/linux/centos/gpg
+      state: present
+    tags: 
+      - docker
+
+  - name: Add Docker CE repository
+    get_url:
+      url: https://download.docker.com/linux/centos/docker-ce.repo
+      dest: /etc/yum.repos.d/docker-ce.repo
+      force: yes
+      owner: root
+      group: root
+      mode: 0644
+    tags: 
+      - docker
+
+  - name: Install selinux pacxkage
+    yum:
+      name: http://mirror.centos.org/centos/7/extras/x86_64/Packages/container-selinux-2.68-1.el7.noarch.rpm
+      state: present
+    tags: 
+      - docker
+
+  - name: Install Docker CE
+    yum:
+      name: 
+        - device-mapper-persistent-data
+        - container-selinux
+        - lvm2
+        - docker-ce
+      state: present
+      update_cache: yes
+    tags: 
+      - docker
+
+  - name: Disable swap
+    shell: swapoff -a
+    tags:
+      - k8s
+
+  - name: add Kubernetes' YUM repository
+    yum_repository:
+      name: Kubernetes
+      description: Kubernetes YUM repository
+      baseurl: https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
+      gpgkey: https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+      gpgcheck: yes
+    tags:
+      - k8s
+
+  - name: Install Kubernetes Packages
+    yum:
+      name: 
+        - kubelet
+        - kubeadm
+        - kubectl
+      state: present
+      update_cache: yes
+    tags:
+      - k8s
+
+  # Start Docker and K8s
+  - name: Enable Docker and K8S Services
+    service: name={{ item }} state=started enabled=yes
+    with_items:
+      - docker
+      - kubelet
+    tags:
+       - k8s
+
+  - name: Set K8S system tuning parameters
+    sysctl:
+      name: "{{ item.property }}"
+      value: "{{ item.value }}"
+      sysctl_file: /etc/sysctl.d/k8s.conf
+      state: present
+      sysctl_set: yes
+      reload: yes
+    with_items:
+      - { property: 'net.bridge.bridge-nf-call-ip6tables', value: '1' }
+      - { property: 'net.bridge.bridge-nf-call-iptables', value: '1' }
+    tags:
+      - k8s
+
+
+  ###--- User environment setup
+
+  #--- Remove the requiretty directive from /etc/sudoers
+  - name: Remove requiretty
+    lineinfile: dest=/etc/sudoers regexp="^Defaults.*requiretty" line='Defaults !requiretty'  backup=yes state=present validate='visudo -cf %s'
+    #become: yes
+    #become_method: sudo
+    tags:
+      - baseline
+
+  #--- SSH Keys
+  - name: Add a non-root user and put them in the qemu/kvm groups - password=n0mad1c
+    user:
+      name: tss01
+      shell: /bin/bash
+      groups: wheel
+      #groups: wheel,qemu,kvm
+      append: yes
+      generate_ssh_key: yes
+      ssh_key_bits: 2048
+      ssh_key_file: .ssh/id_rsa
+      password: $1$z.0hhKJ0$CIfrsuyuTDcoEo4s4jnXF.
+      state: present
+    tags: 
+      - users
+
+
+  - name: Copy rsa keys to user tss01
+    authorized_key:
+      user: tss01 
+      state: present  
+      key: '{{ item }}'
+    with_file:
+      - karlv01.id_rsa.pub
+      - karlv03.id_rsa.pub
+    tags:
+      - keys
+
+
+  - name: configure members of wheel group for passwordless sudo
+    #sudo: yes
+    lineinfile:
+      dest: /etc/sudoers
+      regexp: "^%wheel"
+      line: "%wheel ALL=(ALL) NOPASSWD: ALL"
+      state: present
+    tags:
+      - users
+
+  # Setup some Project directories
+  - name: Create Project Directory
+    file: path={{ project_dir }} state=directory mode=755
+    tags:
+       - setupenv
+
+  - name: Create Temp Directory
+    file: path={{ temp_dir }} state=directory mode=755
+    tags:
+       - setupenv
+
+  - name: Create bin Directory
+    file: path={{ bin_dir }} state=directory mode=755
+    tags:
+       - setupenv
+
+  
+
+
+
+  ###--- System Configuration
+
+  # Configure basic services
+  
+  #- name: Enable firewalld
+  #  service: name=firewalld state=started enabled=yes
+  #  tags:
+  #     - firewalld
+
+  #- name: Configure firewalld
+  #  firewalld:
+  #    port: 9000/tcp
+  #    state: enabled
+  #  tags:
+  #     - firewalld
+
+
+  - name: Disable selinux (I know - that is bad)
+    selinux:
+      state: disabled
+    tags:
+      - baseline
+         
+  - name: Disable Services
+    service: name={{ item }} state=stopped enabled=no
+    with_items:
+      - irqbalance
+      - firewalld
+    tags:
+       - baseline
+
+  - name: Enable Services
+    service: name={{ item }} state=started enabled=yes
+    with_items:
+      - ntpd
+    tags:
+       - baseline
+
+  - name: Update PCI IDs
+    command: update-pciids
+
+  - name: Copy /etc/hosts
+    copy:
+      src: files/hosts
+      dest: /etc/hosts
+      owner: root
+      group: root
+      mode: 0644
+      backup: yes
+    tags:
+       - baseline
+
+  - name: Fix locale issues
+    blockinfile: 
+      path: /etc/environment
+      block: |
+        LANG=en_US.utf-8
+        LC_ALL=en_US.utf-8
+      create: yes
+      group: root
+      owner: root
+      backup: yes
+    tags:
+       - baseline
+
+  - name: Set system tuning parameters
+    sysctl:
+      name: "{{ item.name }}"
+      value: "{{ item.value }}"
+      sysctl_file: /etc/sysctl.conf
+      state: present
+      sysctl_set: yes
+      reload: no
+    with_items:
+      - { name: 'kernel.pid_max', value: '4194303' }
+      - { name: 'fs.file-max', value: '4194303' }
+      - { name: 'vm.swappiness', value: '1' }
+      - { name: 'vm.vfs_cache_pressure', value: '10' }
+      - { name: 'net.core.rmem_max', value: '268435456' }
+      - { name: 'net.core.wmem_max', value: '268435456' }
+      - { name: 'net.core.rmem_default', value: '67108864' }
+      - { name: 'net.core.wmem_default', value: '67108864' }
+      - { name: 'net.core.netdev_budget', value: '1200' }
+      - { name: 'net.core.optmem_max', value: '134217728' }
+      - { name: 'net.core.somaxconn', value: '65535' }
+      - { name: 'net.core.netdev_max_backlog', value: '250000' }
+      - { name: 'net.ipv4.tcp_rmem', value: '67108864 134217728 268435456' }
+      - { name: 'net.ipv4.tcp_wmem', value: '67108864 134217728 268435456' }
+      - { name: 'net.ipv4.tcp_low_latency', value: '1' }
+      - { name: 'net.ipv4.tcp_adv_win_scale', value: '1' }
+      - { name: 'net.ipv4.tcp_max_syn_backlog', value: '30000' }
+      - { name: 'net.ipv4.tcp_max_tw_buckets', value: '2000000' }
+      - { name: 'net.ipv4.tcp_tw_reuse', value: '1' }
+      - { name: 'net.ipv4.tcp_tw_recycle', value: '1' }
+      - { name: 'net.ipv4.tcp_fin_timeout', value: '5' }
+      - { name: 'net.ipv4.tcp_mtu_probing', value: '1' }
+      - { name: 'net.ipv4.tcp_mtu_probing', value: '1' }
+      - { name: 'net.ipv4.udp_rmem_min', value: '8192' }
+      - { name: 'net.ipv4.udp_wmem_min', value: '8192' }
+      - { name: 'net.ipv4.conf.all.send_redirects', value: '0' }
+      - { name: 'net.ipv4.conf.all.accept_redirects', value: '0' }
+      - { name: 'net.ipv4.conf.all.accept_source_route', value: '0' }
+      - { name: 'vm.min_free_kbytes', value: '1000000' }
+    tags: baseline
+
+
+  ###--- Applications
+
+  # Minio Specific
+  - name: Download Minio binary
+    get_url:
+      url: https://dl.minio.io/server/minio/release/linux-amd64/minio
+      dest: "{{ bin_dir }}"
+      mode: 0755
+    tags:
+       - minio
+
+  # Compile FIO
+  - name: Clone FIO from git
+    git: 
+      repo={{ fio_repo }}
+      dest={{ git_dir }}/fio 
+      clone=yes
+      force=yes
+    tags:
+      - fio
+
+  - name: Compile FIO
+    command: "{{ item }} chdir={{ fio_dir }}"
+    with_items:
+     - ./configure
+     - /usr/bin/make
+     - /usr/bin/make install
+    tags:
+      - fio  
+
+
+
+  ###--- Misc Cleanup
+  
+  # Because these files bug me
+  - name: Copy the install logs into the temp folder
+    copy:
+      src: "{{ item }}"
+      dest: "{{ temp_dir }}"
+      remote_src: yes
+    with_items:
+      - anaconda-ks.cfg
+      - original-ks.cfg
+      - install.post.log
+      - install.postnochroot.log
+    tags:
+       - cleanup
+
+  - name: Delete File
+    file:
+      path: "{{ item }}"
+      state: absent
+    with_items:
+      - anaconda-ks.cfg
+      - original-ks.cfg
+      - install.post.log
+      - install.postnochroot.log
+    tags:
+       - cleanup
+ 
+
+

@@ -1,39 +1,14 @@
 127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
 ::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
 
-### Lab Systems not in DNS
-10.20.0.87      tivit1
-10.20.0.88      tivit2
-10.20.0.89      tivit3
-10.20.0.90      tivit4
-10.20.0.91      tivit5
-10.20.0.92      tivitmaster      
-10.20.0.93      tivitload1
-10.20.0.94      tivitload2
-10.20.0.95      tivitload3
-10.20.0.96      tivitload4
 
+# Linux hosts
+10.30.0.5       k8smaster
+10.30.0.7       worker01
+10.30.0.8       worker02
 
-### BMCs
-10.30.0.21      tivit1-bmc
-10.30.0.41      tivit2-bmc           
-10.30.0.38      tivit3-bmc           
-10.30.0.93      tivit4-bmc           
-10.30.0.121     tivit5-bmc           
-10.30.0.33      tivitmaster-bmc
-10.30.0.131     tivitload1-bmc           
-10.30.0.133     tivitload1-bmc           
-10.30.0.132     tivitload1-bmc           
-10.30.0.188     tivitload1-bmc           
+10.20.1.4       dpdk01
+10.20.1.5       dpdk02
+10.20.1.6       dpdk03
+10.20.1.7       dpdk04
 
-###--- 172.20.0.0/24 Network hosts
-172.20.0.87     ceph1
-172.20.0.88     ceph2
-172.20.0.89     ceph3
-172.20.0.90     ceph4
-172.20.0.91     ceph5
-172.20.0.92     cephmaster
-172.20.0.93     cephload1
-172.20.0.94     cephload2
-172.20.0.95     cephload3
-172.20.0.96     cephload4

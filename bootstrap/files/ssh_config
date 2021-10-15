@@ -1,108 +1,22 @@
 ### /root/.ssh/config
 ### SSH client configuration
 ### 
-### For:  Ceph Cluster
+### For:  Azure Linux Systems
 
 Host master
-  HostName cephmaster
+  HostName 10.30.0.5
   User tss01
   PasswordAuthentication no
 
-Host rmaster
-  HostName cephmaster
+Host worker01
+  HostName 10.30.0.7
   User root
   PasswordAuthentication no
 
-Host ceph1
-  HostName ceph1
-  User tss01
-  PasswordAuthentication no
-
-Host rceph1
-  HostName ceph1
+Host worker02
+  HostName 10.30.0.8
   User root
   PasswordAuthentication no
-
-Host ceph2
-  HostName ceph2
-  User tss01
-  PasswordAuthentication no
-
-Host rceph2
-  HostName ceph2
-  User root
-  PasswordAuthentication no
-
-Host ceph3
-  HostName ceph3
-  User tss01
-  PasswordAuthentication no
-
-Host rceph3
-  HostName ceph3
-  User root
-  PasswordAuthentication no
-
-Host ceph4
-  HostName ceph4
-  User tss01
-  PasswordAuthentication no
-
-Host rceph4
-  HostName ceph4
-  User root
-  PasswordAuthentication no
-
-Host ceph5
-  HostName ceph5
-  User tss01
-  PasswordAuthentication no
-
-Host rceph5
-  HostName ceph5
-  User root
-  PasswordAuthentication no
-
-Host load1
-  HostName cephload1
-  User tss01
-  PasswordAuthentication no
-
-Host rload1
-  HostName cephload1
-  User tss01
-  PasswordAuthentication no
-
-Host load2
-  HostName cephload2
-  User tss01
-  PasswordAuthentication no
-
-Host rload2
-  HostName cephload2
-  User root
-  PasswordAuthentication no
-
-Host load3
-  HostName cephload3
-  User tss01
-  PasswordAuthentication no
-
-Host rload3
-  HostName cephload3
-  User root
-  PasswordAuthentication no
-
-Host load4
-  HostName cephload4
-  User tss01
-  PasswordAuthentication no
-
-Host rload4
-  HostName cephload4
-  User root
-  PasswordAuthentication no
-
 
 
 ### ================================================================================###
