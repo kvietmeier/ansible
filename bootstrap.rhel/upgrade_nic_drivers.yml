@@ -1,0 +1,125 @@
+---
+### File upgrade_nic_drivers.yml
+#   Upgrade Intel NIC drivers
+#   Created by: Karl Vietmeier
+#
+#   To Do:
+#      This playbook assumes the files are already on the system.
+#        Need to be usable when they aren't.
+#      Hardcoded to a driver version
+#
+###
+
+- hosts: all
+  remote_user: root
+
+  ###----------------------- Variables ---------------------------###
+  vars:
+   driver_file: i40e-2.9.21.tar.gz
+   fw_file: 700Series_NVMUpdatePackage_v7_00_Linux.tar
+   root_dir: /root
+   compile_dir: /root/temp/i40e-2.9.21/src
+   compile_chk: i40e.7.gz
+
+  ###-------------------------- Tasks ----------------------------###
+  tasks:
+
+  ### - PreWork
+  - name: Check if the FW File Exists
+    stat:
+      path: "{{ root_dir }}/{{ fw_file }}"
+    register: fw_pkg
+    tags:
+       - nic_driver
+
+  - name: Check if the Driver File Exists
+    stat:
+      path: "{{ root_dir }}/{{ driver_file }}"
+    register: driver_file_pkg
+    tags:
+       - nic_driver
+
+  - name: Has the Driver Already Been Compiled?
+    stat:
+      path: "{{ compile_dir }}/{{ compile_chk }}"
+    register: driver_compiled
+    tags:
+       - nic_driver
+
+  ###-- Copy FW and driver files to remote host
+  - name: Copy over the FW tarball
+    copy:
+      remote_src: no
+      src: "{{ fw_file }}"
+      dest: "{{ root_dir }}"
+    when: not fw_pkg.stat.exists
+     
+  - name: Reset FW file exists flag
+    stat:
+      path: "{{ root_dir }}/{{ fw_file }}"
+    register: fw_pkg
+    tags:
+       - nic_driver
+
+  - name: Copy over the Driver package
+    copy:
+      remote_src: no
+      src: "{{ driver_file }}"
+      dest: "{{ root_dir }}"
+    when: not driver_file_pkg.stat.exists
+
+  - name: Reset Driver file exists flag
+    stat:
+      path: "{{ root_dir }}/{{ driver_file }}"
+    register: driver_file_pkg
+    tags:
+       - nic_driver
+
+  #
+  ###--- Copy files
+  #
+
+  ###- Compile Drivers
+  - name: Untar Driver File
+    unarchive:
+      remote_src: yes
+      src: "{{ root_dir }}/{{ driver_file }}"
+      dest: "{{ root_dir }}/temp"
+    when: driver_file_pkg.stat.exists == true
+    tags:
+       - nic_driver
+
+  - name: Compile the Driver
+    make:
+      chdir: "{{ compile_dir }}"
+      target: install
+    when: driver_compiled.stat.exists == false
+    tags:
+       - nic_driver
+
+
+  ### - Cleanup
+  - name: Remove the Driver File
+    file:
+      path: "{{ root_dir }}/{{ driver_file }}"
+      state: absent
+    when: driver_file_pkg.stat.exists == true
+    tags:
+      - nic_driver
+
+  - name: Cleanup after FW Upgrade
+    file:
+      path: "{{ root_dir }}/{{ fw_file }}"
+      state: absent
+    when: fw_pkg.stat.exists == true
+    tags:
+      - nic_driver
+
+  - name: Reboot the Node
+    reboot:
+      reboot_timeout: 3600
+      msg: "Reboot to restart drivers"
+  
+    tags:
+      - nic_driver
+

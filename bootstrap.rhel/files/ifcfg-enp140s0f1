@@ -1,0 +1,9 @@
+# ifcfg-enp140s0f1
+DEVICE=enp140s0f1
+NAME=bond0-slave
+MASTER=bond0
+TYPE=Ethernet
+BOOTPROTO=none
+ONBOOT=yes
+NM_CONTROLLED=no
+SLAVE=yes
