@@ -20,9 +20,19 @@
    cllctd_config_dir: /etc/collectd
    cllctd_conf: https://raw.githubusercontent.com/JoshHilliker/Telemetry-Infra/master/collectd.conf
 
-   fio_repo: https://github.com/axboe/fio.git
+   # For cloning and compiling
    git_dir: ~/git
+
+   # Source Code
+   fio_repo: https://github.com/axboe/fio.git
+   iperf3_repo: https://github.com/esnet/iperf.git
+   sockperf_repo: https://github.com/mellanox/sockperf
+   iperf3_dir: ~/git/iperf3
    fio_dir: ~/git/fio
+   sockperf_dir: ~/git/sockperf
+
+
+
 
   tasks:
 
@@ -67,6 +77,7 @@
         - slurm
         - saidar
         - ccze
+        - net-tools
       state: present
     tags:
       - apt
@@ -229,6 +240,45 @@
     tags:
       - fio  
 
+  # Compile iperf3
+  - name: Clone iperf3 from git
+    git: 
+      repo={{ iperf3_repo }}
+      dest={{ git_dir }}/iperf 
+      clone=yes
+      force=yes
+    tags:
+      - iperf3
+
+  - name: Compile iperf3
+    command: "{{ item }} chdir={{ iperf3_dir }}"
+    with_items:
+     - ./configure
+     - /usr/bin/make
+     - /usr/bin/make install
+     - /usr/bin/ldconfig
+    tags:
+      - iperf3  
+ 
+  # Compile sockperf
+  - name: Clone sockperf from git
+    git: 
+      repo={{ sockperf_repo }}
+      dest={{ git_dir }}/sockperf 
+      clone=yes
+      force=yes
+    tags:
+      - sockperf
+
+  - name: Compile sockperf
+    command: "{{ item }} chdir={{ sockperf_dir }}"
+    with_items:
+     - ./autogen.sh
+     - ./configure --prefix= --enable test
+     - /usr/bin/make
+     - /usr/bin/make install
+    tags:
+      - sockperf  
 
   ###--- Misc Cleanup
   # TBD  
