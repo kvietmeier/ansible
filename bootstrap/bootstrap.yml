@@ -256,7 +256,7 @@
      - ./configure
      - /usr/bin/make
      - /usr/bin/make install
-     - /usr/bin/ldconfig
+     - /usr/sbin/ldconfig
     tags:
       - iperf3  
  
@@ -270,15 +270,35 @@
     tags:
       - sockperf
 
-  - name: Compile sockperf
-    command: "{{ item }} chdir={{ sockperf_dir }}"
-    with_items:
-     - ./autogen.sh
-     - ./configure --prefix= --enable test
-     - /usr/bin/make
-     - /usr/bin/make install
+  - name: Compile sockperf Step 1
+    command: ./autogen.sh
+    args:
+      chdir: "{{ sockperf_dir }}"
     tags:
       - sockperf  
+
+  - name: Compile sockperf Step 2
+    command: ./configure --prefix= --enable-test
+    args:
+      chdir: "{{ sockperf_dir }}"
+    tags:
+      - sockperf  
+
+  - name: Compile sockperf Step 3
+    command: make
+    args:
+      chdir: "{{ sockperf_dir }}"
+    tags:
+      - sockperf  
+
+  - name: Compile sockperf Step 4
+    command: make install
+    args:
+      chdir: "{{ sockperf_dir }}"
+    tags:
+      - sockperf  
+
+
 
   ###--- Misc Cleanup
   # TBD  
