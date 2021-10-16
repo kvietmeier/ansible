@@ -244,7 +244,7 @@
   - name: Clone iperf3 from git
     git: 
       repo={{ iperf3_repo }}
-      dest={{ git_dir }}/iperf 
+      dest={{ git_dir }}/iperf3 
       clone=yes
       force=yes
     tags:
