@@ -37,7 +37,7 @@
 - name: "RHEL: Install RHEL Specific Useful Packages"
   when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
   yum:
-    name: {{ item }}
+    name: "{{ item }}"
     state: present
   with_items: "{{rhel_pkgs}}"
   tags:
@@ -94,7 +94,7 @@
 - name: "Ubuntu: Install Bunch of Useful Packages"
   when: ansible_distribution == 'Ubuntu'
   apt:
-    name: {{ item }}
+    name: "{{ item }}"
     state: present
     update_cache: yes
   with_items: "{{ubuntu_pkgs}}"
@@ -104,7 +104,7 @@
 - name: "Ubuntu: Install libraries needded for dpdk"
   when: ansible_distribution == 'Ubuntu'
   apt:
-    name: {{ item }}
+    name: "{{ item }}"
     state: present
     update_cache: yes
   with_items: "{{ubuntu__dpdk_pkgs}}"
