@@ -100,7 +100,7 @@
 - name: "Ubuntu: Install libraries needded for dpdk"
   when: ansible_distribution == 'Ubuntu'
   apt:
-    name: "{{ ubuntu_dpdk_pkgs` }}"
+    name: "{{ ubuntu_dpdk_pkgs }}"
     state: present
     update_cache: yes
   tags: 
