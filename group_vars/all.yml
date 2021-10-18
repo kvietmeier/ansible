@@ -30,6 +30,10 @@ files_dir: /root/projects/ansible/roles/bootstrap/files
 cpu_gov: cpu_gov.sh
 irq_bal: irq_balance.sh
 
+# binaries - so we can skip the compile if they are already there
+fio_binary: /usr/local/bin/fio
+iperf3_binary: /usr/local/bin/iperf3
+sperf_binary: /usr/bin/sockperf
 
 # Versions
 ceph_ver: 3
