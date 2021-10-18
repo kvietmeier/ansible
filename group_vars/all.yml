@@ -163,6 +163,18 @@ ubuntu_pkgs:
    - ntp
    - ntpsec
 
-
-
+ubuntu_dpdk_pkgs:
+   - librdmacm-dev
+   - librdmacm1
+   - libnuma-dev
+   - libmnl-dev
+   - libpcap-dev
+   - autoconf
+   - lib32z1
+   - meson
+   - pkg-config
+   - cmake
+   - python3-pyelftools
+   - python-pyelftools
+   - python3-pip
 ...

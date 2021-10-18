@@ -1,53 +1,23 @@
 ---
-### Copy over utility scripts and install ISDCT
+### Copy over utility scripts and oyher files we might need
 #
 
-- hosts: all
-
-  vars:
-   #isdct_rpm: foobar.txt
-   isdct_rpm: isdct-3.0.19-1.x86_64.rpm
-   cpu_gov: cpu_gov.sh
-   irq_bal: irq_balance.sh
-   s_n_melt: https://raw.githubusercontent.com/speed47/spectre-meltdown-checker/master/spectre-meltdown-checker.sh
-   root_dir: /root
-   bin_dir: /root/bin
-   files_dir: /root/projects/ansible/bootstrap/files
-
-  remote_user: root
-  tasks:
-
-  - name: Is the ISDCT rpm present?
-    stat:
-      path: "{{ root_dir }}/{{ isdct_rpm }}"
-    register: isdctrpm
-    tags:
-       - scripts
-
-  - name: Is the cpu_gov script present?
-    stat:
-      path: "{{ bin_dir }}/{{ cpu_gov }}"
+- name: Is the cpu_gov script present?
+  stat:
+    path: "{{ bin_dir }}/{{ cpu_gov }}"
     register: cpugov
-    tags:
-       - scripts
+  tags:
+    - scripts
 
-  - name: is irq_balance present?
-    stat:
-      path: "{{ bin_dir }}/{{ irq_bal }}"
-    register: irqbal
-    tags:
-       - scripts
+- name: is irq_balance present?
+  stat:
+    path: "{{ bin_dir }}/{{ irq_bal }}"
+  register: irqbal
+  tags:
+     - scripts
 
-  - name: is the Specter/Meltdown checker present?
-    stat:
-      path: "{{ bin_dir }}/{{ s_n_melt }}"
-    register: spectre
-    tags:
-       - scripts
+  ###--- Using Debug statements
   #
-  ###--- Debug statements
-  #
-
   #- name: Test5
   #  debug:
   #    msg: "Ansible When File Not Present Example."
@@ -67,77 +37,23 @@
   ###--- Copy the scripts over if needed
   #
 
-  - name:  Copy ISDCT rpm
-    copy:
-      remote_src: no
-      src: "{{ isdct_rpm }}"
-      dest: "{{ root_dir }}"
-      mode: 0744
-    when: not isdctrpm.stat.exists
-    tags:
-      -tools
+- name:  Copy cpu_gov.sh
+  copy:
+    remote_src: no
+    src: "{{ cpu_gov }}"
+    dest: "{{ bin_dir }}"
+    mode: 0744
+  when: not cpugov.stat.exists
+  tags:
+    -tools
 
-  - name: Uninstall if isdct is there - assume we have a newer version
-    yum:
-      name: isdct
-      state: absent
-    tags:
-       - scripts
-
-  - name: Is the ISDCT rpm present?
-    stat:
-      path: "{{ root_dir }}/{{ isdct_rpm }}"
-    register: isdctrpm
-    tags:
-       - scripts
-
-  - name: Install ISDCT
-    yum:
-      name: "{{ root_dir }}/{{ isdct_rpm }}"
-      state: present
-    when: isdctrpm.stat.exists
-    tags:
-       - scripts
-
-  - name: Cleanup ISDCT
-    file:
-      path: "{{ root_dir }}/{{ isdct_rpm }}"
-      state: absent
-    when: isdctrpm.stat.exists
-    tags:
-       - scripts
-
-  - name:  Copy cpu_gov.sh
-    copy:
-      remote_src: no
-      src: "{{ cpu_gov }}"
-      dest: "{{ bin_dir }}"
-      mode: 0744
-    when: not cpugov.stat.exists
-    tags:
-      -tools
-
-  - name:  Copy irq_balance.sh
-    copy:
-      remote_src: no
-      src: "{{ irq_bal }}"
-      dest: "{{ bin_dir }}"
-      mode: 0744
-    when: not irqbal.stat.exists
-    tags:
-      -tools
-  
-  - name: Download Spectre/Meltdown script
-    get_url:
-      url: "{{ s_n_melt }}"
-      dest: "{{ bin_dir }}"
-      mode: 0744
-    when: not spectre.stat.exists
-    tags:
-      -tools
-
-
-
-
-
+- name:  Copy irq_balance.sh
+  copy:
+    remote_src: no
+    src: "{{ irq_bal }}"
+    dest: "{{ bin_dir }}"
+    mode: 0744
+  when: not irqbal.stat.exists
+  tags:
+    -tools
 

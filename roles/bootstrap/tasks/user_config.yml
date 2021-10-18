@@ -6,7 +6,13 @@
 
 #--- Remove the requiretty directive from /etc/sudoers
 - name: Remove requiretty
-  lineinfile: dest=/etc/sudoers regexp="^Defaults.*requiretty" line='Defaults !requiretty'  backup=yes state=present validate='visudo -cf %s'
+  lineinfile:
+    dest: /etc/sudoers
+    regexp: "^Defaults.*requiretty"
+    line: 'Defaults !requiretty'
+    backup: yes
+    state: present
+    validate: 'visudo -cf %s'
   become: yes
   become_method: sudo
   tags:
@@ -14,32 +20,59 @@
 
 - name: Enable wheel group in Centos/RHEL to issue all commands with NOPASSWD
   when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
-  lineinfile: "dest=/etc/sudoers state=present backup=yes regexp='^%wheel.*NOPASSWD' line='%wheel ALL=(ALL) NOPASSWD: ALL' validate='visudo -cf %s'"
+  lineinfile:
+    dest: /etc/sudoers
+    state: present
+    backup: yes
+    regexp: '^%wheel.*NOPASSWD'
+    line: '%wheel ALL=(ALL) NOPASSWD: ALL'
+    validate: 'visudo -cf %s'
   become: yes
   become_method: sudo
   tags:
      - usercfg
 
-- name:  Remove wheel lines in Ubuntu sudoers - remove when done testing
-  when: ansible_distribution == 'Ubuntu'
-  lineinfile: "dest=/etc/sudoers state=absent backup=yes regexp='^%wheel.*NOPASSWD' line='%wheel ALL=(ALL) NOPASSWD: ALL' validate='visudo -cf %s'"
-  become: yes
-  become_method: sudo
-  tags:
-     - usercfg
+#- name:  Remove wheel lines in Ubuntu sudoers - remove when done testing
+#  when: ansible_distribution == 'Ubuntu'
+#  lineinfile: "dest=/etc/sudoers state=absent backup=yes regexp='^%wheel.*NOPASSWD' line='%wheel ALL=(ALL) NOPASSWD: ALL' validate='visudo -cf %s'"
+#  become: yes
+#  become_method: sudo
+#  tags:
+#     - usercfg
+#
+
+###=================  Create Users =================###
+
+#--- Add a user
+- name: Add a non-root user and put them in sudo (no wheel in Ubuntu) - password=n0mad1c
+  user:
+    name: labuser01
+    shell: /bin/bash
+    groups: 
+      - sudo
+    append: yes
+    generate_ssh_key: yes
+    ssh_key_bits: 2048
+    ssh_key_file: .ssh/id_rsa
+    password: $1$z.0hhKJ0$CIfrsuyuTDcoEo4s4jnXF.
+    state: present
+  tags: 
+    - users
 
 
-#--- SSH Keys
-- name: Copy rsa keys to user root
-  authorized_key: user=root key="{{ item }}"
-  become: yes
-  become_method: sudo
-  with_file:
-    - roles/common/files/auth/skarn.id_rsa.pub
-    - roles/common/files/auth/foobar.id_rsa.pub
-  tags:
-     - usercfg
-
+##--- SSH Keys
+#- name: Copy rsa keys to user root
+#  authorized_key: 
+#    - user: root
+#    - key: "{{ item }}"
+#  become: yes
+#  become_method: sudo
+#  with_file:
+#    - roles/common/files/auth/skarn.id_rsa.pub
+#    - roles/common/files/auth/foobar.id_rsa.pub
+#  tags:
+#     - usercfg
+#
 
 # Validate the sudoers file before saving
 #- lineinfile: dest=/etc/sudoers 

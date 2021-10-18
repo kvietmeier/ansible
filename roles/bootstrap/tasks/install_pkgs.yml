@@ -5,32 +5,40 @@
 # Created by: Karl Vietmeier
 #
 
-# Common Packages For both OS
+###======== Common Packages For both OS
 - name: "RHEL: Install a Bunch of Useful Packages you will need eventually"
   when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
-  yum: name={{ item }} state=present
+  yum: 
+    name: {{ item }}
+    state: present
   with_items: "{{xtra_pkgs}}"
   tags:
      - pkgs
 
 - name: "Ubuntu: Install a Bunch of Useful Packages you will need eventually"
   when: ansible_distribution == 'Ubuntu'
-  apt: name={{ item }} state=present
+  apt:
+    name: {{ item }}
+    state: present
   with_items: "{{xtra_pkgs}}"
   tags:
      - pkgs
 
 
-# Upgrade RHEL/Centos Based Systems
+###======== Upgrade RHEL/Centos Based Systems =========###
 - name: "RHEL: Install the RHEL/Centos 'Development Tools' package group"
   when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
-  yum: name="@Development tools" state=present
+  yum: 
+    name: "@Development tools"
+    state: present
   tags:
      - pkgs
 
 - name: "RHEL: Install RHEL Specific Useful Packages"
   when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
-  yum: name={{ item }} state=present
+  yum:
+    name: {{ item }}
+    state: present
   with_items: "{{rhel_pkgs}}"
   tags:
      - pkgs
@@ -43,26 +51,14 @@
 
 - name: "RHEL: Upgrade all packages"
   when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
-  yum: name=* state=latest
+  yum:
+    name: "*" 
+    state: latest
   tags:
      - pkgs
 
 
-# Upgrade Debian/Ubuntu based systems and reboot if necessary.
-# Ubuntu seemd kind of flaky here - can end up with an unusable system
-- name: "Ubuntu: Install Ubuntu Development Tools"
-  when: ansible_distribution == 'Ubuntu'
-  apt: name=build-essential state=present
-  tags: 
-     - pkgs
-
-- name: "Ubuntu: Install Bunch of Useful Packages"
-  when: ansible_distribution == 'Ubuntu'
-  apt: name={{ item }} state=present update_cache=yes
-  with_items: "{{ubuntu_pkgs}}"
-  tags: 
-      - pkgs
-
+###======== Upgrade Debian/Ubuntu based systems and reboot if necessary ========###
 - name: "Ubuntu: Check if there are packages available to be installed/upgraded"
   when: ansible_distribution == 'Ubuntu'
   command: /usr/lib/update-notifier/apt-check --package-names
@@ -70,48 +66,113 @@
   tags:
      - pkgs
 
-- name: "Update apt cache"
+- name: "Update apt cache if it is old"
   when: (ansible_distribution == 'Ubuntu')
-  apt: update_cache=yes cache_valid_time=3600
+  apt:
+    update_cache: yes
+    force_apt_get: yes
+    cache_valid_time: 3600
   tags:
      - pkgs
 
 - name: "Ubuntu: Upgrade all packages to the latest version"
   when: (ansible_distribution == 'Ubuntu') and (packages.stderr != "")
-  apt: upgrade=dist
+  apt: 
+    name: "*"
+    state: latest
+  tags:
+    - pkgs
+
+- name: "Ubuntu: Install Ubuntu Development Tools"
+  when: ansible_distribution == 'Ubuntu'
+  apt:
+    name: build-essential
+    state: present
+  tags: 
+    - pkgs
+
+- name: "Ubuntu: Install Bunch of Useful Packages"
+  when: ansible_distribution == 'Ubuntu'
+  apt:
+    name: {{ item }}
+    state: present
+    update_cache: yes
+  with_items: "{{ubuntu_pkgs}}"
+  tags: 
+    - pkgs
+  
+- name: "Ubuntu: Install libraries needded for dpdk"
+  when: ansible_distribution == 'Ubuntu'
+  apt:
+    name: {{ item }}
+    state: present
+    update_cache: yes
+  with_items: "{{ubuntu__dpdk_pkgs}}"
+  tags: 
+    - pkgs
+
+- name: Upgrade pip if required
+  when: ansible_distribution == 'Ubuntu'
+  pip:
+    name: pip
+    executable: pip3
+    state: latest
   tags:
     - pkgs
 
 
-# All Distros
+# In Ubuntu you have to check if a reboot is required
+- name: Check if a reboot is needed
+  when: (ansible_distribution == 'Ubuntu')
+  register: reboot_required_file
+  stat: 
+    path: /var/run/reboot-required
+    get_md5: no
+  tags:
+     - pkgs
+  
+- name: Reboot the box if kernel updated
+  reboot:
+    msg: "Reboot initiated by Ansible for kernel updates"
+    connect_timeout: 5
+    reboot_timeout: 300
+    pre_reboot_delay: 0
+    post_reboot_delay: 30
+    test_command: uptime
+  when: (reboot_required_file.stat.exists) and (ansible_distribution == 'Ubuntu')
+  tags:
+     - pkgs
+
+
+### All Distros
 - name: "All: Update Man Page Database"
   command: mandb
   tags:
      - pkgs
 
 
-### Ubuntu Again
+### Ubuntu Again - this is cleaner now
 # Reboot Ubuntu server if required (because Ubuntu is lame)
-- name: "Ubuntu: Check if a reboot is required"
-  when: ansible_distribution == 'Ubuntu'
-  register: file
-  stat: path=/var/run/reboot-required get_md5=no
-  tags:
-    - pkgs
-
-- name: "Ubuntu: Reboot the server"
-  # need the sleep statement as shell - https://github.com/ansible/ansible/issues/10616
-  when: (ansible_distribution == 'Ubuntu') and (file.stat.exists == true)
-  #when: ansible_distribution == 'Ubuntu'
-  shell: sleep 2 && shutdown -r now "Reboot triggered by Ansible"
-  async: 1
-  poll: 0
-  ignore_errors: true
-  notify: 
-    - Wait for restart
-  tags:
-     - pkgs
-
+#- name: "Ubuntu: Check if a reboot is required"
+#  when: ansible_distribution == 'Ubuntu'
+#  register: file
+#  stat: path=/var/run/reboot-required get_md5=no
+#  tags:
+#    - pkgs
+#
+#- name: "Ubuntu: Reboot the server"
+#  # need the sleep statement as shell - https://github.com/ansible/ansible/issues/10616
+#  when: (ansible_distribution == 'Ubuntu') and (file.stat.exists == true)
+#  #when: ansible_distribution == 'Ubuntu'
+#  shell: sleep 2 && shutdown -r now "Reboot triggered by Ansible"
+#  async: 1
+#  poll: 0
+#  ignore_errors: true
+#  notify: 
+#    - Wait for restart
+#  tags:
+#     - pkgs
+#
 
 #--- End File
 ...
