@@ -7,14 +7,35 @@
     path: "{{ bin_dir }}/{{ cpu_gov }}"
     register: cpugov
   tags:
-    - scripts
+    - files
 
 - name: is irq_balance present?
   stat:
     path: "{{ bin_dir }}/{{ irq_bal }}"
   register: irqbal
   tags:
-     - scripts
+     - files
+
+- name:  Copy cpu_gov.sh
+  copy:
+    remote_src: no
+    src: "{{ cpu_gov }}"
+    dest: "{{ bin_dir }}"
+    mode: 0744
+  when: not cpugov.stat.exists
+  tags:
+    - files
+
+- name:  Copy irq_balance.sh
+  copy:
+    remote_src: no
+    src: "{{ irq_bal }}"
+    dest: "{{ bin_dir }}"
+    mode: 0744
+  when: not irqbal.stat.exists
+  tags:
+    - files
+
 
   ###--- Using Debug statements
   #
@@ -36,24 +57,3 @@
   # 
   ###--- Copy the scripts over if needed
   #
-
-- name:  Copy cpu_gov.sh
-  copy:
-    remote_src: no
-    src: "{{ cpu_gov }}"
-    dest: "{{ bin_dir }}"
-    mode: 0744
-  when: not cpugov.stat.exists
-  tags:
-    -tools
-
-- name:  Copy irq_balance.sh
-  copy:
-    remote_src: no
-    src: "{{ irq_bal }}"
-    dest: "{{ bin_dir }}"
-    mode: 0744
-  when: not irqbal.stat.exists
-  tags:
-    -tools
-

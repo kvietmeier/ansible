@@ -1,0 +1,304 @@
+---
+### File - bootstrap.yml
+#   Prepare a Basic Lab Server with a single Playbook
+#   Created By:   Karl Vietmeier
+#
+###
+
+- hosts: all
+  remote_user: root
+
+  # Variable Assignment
+  vars:
+   bin_dir: ~/bin
+   temp_dir: ~/temp
+   project_dir: ~/testing_output
+
+   # collectd vars
+   cllctd_git: https://github.com/httpdss/collectd-web.git
+   cllctd_install_dir: /usr/local
+   cllctd_config_dir: /etc/collectd
+   cllctd_conf: https://raw.githubusercontent.com/JoshHilliker/Telemetry-Infra/master/collectd.conf
+
+   # For cloning and compiling
+   git_dir: ~/git
+
+   # Source Code
+   fio_repo: https://github.com/axboe/fio.git
+   iperf3_repo: https://github.com/esnet/iperf.git
+   sockperf_repo: https://github.com/mellanox/sockperf
+   iperf3_dir: ~/git/iperf3
+   fio_dir: ~/git/fio
+   sockperf_dir: ~/git/sockperf
+
+
+
+
+  tasks:
+
+  # Package Management with apt
+  - name: Update apt repo and cache on all Debian/Ubuntu boxes
+    apt: update_cache=yes force_apt_get=yes cache_valid_time=3600
+    tags:
+       - apt
+
+  - name: Upgrade all packages
+    apt: upgrade=dist force_apt_get=yes
+    tags:
+       - apt
+
+  # In Ubuntu you have to check if a reboot is required
+  - name: Check if a reboot is needed
+    register: reboot_required_file
+    stat: path=/var/run/reboot-required get_md5=no
+  
+  - name: Reboot the box if kernel updated
+    reboot:
+      msg: "Reboot initiated by Ansible for kernel updates"
+      connect_timeout: 5
+      reboot_timeout: 300
+      pre_reboot_delay: 0
+      post_reboot_delay: 30
+      test_command: uptime
+    when: reboot_required_file.stat.exists
+
+       
+  # Packages we all usually need
+  - name: Install a bunch of stuff we need/want
+    apt:
+      name: 
+        - vim
+        - tree
+        - numactl 
+        - build-essential 
+        - dstat 
+        - nmon
+        - ncdu
+        - slurm
+        - saidar
+        - ccze
+        - net-tools
+      state: present
+    tags:
+      - apt
+
+  # Need these for DPDK build
+  - name: Install System Libraries
+    apt:
+      name:
+        - librdmacm-dev
+        - librdmacm1
+        - libnuma-dev
+        - libmnl-dev
+        - libpcap-dev
+        - autoconf
+        - lib32z1
+        - meson
+        - pkg-config
+        - cmake
+      state: present
+    tags:
+      - apt
+        
+  - name: Install Python Packages
+    apt:
+      name:
+        - python3-pyelftools
+        - python-pyelftools
+        - python3-pip
+      state: present
+    tags:
+      - apt
+
+  - name: Disable swap
+    shell: swapoff -a
+    tags:
+      - baseline
+
+
+  ###--- User environment setup
+
+  #--- Remove the requiretty directive from /etc/sudoers
+  - name: Remove requiretty
+    lineinfile: dest=/etc/sudoers regexp="^Defaults.*requiretty" line='Defaults !requiretty'  backup=yes state=present validate='visudo -cf %s'
+    #become: yes
+    #become_method: sudo
+    tags:
+      - baseline
+
+  #--- Add a user
+  - name: Add a non-root user and put them in wheel - password=n0mad1c
+    user:
+      name: labuser01
+      shell: /bin/bash
+      groups: sudo
+      append: yes
+      generate_ssh_key: yes
+      ssh_key_bits: 2048
+      ssh_key_file: .ssh/id_rsa
+      password: $1$z.0hhKJ0$CIfrsuyuTDcoEo4s4jnXF.
+      state: present
+    tags: 
+      - users
+
+  # Setup some Project directories
+  - name: Create Project Directory
+    file: path={{ project_dir }} state=directory mode=755
+    tags:
+       - setupenv
+
+  - name: Create Temp Directory
+    file: path={{ temp_dir }} state=directory mode=755
+    tags:
+       - setupenv
+
+  - name: Create bin Directory
+    file: path={{ bin_dir }} state=directory mode=755
+    tags:
+       - setupenv
+
+  ###--- System Configuration
+
+  # Configure basic services
+  #
+
+  # Grab list of running/present services
+  #- name: 'Populate service facts'
+  #  service_facts:
+
+   #- name: 'Disable firewalld Services'
+   # service:
+   #   name: "{{item}}"
+   #   state: stopped
+   #   enabled: no
+   # loop:
+   #  - firewalld
+   # when: ansible_facts.services[item] is defined
+   # ignore_errors: yes
+  
+  #- name: Enable firewalld
+  #  service: name=firewalld state=started enabled=yes
+  #  tags:
+  #     - firewalld
+
+  #- name: Configure firewalld
+  #  firewalld:
+  #    port: 9000/tcp
+  #    state: enabled
+  #  tags:
+  #     - firewalld
+
+
+  #- name: Disable Services
+  #service: name={{ item }} state=stopped enabled=no
+  #with_items:
+  #  - irqbalance
+  #  - firewalld
+  #tags:
+  #   - baseline
+
+  #- name: Enable Services
+  #  service: name={{ item }} state=started enabled=yes
+  #  with_items:
+  #    - ntpd
+  #  tags:
+  #     - baseline
+
+  - name: Update PCI IDs
+    command: update-pciids
+
+  - name: Copy /etc/hosts
+    copy:
+      src: files/hosts
+      dest: /etc/hosts
+      owner: root
+      group: root
+      mode: 0644
+      backup: yes
+    tags:
+       - baseline
+
+
+  ###--- Applications
+  
+  # Compile FIO
+  - name: Clone FIO from git
+    git: 
+      repo={{ fio_repo }}
+      dest={{ git_dir }}/fio 
+      clone=yes
+      force=yes
+    tags:
+      - fio
+
+  - name: Compile FIO
+    command: "{{ item }} chdir={{ fio_dir }}"
+    with_items:
+     - ./configure
+     - /usr/bin/make
+     - /usr/bin/make install
+    tags:
+      - fio  
+
+  # Compile iperf3
+  - name: Clone iperf3 from git
+    git: 
+      repo={{ iperf3_repo }}
+      dest={{ git_dir }}/iperf3 
+      clone=yes
+      force=yes
+    tags:
+      - iperf3
+
+  - name: Compile iperf3
+    command: "{{ item }} chdir={{ iperf3_dir }}"
+    with_items:
+     - ./configure
+     - /usr/bin/make
+     - /usr/bin/make install
+     - /usr/sbin/ldconfig
+    tags:
+      - iperf3  
+ 
+  # Compile sockperf
+  - name: Clone sockperf from git
+    git: 
+      repo={{ sockperf_repo }}
+      dest={{ git_dir }}/sockperf 
+      clone=yes
+      force=yes
+    tags:
+      - sockperf
+
+  - name: Compile sockperf Step 1
+    command: ./autogen.sh
+    args:
+      chdir: "{{ sockperf_dir }}"
+    tags:
+      - sockperf  
+
+  - name: Compile sockperf Step 2
+    command: ./configure --prefix= --enable-test
+    args:
+      chdir: "{{ sockperf_dir }}"
+    tags:
+      - sockperf  
+
+  - name: Compile sockperf Step 3
+    command: make
+    args:
+      chdir: "{{ sockperf_dir }}"
+    tags:
+      - sockperf  
+
+  - name: Compile sockperf Step 4
+    command: make install
+    args:
+      chdir: "{{ sockperf_dir }}"
+    tags:
+      - sockperf  
+
+
+
+  ###--- Misc Cleanup
+  # TBD  

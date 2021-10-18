@@ -1,0 +1,20 @@
+---
+# File roles/kubernetes/tasks/main.yml
+
+# Install K8S packages
+- include: foobar1.yml
+
+# Configure systems
+- include: foobar2.yml
+
+# Create cluster
+- include: foobar3.yml 
+
+# ......
+- include: foobar4.yml
+
+# ......
+- include: foobar5.yml
+
+
+...

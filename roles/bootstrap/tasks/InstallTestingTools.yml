@@ -1,0 +1,83 @@
+---
+### Clone amd compile common testing tools
+### 
+
+
+###---- Compile FIO
+- name: Clone FIO from git
+  git: 
+    repo: "{{ fio_repo }}"
+    dest: "{{ git_dir }}/fio" 
+    clone: yes
+    force: yes
+  tags:
+    - fio
+
+- name: Compile FIO
+  command: "{{ item }} chdir={{ fio_dir }}"
+  with_items:
+   - ./configure
+   - /usr/bin/make
+   - /usr/bin/make install
+  tags:
+    - fio  
+
+###---- Compile iperf3
+- name: Clone iperf3 from git
+  git: 
+    repo: "{{ iperf3_repo }}"
+    dest: "{{ git_dir }}/iperf3" 
+    clone: yes
+    force: yes
+  tags:
+    - iperf3
+
+- name: Compile iperf3
+  command: "{{ item }} chdir={{ iperf3_dir }}"
+  with_items:
+   - ./configure
+   - /usr/bin/make
+   - /usr/bin/make install
+   - /usr/sbin/ldconfig
+  tags:
+    - iperf3  
+ 
+###---- Compile sockperf
+- name: Clone sockperf from git
+  git: 
+    repo: "{{ sockperf_repo }}"
+    dest: "{{ git_dir }}/sockperf" 
+    clone: yes
+    force: yes
+  tags:
+    - sockperf
+
+- name: Compile sockperf Step 1
+  command: ./autogen.sh
+  args:
+    chdir: "{{ sockperf_dir }}"
+  tags:
+    - sockperf  
+
+- name: Compile sockperf Step 2
+  command: ./configure --prefix= --enable-test
+  args:
+    chdir: "{{ sockperf_dir }}"
+  tags:
+    - sockperf  
+
+- name: Compile sockperf Step 3
+  command: make
+  args:
+    chdir: "{{ sockperf_dir }}"
+  tags:
+    - sockperf  
+
+- name: Compile sockperf Step 4
+  command: make install
+  args:
+    chdir: "{{ sockperf_dir }}"
+  tags:
+    - sockperf  
+
+

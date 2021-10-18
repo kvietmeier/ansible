@@ -2,7 +2,162 @@
 # File: - group_vars/all.yml
 # Global variables for all playbooks
 
-### Time related
+### Repos 
+rhel7_optional: rhel-7-server-optional-rpms
+ceph_repo: rhel-7-server-rhceph-1.2-installer-rpms
+cephmon_repo: rhel-7-server-rhceph-1.2-mon-rpms
+fedora_mirror: http://mirror.hmc.edu/fedora/linux/releases/22/Everything/x86_64/os/Packages
+
+# collectd vars
+cllctd_git: https://github.com/httpdss/collectd-web.git
+cllctd_install_dir: /usr/local
+cllctd_config_dir: /etc/collectd
+cllctd_conf: https://raw.githubusercontent.com/JoshHilliker/Telemetry-Infra/master/collectd.conf
+
+# Various Directories
+git_dir: ~/git
+fio_dir: ~/git/fio
+bin_dir: ~/bin
+root_dir: /root
+temp_dir: ~/temp
+project_dir: ~/testing_output
+iperf3_dir: ~/git/iperf3
+sockperf_dir: ~/git/sockperf
+pkg_dir: ~/temp
+
+# Files
+files_dir: /root/projects/ansible/roles/bootstrap/files
+cpu_gov: cpu_gov.sh
+irq_bal: irq_balance.sh
+
+
+# Versions
+ceph_ver: 3
+
+# Source Code github
+fio_repo: https://github.com/axboe/fio.git
+iperf3_repo: https://github.com/esnet/iperf.git
+sockperf_repo: https://github.com/mellanox/sockperf
+
+### User Information (password n0mad1c)
+userpass: $1$z.0hhKJ0$CIfrsuyuTDcoEo4s4jnXF. 
+usershell: /bin/bash
+users:
+  - kube
+  - azureuser
+  - labuser01
+groups: wheel
+generate_ssh_key: yes
+ssh_key_bits: 2048 
+ssh_key_comment: yes
+ssh_key_type: rsa
+
+### Basic system info
+timezone: America/Los_Angeles
+
+### Package Information
+xtra_pkgs:
+  - psmisc
+  - util-linux
+  - coreutils
+  - xfsprogs
+  - e2fsprogs
+  - findutils
+  - sysfsutils
+  - hwloc
+  - hwloc-gui
+  - git
+  - wget
+  - bzip2
+  - kernel-devel
+  - perf
+  - blktrace
+  - lsof
+  - sysstat
+  - python-yaml
+  - ipmitool
+  - dstat
+  - zlib-devel
+  - collectl
+  - tree
+  - screen
+  - tmux
+  - nvme-cli
+  - numactl
+  - hdparm
+  - sdparm
+  - vim
+
+### RHEL/Centos Packages
+rhel_pkgs:
+  - epel-release
+  - redhat-lsb
+  - sdparm
+  - smartmontools
+  - rpcbind
+  - ftp
+  - python
+  - openssh-clients
+  - yum-utils
+  - yum-plugin-priorities.noarch
+  - sg3_utils
+  - perf
+  - bind-utils
+  - nfs-utils
+  - openldap
+  - openldap-clients
+  - nss_ldap
+  
+### Ubuntu Packages
+ubuntu_pkgs:
+  - sg3-utils
+  - ssh
+  - nfs-common
+  - nfs-kernel-server
+  - dnsutils
+  - ldap-utils
+  - libpam-ldap
+  - libnss-ldap
+  - nslcd        
+  - build-essential 
+  - git
+  - vim
+  - tree
+  - numactl 
+  - psmisc
+  - dstat 
+  - nmon
+  - ncdu
+  - slurm
+  - saidar
+  - ccze
+  - net-tools
+  - nfs-common
+  - sysstat
+
+ubuntu_kernel_pkgs:
+  # These are kernels - don't need them in Azure
+  - linux-tools-lowlatency
+  - linux-tools-virtual
+  - linux-tools-common
+  - linux-tools-generic
+
+ubuntu_dpdk_pkgs:
+  - librdmacm-dev
+  - librdmacm1
+  - libnuma-dev
+  - libmnl-dev
+  - libpcap-dev
+  - autoconf
+  - lib32z1
+  - meson
+  - pkg-config
+  - cmake
+  - python3-pyelftools
+  - python-pyelftools
+  - python3-pip
+
+
 # NTP Dictionaries
 centos_ntp_dict:
   server0: 0.centos.pool.ntp.org
@@ -28,153 +183,4 @@ rhel_ntp:
   - 2.rhel.pool.ntp.org
   - 3.rhel.pool.ntp.org
 
-timezone: America/Los_Angeles
-
-### Repos and Such
-rhel7_optional: rhel-7-server-optional-rpms
-ceph_repo: rhel-7-server-rhceph-1.2-installer-rpms
-cephmon_repo: rhel-7-server-rhceph-1.2-mon-rpms
-fedora_mirror: http://mirror.hmc.edu/fedora/linux/releases/22/Everything/x86_64/os/Packages
-
-# collectd vars
-cllctd_git: https://github.com/httpdss/collectd-web.git
-cllctd_install_dir: /usr/local
-cllctd_config_dir: /etc/collectd
-cllctd_conf: https://raw.githubusercontent.com/JoshHilliker/Telemetry-Infra/master/collectd.conf
-
-# Various Directories
-git_dir: ~/git
-fio_dir: ~/git/fio
-bin_dir: ~/bin
-temp_dir: ~/temp
-project_dir: ~/testing_output
-iperf3_dir: ~/git/iperf3
-sockperf_dir: ~/git/sockperf
-bin_dir: ~/bin
-pkg_dir: ~/temp
-
-# Versions
-ceph_ver: 3
-
-# Source Code github
-fio_repo: https://github.com/axboe/fio.git
-iperf3_repo: https://github.com/esnet/iperf.git
-sockperf_repo: https://github.com/mellanox/sockperf
-
-# Users (password n0mad1c)
-users:
-  - kube
-  - azureuser
-  - labuser01
-usershell: /bin/bash
-userpass: $1$z.0hhKJ0$CIfrsuyuTDcoEo4s4jnXF. 
-groups: wheel
-generate_ssh_key: yes
-ssh_key_bits: 2048 
-ssh_key_comment: yes
-ssh_key_type: rsa
-
-
-
-### Package Information
-xtra_pkgs:
-   - psmisc
-   - util-linux
-   - coreutils
-   - xfsprogs
-   - e2fsprogs
-   - findutils
-   - sysfsutils
-   - hwloc
-   - hwloc-gui
-   - git
-   - wget
-   - bzip2
-   - kernel-devel
-   - perf
-   - blktrace
-   - lsof
-   - redhat-lsb
-   - sysstat
-   - python-yaml
-   - ipmitool
-   - dstat
-   - zlib-devel
-   - ntp
-   - collectl
-   - tree
-   - screen
-   - tmux
-   - nvme-cli
-   - numactl
-   - hdparm
-   - sdparm
-   - vim
-
-### RHEL/Centos Packages
-rhel_pkgs:
-   - epel-release
-   - sdparm
-   - smartmontools
-   - rpcbind
-   - ftp
-   - python
-   - openssh-clients
-   - yum-utils
-   - yum-plugin-priorities.noarch
-   - sg3_utils
-   - perf
-   - bind-utils
-   - nfs-utils
-   - openldap
-   - openldap-clients
-   - nss_ldap
-   
-### Ubuntu Packages
-ubuntu_pkgs:
-   - sg3-utils
-   - ssh
-   - nfs-common
-   - nfs-kernel-server
-   - linux-tools-lowlatency
-   - linux-tools-virtual
-   - linux-tools-common
-   - linux-tools-generic
-   - dnsutils
-   - ldap-utils
-   - libpam-ldap
-   - libnss-ldap
-   - nslcd        
-   - build-essential 
-   - git
-   - vim
-   - tree
-   - numactl 
-   - psmisc
-   - dstat 
-   - nmon
-   - ncdu
-   - slurm
-   - saidar
-   - ccze
-   - net-tools
-   - nfs-common
-   - sysstat
-   - ntp
-   - ntpsec
-
-ubuntu_dpdk_pkgs:
-   - librdmacm-dev
-   - librdmacm1
-   - libnuma-dev
-   - libmnl-dev
-   - libpcap-dev
-   - autoconf
-   - lib32z1
-   - meson
-   - pkg-config
-   - cmake
-   - python3-pyelftools
-   - python-pyelftools
-   - python3-pip
 ...
