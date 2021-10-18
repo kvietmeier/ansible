@@ -1,5 +1,8 @@
 ---
-# File roles/common/tasks/main.yml
+###====================================================================================###
+#     File roles/bootstrap/tasks/main.yml
+#     Basic tasks to get the core OS settings taken care of
+###====================================================================================###
 
 # Check some basic parameters to see if we should even proceed.
 - include: check_os.yml
@@ -10,5 +13,13 @@
 # Run apt, update packages
 - include: install_pkgs.yml
 
+# Copy over config files/scripts
+- include: copyfiles.yml
+
+# Install testing tools - iperf3, fio, sockperf
+- include: InstallTestingTools.yml
+
+# Placeholder
+#- include: install_pkgs.yml
 
 ...
