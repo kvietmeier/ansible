@@ -8,29 +8,6 @@
 - hosts: all
   remote_user: root
 
-  # Variable Assignment
-  vars:
-   bin_dir: ~/bin
-   temp_dir: ~/temp
-   project_dir: ~/testing_output
-
-   # collectd vars
-   #cllctd_git: https://github.com/httpdss/collectd-web.git
-   #cllctd_install_dir: /usr/local
-   #cllctd_config_dir: /etc/collectd
-   #cllctd_conf: https://raw.githubusercontent.com/JoshHilliker/Telemetry-Infra/master/collectd.conf
-
-   # For cloning and compiling
-   git_dir: ~/git
-
-   # Source Code
-   fio_repo: https://github.com/axboe/fio.git
-   iperf3_repo: https://github.com/esnet/iperf.git
-   sockperf_repo: https://github.com/mellanox/sockperf
-   iperf3_dir: ~/git/iperf3
-   fio_dir: ~/git/fio
-   sockperf_dir: ~/git/sockperf
-
   tasks:
   # Package Management with apt
   - name: Update apt repo and cache on all Debian/Ubuntu boxes
@@ -60,13 +37,15 @@
 
        
   # Packages we all usually need
-  - name: Install a bunch of stuff we need/want
+  - name: Install a bunch of stuff we need/want that may or may not be installed
     apt:
       name: 
+        - build-essential 
+        - git
         - vim
         - tree
         - numactl 
-        - build-essential 
+        - psmisc
         - dstat 
         - nmon
         - ncdu
@@ -74,6 +53,13 @@
         - saidar
         - ccze
         - net-tools
+        - nfs-common
+        - sysstat
+        - ntp
+        - ntpsec
+        #- linux-tools-lowlatency
+        #- linux-tools-common
+        #- linux-tools-generic
       state: present
     tags:
       - apt
@@ -106,15 +92,23 @@
     tags:
       - apt
 
+  - name: Upgrade pip if required
+    pip:
+      name: pip
+      executable: pip3
+      state: latest
+    tags:
+      - apt
+
+  # Needed for Kubernetes - don't really need anyway.
   - name: Disable swap
     shell: swapoff -a
     tags:
       - baseline
 
-
-  ###--- User environment setup
-
+  ###--- User environment setup ---###
   #--- Remove the requiretty directive from /etc/sudoers
+  #--- Needed by some software installers (Ceph fofr example)
   - name: Remove requiretty
     lineinfile: dest=/etc/sudoers regexp="^Defaults.*requiretty" line='Defaults !requiretty'  backup=yes state=present validate='visudo -cf %s'
     #become: yes
@@ -123,7 +117,7 @@
       - baseline
 
   #--- Add a user
-  - name: Add a non-root user and put them in wheel - password=n0mad1c
+  - name: Add a non-root user and put them in sudo (no wheel in Ubuntu) - password=n0mad1c
     user:
       name: labuser01
       shell: /bin/bash
@@ -202,6 +196,8 @@
 
   - name: Update PCI IDs
     command: update-pciids
+    tags:
+       - baseline
 
   - name: Copy /etc/hosts
     copy:

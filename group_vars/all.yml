@@ -42,20 +42,30 @@ cllctd_install_dir: /usr/local
 cllctd_config_dir: /etc/collectd
 cllctd_conf: https://raw.githubusercontent.com/JoshHilliker/Telemetry-Infra/master/collectd.conf
 
-# FIO and iperf
-fio_repo: https://github.com/axboe/fio.git
+# Various Directories
 git_dir: ~/git
 fio_dir: ~/git/fio
+bin_dir: ~/bin
+temp_dir: ~/temp
+project_dir: ~/testing_output
+iperf3_dir: ~/git/iperf3
+sockperf_dir: ~/git/sockperf
+bin_dir: ~/bin
+pkg_dir: ~/temp
 
-### Versions
+# Versions
 ceph_ver: 3
+
+# Source Code github
+fio_repo: https://github.com/axboe/fio.git
+iperf3_repo: https://github.com/esnet/iperf.git
+sockperf_repo: https://github.com/mellanox/sockperf
 
 # Users (password n0mad1c)
 users:
-  - tss01
-  - tss02
-  - tss03
-
+  - kube
+  - azureuser
+  - labuser01
 usershell: /bin/bash
 userpass: $1$z.0hhKJ0$CIfrsuyuTDcoEo4s4jnXF. 
 groups: wheel
@@ -64,10 +74,6 @@ ssh_key_bits: 2048
 ssh_key_comment: yes
 ssh_key_type: rsa
 
-# Directories
-bin_dir: ~/bin
-pkg_dir: ~/temp
-git_dir: ~/git
 
 
 ### Package Information
@@ -103,7 +109,6 @@ xtra_pkgs:
    - numactl
    - hdparm
    - sdparm
-   - iperf
    - vim
 
 ### RHEL/Centos Packages
@@ -139,7 +144,25 @@ ubuntu_pkgs:
    - ldap-utils
    - libpam-ldap
    - libnss-ldap
-   - nslcd
+   - nslcd        
+   - build-essential 
+   - git
+   - vim
+   - tree
+   - numactl 
+   - psmisc
+   - dstat 
+   - nmon
+   - ncdu
+   - slurm
+   - saidar
+   - ccze
+   - net-tools
+   - nfs-common
+   - sysstat
+   - ntp
+   - ntpsec
+
 
 
 ...
