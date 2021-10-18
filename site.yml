@@ -14,12 +14,12 @@
 #     # Include Red Hat login info - not pushed up to git
 #     - group_vars/vault.yml
 
-- hosts: oshift
+- hosts: master,workers
   roles:
      - common
   remote_user: root
   vars_files:
-     # Include Red Hat login info - not pushed up to git
+     # Any confidential info like certs, keys, etc.
      - group_vars/vault.yml
 
 ...
