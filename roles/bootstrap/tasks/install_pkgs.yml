@@ -6,8 +6,8 @@
 #
 
 ###======== Common Packages For both OS
-- name: 'RHEL: Install a Bunch of Useful Packages you will need eventually'
-  when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
+- name: "RHEL: Install a Bunch of Useful Packages you will need eventually"
+  when: ansible_distribution == "CentOS" or ansible_distribution == "Red Hat Enterprise Linux"
   yum: 
     name: "{{ item }}"
     state: present
