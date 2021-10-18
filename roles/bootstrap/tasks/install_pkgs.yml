@@ -1,29 +1,9 @@
 ---
 # File: roles/common/tasks/install_pkgs.yml
-# Update the system and install extra packages
-# Uses conditionals to check for OS version and state files
-# Created by: Karl Vietmeier
+#   Update the system and install extra packages
+#   Uses conditionals to check for OS version and state files
+#   Created by: Karl Vietmeier
 #
-
-###======== Common Packages For both OS
-- name: "RHEL: Install a Bunch of Useful Packages you will need eventually"
-  when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
-  yum: 
-    name: "{{ item }}"
-    state: present
-  with_items: "{{ xtra_pkgs }}"
-  tags:
-    - pkgs
-
-- name: "Ubuntu: Install a Bunch of Useful Packages you will need eventually"
-  when: ansible_distribution == 'Ubuntu'
-  apt:
-    name: "{{ item }}"
-    state: present
-  with_items: "{{xtra_pkgs}}"
-  tags:
-     - pkgs
-
 
 ###======== Upgrade RHEL/Centos Based Systems =========###
 - name: "RHEL: Install the RHEL/Centos 'Development Tools' package group"
@@ -34,6 +14,15 @@
   tags:
      - pkgs
 
+- name: "RHEL: Install a Bunch of Useful Packages you will need eventually"
+  when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
+  yum: 
+    name: "{{ item }}"
+    state: present
+  with_items: "{{ xtra_pkgs }}"
+  tags:
+    - pkgs
+
 - name: "RHEL: Install RHEL Specific Useful Packages"
   when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
   yum:
@@ -43,7 +32,7 @@
   tags:
      - pkgs
 
-- name: Disable epel until you really need it
+- name: "Disable epel until you really need it"
   when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
   command: sed -i -e "s/^enabled=1/enabled=0/" /etc/yum.repos.d/epel.repo
   tags:
@@ -91,7 +80,16 @@
   tags: 
     - pkgs
 
-- name: "Ubuntu: Install Bunch of Useful Packages"
+- name: "Ubuntu: Install a Bunch of Useful Packages you will need eventually"
+  when: ansible_distribution == 'Ubuntu'
+  apt:
+    name: "{{ item }}"
+    state: present
+  with_items: "{{xtra_pkgs}}"
+  tags:
+     - pkgs
+
+- name: "Ubuntu: Install Core Utilities htat might not be there"
   when: ansible_distribution == 'Ubuntu'
   apt:
     name: "{{ item }}"
