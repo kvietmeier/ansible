@@ -5,6 +5,7 @@
 #   Created by: Karl Vietmeier
 #
 
+
 ###======== Upgrade RHEL/Centos Based Systems =========###
 - name: Install the RHEL/Centos Development Tools package group
   yum: 
@@ -17,18 +18,16 @@
 - name: Install a Bunch of Useful Packages you will need eventually
   when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
   yum: 
-    name: "{{ item }}"
+    name: "{{ xtra_pkgs }}"
     state: present
-  with_items: "{{ xtra_pkgs }}"
   tags:
     - pkgs
 
 - name: RHEL - Install RHEL Specific Useful Packages
   when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
   yum:
-    name: "{{ item }}"
+    name: "{{ rhel_pkgs }}"
     state: present
-  with_items: "{{rhel_pkgs}}"
   tags:
      - pkgs
 
@@ -80,32 +79,30 @@
   tags: 
     - pkgs
 
-- name: "Ubuntu: Install a Bunch of Useful Packages you will need eventually"
-  when: ansible_distribution == 'Ubuntu'
-  apt:
-    name: "{{ item }}"
-    state: present
-  with_items: "{{xtra_pkgs}}"
-  tags:
-     - pkgs
+# some bad packages in the list
+#- name: "Ubuntu: Install a Bunch of Useful Packages you will need eventually"
+#  when: ansible_distribution == 'Ubuntu'
+#  apt:
+#    name: "{{ xtra_pkgs }}"
+#    state: present
+#  tags:
+#     - pkgs
 
 - name: "Ubuntu: Install Core Utilities that might not be there"
   when: ansible_distribution == 'Ubuntu'
   apt:
-    name: "{{ item }}"
+    name: "{{ ubuntu_pkgs }}"
     state: present
     update_cache: yes
-  with_items: "{{ubuntu_pkgs}}"
   tags: 
     - pkgs
   
 - name: "Ubuntu: Install libraries needded for dpdk"
   when: ansible_distribution == 'Ubuntu'
   apt:
-    name: "{{ item }}"
+    name: "{{ ubuntu_dpdk_pkgs` }}"
     state: present
     update_cache: yes
-  with_items: "{{ubuntu__dpdk_pkgs}}"
   tags: 
     - pkgs
 
