@@ -9,7 +9,7 @@
 - name: "RHEL: Install a Bunch of Useful Packages you will need eventually"
   when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
   yum: 
-    name: {{ item }}
+    name: "{{ item }}"
     state: present
   with_items: "{{xtra_pkgs}}"
   tags:
@@ -18,7 +18,7 @@
 - name: "Ubuntu: Install a Bunch of Useful Packages you will need eventually"
   when: ansible_distribution == 'Ubuntu'
   apt:
-    name: {{ item }}
+    name: "{{ item }}"
     state: present
   with_items: "{{xtra_pkgs}}"
   tags:
