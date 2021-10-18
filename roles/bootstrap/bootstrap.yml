@@ -64,8 +64,6 @@
         - net-tools
         - nfs-common
         - sysstat
-        - ntp
-        - ntpsec
         #- linux-tools-lowlatency
         #- linux-tools-common
         #- linux-tools-generic
