@@ -1,0 +1,35 @@
+### /root/.ssh/config
+### SSH client configuration
+### 
+### For:  Azure Linux Systems
+
+Host master
+  HostName 10.30.0.5
+  User tss01
+  PasswordAuthentication no
+
+Host worker01
+  HostName 10.30.0.7
+  User root
+  PasswordAuthentication no
+
+Host worker02
+  HostName 10.30.0.8
+  User root
+  PasswordAuthentication no
+
+
+### ================================================================================###
+#                         Common Settings for all SSH targets                         #
+### ================================================================================###
+Host *
+  # Effect is to not populate the known_hosts file every time you connect to a new server
+  UserKnownHostsFile /dev/null
+  # Don't verify that the the key matches a known_host - useful when you rebuild hosts frequently
+  StrictHostKeyChecking no
+  IdentitiesOnly no
+  LogLevel FATAL
+  ForwardX11 yes
+  ForwardAgent yes
+  # Send a null packet every 120s
+  ServerAliveInterval 120

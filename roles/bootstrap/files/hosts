@@ -1,0 +1,14 @@
+127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
+::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
+
+
+# Linux hosts
+10.30.0.5       k8smaster
+10.30.0.7       worker01
+10.30.0.8       worker02
+
+10.20.1.4       dpdk01
+10.20.1.5       dpdk02
+10.20.1.6       dpdk03
+10.20.1.7       dpdk04
+
