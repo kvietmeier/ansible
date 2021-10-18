@@ -10,16 +10,16 @@
 
   tasks:
   # Package Management with apt
-  - name: Upgrade the Distro
-    apt: upgrade=dist force_apt_get=yes
-    tags:
-       - apt
-
   - name: Update apt repo and cache on all Debian/Ubuntu boxes
     apt: 
       update_cache: yes
       force_apt_get: yes
       cache_valid_time: 3600
+    tags:
+       - apt
+
+  - name: Upgrade the Distro
+    apt: upgrade=dist force_apt_get=yes
     tags:
        - apt
 
@@ -38,6 +38,12 @@
       test_command: uptime
     when: reboot_required_file.stat.exists
 
+  - name: Update apt repo and cache after updates/upgrade
+    apt: 
+      update_cache: yes
+      force_apt_get: yes
+    tags:
+       - apt
        
   # Packages we all usually need
   - name: Install a bunch of stuff we need/want that may or may not be installed
