@@ -7,13 +7,13 @@
 
 ###======== Common Packages For both OS
 - name: "RHEL: Install a Bunch of Useful Packages you will need eventually"
-  when: ansible_distribution == "CentOS" or ansible_distribution == "Red Hat Enterprise Linux"
+  when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
   yum: 
     name: "{{ item }}"
     state: present
-  with_items: "{{xtra_pkgs}}"
+  with_items: "{{ xtra_pkgs }}"
   tags:
-     - pkgs
+    - pkgs
 
 - name: "Ubuntu: Install a Bunch of Useful Packages you will need eventually"
   when: ansible_distribution == 'Ubuntu'
