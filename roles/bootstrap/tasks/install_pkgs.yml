@@ -7,10 +7,10 @@
 
 ###======== Upgrade RHEL/Centos Based Systems =========###
 - name: Install the RHEL/Centos Development Tools package group
-  when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
   yum: 
     name: "@Development tools"
     state: present
+  when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
   tags:
      - pkgs
 
