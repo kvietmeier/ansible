@@ -1,7 +1,5 @@
 ---
 # File roles/common/tasks/user_config.yml
-# Basic user related configuration items
-
 # Setup some basic functionality for users and sudo
 
 #--- Remove the requiretty directive from /etc/sudoers
