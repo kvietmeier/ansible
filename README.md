@@ -5,7 +5,7 @@ A set of roles/tasks to bootstrap some basic server parameters to prep for overl
 
 The scratch directory has some snippets of code and a playbook to prep a node for runninng CBT.
 
-Lots of RHEL related tasks/vars in here, updating to work with Ubuntu
+RHEL related tasks/vars are in the archive folder, updating to work with Ubuntu
 
 ```
 .
