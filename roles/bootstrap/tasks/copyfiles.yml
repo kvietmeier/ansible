@@ -41,6 +41,18 @@
   tags:
     - files
 
+# We need a hosts file
+- name: Copy over /etc/hosts
+  copy:
+    src: files/hosts
+    dest: /etc/hosts
+    owner: root
+    group: root
+    mode: 0644
+    backup: yes
+  tags:
+     - baseline
+
 
   ###--- Using Debug statements
   #

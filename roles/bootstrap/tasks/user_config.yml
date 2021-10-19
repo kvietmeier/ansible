@@ -58,6 +58,33 @@
     - users
 
 
+# Setup some Project directories for root user
+- name: Create Project Directory
+  file: 
+    path: "{{ project_dir }}"
+    state: directory
+    mode: 755
+  tags:
+    - setupenv
+
+- name: Create Temp Directory
+  file:
+    path: "{{ temp_dir }}"
+    state: directory
+    mode: 755
+  tags:
+    - setupenv
+
+- name: Create bin Directory
+  file:
+    path: "{{ bin_dir }}"
+    state: directory
+    mode: 755
+  tags:
+    - setupenv
+
+
+
 ##--- SSH Keys
 #- name: Copy rsa keys to user root
 #  authorized_key: 
