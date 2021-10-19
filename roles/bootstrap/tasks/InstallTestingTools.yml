@@ -2,7 +2,9 @@
 ### Clone amd compile common testing tools
 ### 
 
-# Check for the binaries
+# Check for the binaries. We only want to compile if the 
+# binaries don't already exist - this isn't an "idempotent"
+# process so if we don't check these tasks execute every time.
 - name: iperf3 present?
   stat:
     path: "{{ iperf3_binary }}"
@@ -18,7 +20,7 @@
     path: "{{ sperf_binary }}"
   register: sockperf
 
-
+###==============================  Compile Tools  ==============================###
 ###---- Compile FIO
 - name: Clone FIO from git
   git: 

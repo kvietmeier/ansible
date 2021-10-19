@@ -1,11 +1,15 @@
 ---
-### Copy over utility scripts and oyher files we might need
+###==========================================================================###
+#     Copy over utility scripts and other files we might need
 #
+#
+###==========================================================================###
 
+###---- Make sure the files don't exist - copy if they don't.
 - name: Is the cpu_gov script present?
   stat:
     path: "{{ bin_dir }}/{{ cpu_gov }}"
-    register: cpugov
+  register: cpugov
   tags:
     - files
 
@@ -16,13 +20,14 @@
   tags:
      - files
 
+###---- Copy scripts
 - name:  Copy cpu_gov.sh
   copy:
     remote_src: no
     src: "{{ cpu_gov }}"
     dest: "{{ bin_dir }}"
     mode: 0744
-  when: not cpugov.stat.exists
+  when: cpugov.stat.exists == false
   tags:
     - files
 
@@ -32,7 +37,7 @@
     src: "{{ irq_bal }}"
     dest: "{{ bin_dir }}"
     mode: 0744
-  when: not irqbal.stat.exists
+  when: irqbal.stat.exists == false
   tags:
     - files
 

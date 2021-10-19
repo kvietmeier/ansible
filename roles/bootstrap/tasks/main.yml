@@ -14,7 +14,7 @@
 - include: install_pkgs.yml
 
 # Copy over config files/scripts
-#- include: copyfiles.yml
+- include: copyfiles.yml
 
 # Install testing tools - iperf3, fio, sockperf
 - include: InstallTestingTools.yml
