@@ -14,7 +14,7 @@
 #     # Include Red Hat login info - not pushed up to git
 #     - group_vars/vault.yml
 
-- hosts: master
+- hosts: all
   roles:
      - bootstrap
   remote_user: root

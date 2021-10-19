@@ -15,15 +15,15 @@ cllctd_config_dir: /etc/collectd
 cllctd_conf: https://raw.githubusercontent.com/JoshHilliker/Telemetry-Infra/master/collectd.conf
 
 # Various Directories
-git_dir: ~/git
-fio_dir: ~/git/fio
 bin_dir: ~/bin
 root_dir: /root
 temp_dir: ~/temp
+pkg_dir: ~/temp
 project_dir: ~/testing_output
+git_dir: ~/git
+fio_dir: ~/git/fio
 iperf3_dir: ~/git/iperf3
 sockperf_dir: ~/git/sockperf
-pkg_dir: ~/temp
 
 # Files
 files_dir: /root/projects/ansible/roles/bootstrap/files
