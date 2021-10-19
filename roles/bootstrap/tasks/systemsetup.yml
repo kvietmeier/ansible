@@ -1,0 +1,27 @@
+---
+###  Misc System level configuration tasks
+###
+
+# Needed for Kubernetes - don't really need anyway.
+- name: Disable swap
+  shell: swapoff -a
+  tags:
+    - baseline
+
+# Always a good idea
+- name: Update PCI IDs
+  command: update-pciids
+  tags:
+     - baseline
+
+  ###--- We need a hosts file
+- name: Copy over /etc/hosts
+  copy:
+    src: files/hosts
+    dest: /etc/hosts
+    owner: root
+    group: root
+    mode: 0644
+    backup: yes
+  tags:
+     - baseline

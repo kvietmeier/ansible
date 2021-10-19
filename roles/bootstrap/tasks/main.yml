@@ -13,13 +13,13 @@
 # Run apt, update packages
 - include: install_pkgs.yml
 
+# Misc System settings
+- include: systemsetup.yml
+
 # Copy over config files/scripts
 - include: copyfiles.yml
 
 # Install testing tools - iperf3, fio, sockperf
 - include: InstallTestingTools.yml
-
-# Placeholder
-#- include: install_pkgs.yml
 
 ...
