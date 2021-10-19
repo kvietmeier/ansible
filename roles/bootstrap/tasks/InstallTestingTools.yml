@@ -2,6 +2,22 @@
 ### Clone amd compile common testing tools
 ### 
 
+# Check for the binaries
+- name: iperf3 present?
+  stat:
+    path: "{{ iperf3_binary }}"
+  register: iperf3
+
+- name: FIO present?
+  stat:
+    path: "{{ fio_binary }}"
+  register: fio
+
+- name: Sockperf present?
+  stat:
+    path: "{{ sperf_binary }}"
+  register: sockperf
+
 
 ###---- Compile FIO
 - name: Clone FIO from git
@@ -10,6 +26,7 @@
     dest: "{{ git_dir }}/fio" 
     clone: yes
     force: yes
+  when: fio.stat.exists == false
   tags:
     - fio
 
@@ -19,6 +36,7 @@
    - ./configure
    - /usr/bin/make
    - /usr/bin/make install
+  when: fio.stat.exists == false
   tags:
     - fio  
 
@@ -29,6 +47,7 @@
     dest: "{{ git_dir }}/iperf3" 
     clone: yes
     force: yes
+  when: iperf3.stat.exists == false
   tags:
     - iperf3
 
@@ -39,6 +58,7 @@
    - /usr/bin/make
    - /usr/bin/make install
    - /usr/sbin/ldconfig
+  when: iperf3.stat.exists == false
   tags:
     - iperf3  
  
@@ -49,6 +69,7 @@
     dest: "{{ git_dir }}/sockperf" 
     clone: yes
     force: yes
+  when: sockperf.stat.exists == false
   tags:
     - sockperf
 
@@ -56,6 +77,7 @@
   command: ./autogen.sh
   args:
     chdir: "{{ sockperf_dir }}"
+  when: sockperf.stat.exists == false
   tags:
     - sockperf  
 
@@ -63,6 +85,7 @@
   command: ./configure --prefix= --enable-test
   args:
     chdir: "{{ sockperf_dir }}"
+  when: sockperf.stat.exists == false
   tags:
     - sockperf  
 
@@ -70,6 +93,7 @@
   command: make
   args:
     chdir: "{{ sockperf_dir }}"
+  when: sockperf.stat.exists == false
   tags:
     - sockperf  
 
@@ -77,6 +101,7 @@
   command: make install
   args:
     chdir: "{{ sockperf_dir }}"
+  when: sockperf.stat.exists == false
   tags:
     - sockperf  
 
