@@ -44,7 +44,7 @@
 #--- Add a user
 - name: Add a non-root user and put them in sudo (no wheel in Ubuntu) - password=n0mad1c
   user:
-    name: labuser01
+    name: "{{ users }}"
     shell: /bin/bash
     groups: 
       - sudo

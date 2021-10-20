@@ -4,17 +4,17 @@
 ### For:  Azure Linux Systems
 
 Host master
-  HostName 10.30.0.5
-  User tss01
+  HostName k8smaster
+  User root
   PasswordAuthentication no
 
 Host worker01
-  HostName 10.30.0.7
+  HostName worker01
   User root
   PasswordAuthentication no
 
 Host worker02
-  HostName 10.30.0.8
+  HostName worker02
   User root
   PasswordAuthentication no
 
