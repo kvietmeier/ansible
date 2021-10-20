@@ -40,7 +40,7 @@
 - name: Set Docker to use systemd for container mgmt
   ansible.builtin.lineinfile:
     path: /etc/docker/daemon.json
-    line: { "exec-opts": ["native.cgroupdriver=systemd"] }
+    line: '{ "exec-opts": ["native.cgroupdriver=systemd"] }'
     create: yes
   tags: 
     - docker
