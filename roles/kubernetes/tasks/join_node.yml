@@ -1,0 +1,19 @@
+---
+### File - initializecluster.yml
+#   https://kubernetes.io/blog/2019/03/15/kubernetes-setup-using-ansible-and-vagrant/
+#   Created By:   Karl Vietmeier
+#
+###
+
+- name: Copy the join command to server location
+  copy: 
+    src: join-command 
+    dest: /tmp/join-command.sh
+    mode: 0777
+  tags: 
+    - node-join
+
+- name: Join the node to cluster
+  command: sh /tmp/join-command.sh
+  tags: 
+    - node-join

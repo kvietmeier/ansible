@@ -1,0 +1,49 @@
+---
+### File - k8setup.yml
+#   https://kubernetes.io/blog/2019/03/15/kubernetes-setup-using-ansible-and-vagrant/
+#   Created By:   Karl Vietmeier
+#
+###
+
+- name: Add an apt signing key for Kubernetes
+  apt_key:
+    url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+    state: present
+  tags: 
+    - k8s-setup
+
+- name: Adding apt repository for Kubernetes
+  apt_repository:
+    repo: deb https://apt.kubernetes.io/ kubernetes-xenial main
+    state: present
+    filename: kubernetes.list
+  tags: 
+    - k8s-setup
+
+- name: Install Kubernetes binaries
+  apt: 
+    name: "{{ packages }}"
+    state: present
+    update_cache: yes
+  vars:
+    packages:
+      - kubelet 
+      - kubeadm 
+      - kubectl
+  tags: 
+    - k8s-setup
+
+- name: Configure node ip
+  lineinfile:
+    path: /etc/default/kubelet
+    line: KUBELET_EXTRA_ARGS=--node-ip={{ node_ip }}
+  tags: 
+    - k8s-setup
+
+- name: Restart kubelet
+  service:
+    name: kubelet
+    daemon_reload: yes
+    state: restarted
+  tags: 
+    - k8s-setup

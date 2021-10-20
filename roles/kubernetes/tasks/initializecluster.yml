@@ -1,0 +1,47 @@
+---
+### File - initializecluster.yml
+#   https://kubernetes.io/blog/2019/03/15/kubernetes-setup-using-ansible-and-vagrant/
+#   Created By:   Karl Vietmeier
+#
+###
+
+- name: Initialize the Kubernetes cluster using kubeadm
+  command: kubeadm init --apiserver-advertise-address="192.168.50.10" --apiserver-cert-extra-sans="192.168.50.10"  --node-name k8s-master --pod-network-cidr=192.168.0.0/16
+  tags: 
+    - k8s-init
+
+- name: Setup kubeconfig for vagrant user
+  command: "{{ item }}"
+  with_items:
+    - mkdir -p /home/kube/.kube
+    - cp -i /etc/kubernetes/admin.conf /home/kube/.kube/config
+    - chown vagrant:vagrant /home/kube/.kube/config
+  tags: 
+    - k8s-init
+
+- name: Install calico pod network
+  become: false
+  command: kubectl create -f https://docs.projectcalico.org/v3.4/getting-started/kubernetes/installation/hosted/calico.yaml
+  tags: 
+    - k8s-init
+
+- name: Generate join command
+  command: kubeadm token create --print-join-command
+  register: join_command
+  tags: 
+    - k8s-init
+
+- name: Copy join command to local file
+  local_action: copy content="{{ join_command.stdout_lines[0] }}" dest="./join-command"
+  tags: 
+    - k8s-init
+
+
+handlers:
+  - name: docker status
+    service: name=docker state=started
+  tags: 
+    - k8s-setup
+
+
+...

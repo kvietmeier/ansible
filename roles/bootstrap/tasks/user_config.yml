@@ -39,9 +39,9 @@
 #     - usercfg
 #
 
-###=================  Create Users =================###
+###=================  Create and modify Users =================###
 
-#--- Add a user
+#--- Add some users
 - name: Add a non-root user and put them in sudo (no wheel in Ubuntu) - password=n0mad1c
   user:
     name: "{{ item.username }}"
@@ -53,20 +53,29 @@
     ssh_key_bits: 2048
     ssh_key_file: .ssh/id_rsa
     password: $1$z.0hhKJ0$CIfrsuyuTDcoEo4s4jnXF.
+    update_password: on_create
     state: present
   with_items: "{{ users }}"
   tags: 
-    - users
+    - usercfg
 
-
+### For root (need to do this for all users)
 # Setup some Project directories for root user
+
+- name: Add 'set -o vi' to bashrc
+  lineinfile:
+    path: ~/.bashrc
+    line: set -o vi
+  tags: 
+    - usercfg
+
 - name: Create Project Directory
   file: 
     path: "{{ project_dir }}"
     state: directory
     mode: 755
   tags:
-    - setupenv
+    - usercfg
 
 - name: Create Temp Directory
   file:
@@ -74,7 +83,7 @@
     state: directory
     mode: 755
   tags:
-    - setupenv
+    - usercfg
 
 - name: Create bin Directory
   file:
@@ -82,7 +91,7 @@
     state: directory
     mode: 755
   tags:
-    - setupenv
+    - users
 
 
 
