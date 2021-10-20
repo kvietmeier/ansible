@@ -22,14 +22,9 @@
 
 - name: Install Kubernetes binaries
   apt: 
-    name: "{{ packages }}"
+    name: "{{ k8s_pkgs }}"
     state: present
     update_cache: yes
-  vars:
-    packages:
-      - kubelet 
-      - kubeadm 
-      - kubectl
   tags: 
     - k8s-setup
 

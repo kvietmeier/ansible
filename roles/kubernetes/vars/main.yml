@@ -3,11 +3,13 @@
 
 node_ip: 10.20.1.0
 
+# Docker packages
 docker_pkgs:
   - docker-ce 
   - docker-ce-cli 
   - containerd.io
 
+# K8S packages
 k8s_pkgs:
   - kubelet 
   - kubeadm 
