@@ -1,18 +1,9 @@
 ---
 ### File - site.yml
-#   Top level playbook to "bootstrap" servers
+#   Top level playbook
 #   
 #   Created By:   Karl Vietmeier
 #
-
-#- hosts: centosvms:ubuntuvms
-#  roles:
-#     - common
-#  remote_user: vagrant
-#  sudo: yes
-#  vars_files:
-#     # Include Red Hat login info - not pushed up to git
-#     - group_vars/vault.yml
 
 - hosts: all
   roles:
