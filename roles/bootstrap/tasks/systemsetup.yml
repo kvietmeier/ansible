@@ -30,7 +30,7 @@
 
 # Set the timezone
 - name: Set timezone to Asia/Tokyo
-  community.general.timezone:
+  timezone:
     name: "{{ timezone }}"
   tags:
      - baseline
