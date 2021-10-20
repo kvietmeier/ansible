@@ -2,3 +2,13 @@
 # Local variable specific to Kubernetes - network addresses etc.
 
 node_ip: 10.20.1.0
+
+docker_pkgs:
+  - docker-ce 
+  - docker-ce-cli 
+  - containerd.io
+
+k8s_pkgs:
+  - kubelet 
+  - kubeadm 
+  - kubectl

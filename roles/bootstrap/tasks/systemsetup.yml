@@ -31,6 +31,6 @@
 # Set the timezone
 - name: Set timezone to Asia/Tokyo
   community.general.timezone:
-    name: US/Pacific
+    name: "{{ timezone }}"
   tags:
      - baseline

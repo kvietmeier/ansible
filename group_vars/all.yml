@@ -162,8 +162,16 @@ ubuntu_dpdk_pkgs:
   - python-pyelftools
   - python3-pip
 
+# Need these to support apt over http
+apt_html_pkgs:
+  - apt-transport-https
+  - ca-certificates
+  - curl
+  - gnupg-agent
+  - software-properties-common
 
-# NTP Dictionaries
+###--- Not needed on Azure
+###--- NTP Dictionaries
 centos_ntp_dict:
   server0: 0.centos.pool.ntp.org
   server1: 1.centos.pool.ntp.org

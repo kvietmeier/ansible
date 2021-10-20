@@ -36,14 +36,4 @@
   tags: 
     - k8s-init
 
-
-#handlers:
-#  - name: Docker status
-#    ansible.builtin.service:
-#      name: docker
-#      state: started
-#  tags: 
-#    - k8s-setup
-
-
 ...
