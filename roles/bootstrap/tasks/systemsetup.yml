@@ -29,7 +29,7 @@
 ###---- Time related - Ansible uses chrony, not ntpd.
 
 # Set the timezone
-- name: Set timezone to Asia/Tokyo
+- name: Set timezone to America/Pacific
   timezone:
     name: "{{ timezone }}"
   tags:

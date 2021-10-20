@@ -1,7 +1,7 @@
 ---
 # Local variable specific to Kubernetes - network addresses etc.
 
-node_ip: 10.20.1.0
+node_ip: 10.30.0.5
 
 # Docker packages
 docker_pkgs:
