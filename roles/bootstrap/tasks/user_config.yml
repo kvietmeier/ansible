@@ -44,7 +44,7 @@
 #--- Add a user
 - name: Add a non-root user and put them in sudo (no wheel in Ubuntu) - password=n0mad1c
   user:
-    name: "{{ users }}"
+    name: "{{ item.username }}"
     shell: /bin/bash
     groups: 
       - sudo
@@ -54,6 +54,7 @@
     ssh_key_file: .ssh/id_rsa
     password: $1$z.0hhKJ0$CIfrsuyuTDcoEo4s4jnXF.
     state: present
+  with_items: "{{ users }}"
   tags: 
     - users
 

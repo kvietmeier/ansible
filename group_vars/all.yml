@@ -45,9 +45,9 @@ sockperf_repo: https://github.com/mellanox/sockperf
 
 ### User Information (password n0mad1c)
 users:
-  - kube
-  - azureuser
-  - labuser01
+  - username: kube
+  - username: azureuser
+  - username: labuser01
 
 userpass: $1$z.0hhKJ0$CIfrsuyuTDcoEo4s4jnXF. 
 usershell: /bin/bash
