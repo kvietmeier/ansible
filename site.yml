@@ -8,6 +8,7 @@
 - hosts: all
   roles:
      - bootstrap
+     - kubernetes
   remote_user: root
   vars_files:
      # Any confidential info like certs, keys, etc.
