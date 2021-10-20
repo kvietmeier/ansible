@@ -15,7 +15,7 @@
   with_items:
     - mkdir -p /home/kube/.kube
     - cp -i /etc/kubernetes/admin.conf /home/kube/.kube/config
-    - chown vagrant:vagrant /home/kube/.kube/config
+    - chown kube:kube /home/kube/.kube/config
   tags: 
     - k8s-init
 
