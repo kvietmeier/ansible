@@ -1,14 +1,18 @@
 ---
-# File: roles/common/handlers/main.yml
+# File: roles/kubernetes/handlers/main.yml
 # Handlers for common services
 # See http://docs.ansible.com/playbooks_intro.html for more information about handlers.
 
 # Services
 - name: restart ntpd
-  service: name=ntpd state=restarted
+  ansible.builtin.service:
+    name: ntpd
+    state: restarted
 
 - name: restart iptables
-  service: name=iptables state=restarted
+  ansible.builtin.service:
+    name: iptables
+    state: restarted
 
 # Wait for a server after reboot
 - name: Wait for restart
@@ -19,6 +23,12 @@
       delay=10
       #timeout=300
     sudo: false
+
+# Is docker running?
+- name: Docker status
+  ansible.builtin.service:
+    name: docker
+    state: started
 
 ...
 

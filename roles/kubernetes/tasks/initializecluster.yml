@@ -10,7 +10,7 @@
   tags: 
     - k8s-init
 
-- name: Setup kubeconfig for vagrant user
+- name: Setup kubeconfig for kube user
   command: "{{ item }}"
   with_items:
     - mkdir -p /home/kube/.kube
@@ -37,11 +37,11 @@
     - k8s-init
 
 
-#- handlers:
-#  name: docker status
-#  service: 
-#    name: docker
-#    state: started
+#handlers:
+#  - name: Docker status
+#    ansible.builtin.service:
+#      name: docker
+#      state: started
 #  tags: 
 #    - k8s-setup
 
