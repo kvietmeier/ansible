@@ -34,14 +34,12 @@
 
 - name: Install docker and its dependecies
   apt: 
-    name: "{{ packages }}"
+    pkg:
+      - docker-ce 
+      - docker-ce-cli 
+      - containerd.io
     state: present
     update_cache: yes
-  vars:
-    packages:
-    - docker-ce 
-    - docker-ce-cli 
-    - containerd.io
   notify:
     - docker status
   tags: 
