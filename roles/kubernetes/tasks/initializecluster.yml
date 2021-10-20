@@ -37,9 +37,11 @@
     - k8s-init
 
 
-handlers:
-  - name: docker status
-    service: name=docker state=started
+- handlers:
+  name: docker status
+  service: 
+    name: docker
+    state: started
   tags: 
     - k8s-setup
 
