@@ -2,7 +2,7 @@
 ###  Misc System level configuration tasks
 ###
 
-# Needed for Kubernetes - don't really need anyway.
+# Needed for Kubernetes - don't really need it anyway.
 - name: Disable swap
   shell: swapoff -a
   tags:
@@ -23,5 +23,14 @@
     group: root
     mode: 0644
     backup: yes
+  tags:
+     - baseline
+
+###---- Time related - Ansible uses chrony, not ntpd.
+
+# Set the timezone
+- name: Set timezone to Asia/Tokyo
+  community.general.timezone:
+    name: US/Pacific
   tags:
      - baseline

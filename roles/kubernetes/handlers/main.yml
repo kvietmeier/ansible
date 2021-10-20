@@ -25,7 +25,7 @@
     sudo: false
 
 # Is docker running?
-- name: Docker status
+- name: docker status
   ansible.builtin.service:
     name: docker
     state: started
