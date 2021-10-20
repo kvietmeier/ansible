@@ -44,13 +44,14 @@ iperf3_repo: https://github.com/esnet/iperf.git
 sockperf_repo: https://github.com/mellanox/sockperf
 
 ### User Information (password n0mad1c)
-userpass: $1$z.0hhKJ0$CIfrsuyuTDcoEo4s4jnXF. 
-usershell: /bin/bash
 users:
   - kube
   - azureuser
   - labuser01
-groups: wheel
+
+userpass: $1$z.0hhKJ0$CIfrsuyuTDcoEo4s4jnXF. 
+usershell: /bin/bash
+groups: sudo
 generate_ssh_key: yes
 ssh_key_bits: 2048 
 ssh_key_comment: yes
