@@ -45,10 +45,35 @@ mkdir logs 2> /dev/null
 cd voltdb-charglt/jars 
 
 # silently kill off any copy that is currently running...
-kill -9 `ps -deaf | grep ChargingDemoKVStore.jar  | grep -v grep | awk '{ print $2 }'` 2> /dev/null
-kill -9 `ps -deaf | grep ChargingDemoTransactions.jar  | grep -v grep | awk '{ print $2 }'` 2> /dev/null
+#kill -9 `ps -deaf | grep ChargingDemoKVStore.jar  | grep -v grep | awk '{ print $2 }'` 2> /dev/null
+#kill -9 `ps -deaf | grep ChargingDemoTransactions.jar  | grep -v grep | awk '{ print $2 }'` 2> /dev/null
 
-sleep 2 
+
+### Functions:
+function killbench () {
+  # Need to kill off any running java threads
+  # Need to reap any KV benchmarks as well - ToDo
+  
+  # Get the first PID
+  PID=$(ps -deaf | grep ChargingDemoTransactions.jar  | grep -v grep | awk '{ print $2 }')
+  KVPID=$(ps -deaf | grep ChargingDemoKVStore.jar  | grep -v grep | awk '{ print $2 }')
+
+  if [ -z $PID] ; then
+    echo "No java threads running"
+  else 
+    echo "Previous benchmark still running, reaping the threads"
+  fi
+
+  # Reap the PIDs - loop until none are left
+  until [ -z $PID ]
+  do
+    kill -9 $PID
+    sleep 2
+    PID=$(ps -deaf | grep ChargingDemoTransactions.jar  | grep -v grep | awk '{ print $2 }')
+  done
+}
+
+killbench
 
 CT=${ST}
 DT=`date '+%Y%m%d_%H%M%S'`
@@ -65,7 +90,7 @@ do
 		[ "$T" -le "$TC" ]
 	do
 
-       		EACH_TPS=`expr ${CT} / ${TC}`
+       	EACH_TPS=`expr ${CT} / ${TC}`
 		echo Starting thread $T at $EACH_TPS KTPS...
 		echo `date` java ${JVMOPTS}  -jar ChargingDemoTransactions.jar `cat $HOME/.vdbhostnames`  ${USERCOUNT} ${EACH_TPS} $DURATION 60 >> $HOME/logs/activity.log
 		java ${JVMOPTS}  -jar ChargingDemoTransactions.jar `cat $HOME/.vdbhostnames`  ${USERCOUNT} ${EACH_TPS} $DURATION 60 > $HOME/logs/${DT}_charging_`uname -n`_${CT}_${T}.lst &

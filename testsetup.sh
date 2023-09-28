@@ -1,1 +1,1 @@
-ansible-playbook --limit vdb-04 -i inventory roles/voltdb/voltdb.yaml
+ansible-playbook --limit voltnodes -i inventory roles/voltdb/voltdb.yaml

@@ -25,6 +25,7 @@
 
 . $HOME/.profile
 
+# Numbers are in K - so 10=10000K
 ST=$1
 MX=$2
 INC=$3
@@ -54,7 +55,7 @@ function killbench () {
   if [ -z $PID] ; then
     echo "No java threads running"
   else 
-    echo "Previous bencxhmnark still running, reaping the threads"
+    echo "Previous benchmark still running, reaping the threads"
   fi
 
   # Reap the PIDs - loop until none are left
@@ -78,6 +79,7 @@ killbench
 
 
 # Walk through the iterations
+# Pipe sdtout to a file to examine later
 CT=${ST}
 while [ "${CT}" -le "${MX}" ] ; do
   

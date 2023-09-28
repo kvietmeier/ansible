@@ -36,7 +36,7 @@
     # Charging demo repo
     charging_repo: https://github.com/srmadscience/voltdb-charglt
 
-    # Files to copy over
+    # Modified files to copy over from $HOME/bin
     SetupFiles:
       - ntpfix.sh
       - setup_part_1.sh
@@ -47,18 +47,7 @@
       - reinit_voltdb.sh
       - waituntilclustersizeisx.sh
       - setup_runoncepercluster.sh
-    DemoFiles:
-      - add_users.sh
-      - setup.sh
-      - runbenchmark.sh
-      - runkvbenchmark.sh
-      - runlargebenchmark.sh
-      - runlargekvbenchmark.sh
-      - remove_users.sh
-      - export_and_import.xml
-      - run_once.sh
-      - run_kv_once.sh
-      - kill_bench.sh
+    # Database Hosts
     volt_hosts:
       - vdb-02
       - vdb-03
@@ -104,6 +93,8 @@
     become: true
     register: reboot_required_file
     stat: path=/var/run/reboot-required get_md5=no
+    tags:
+       - apt
   
   - name: Reboot the box if kernel updated
     become: true
@@ -115,6 +106,8 @@
       post_reboot_delay: 30
       test_command: uptime
     when: reboot_required_file.stat.exists
+    tags:
+       - apt
 
   - name: Update apt repo and cache after updates/upgrade
     become: true
@@ -178,17 +171,17 @@
   - name: Create Project Directory
     file: path={{ project_dir }} state=directory mode=755
     tags:
-       - userenv
+      - userenv
  
   - name: Create Temp Directory
     file: path={{ temp_dir }} state=directory mode=755
     tags:
-       - userenv
+      - userenv
  
   - name: Create scripts Directory
     file: path={{ scripts_dir }} state=directory mode=755
     tags:
-       - userenv
+      - userenv
 
   # Tweak .bashrc
   - name: Setup .bashrc for ubuntu user
@@ -223,42 +216,47 @@
   
   ###--- Setup .gitconfig https://docs.ansible.com/ansible/latest/collections/community/general/git_config_module.html
   - name: Add user.name to ~/.gitconfig
-    community.general.git_config:
-    name: user.name
-    scope: global
-    value: "{{ git_user }}"
+    become_user: ubuntu
+    git_config:
+      name: user.name
+      scope: global
+      value: "{{ git_user }}"
     tags:
       - git
   
   - name: Add user.email to ~/.gitconfig
-    community.general.git_config:
-    name: user.email
-    scope: global
-    value: "{{ git_email }}"
+    become_user: ubuntu
+    git_config:
+      name: user.email
+      scope: global
+      value: "{{ git_email }}"
     tags:
       - git
   
   - name: Add editor setting to ~/.gitconfig
-    community.general.git_config:
-    name: core.editor
-    scope: global
-    value: "{{ git_editor }}"
+    become_user: ubuntu
+    git_config:
+      name: core.editor
+      scope: global
+      value: "{{ git_editor }}"
     tags:
       - git
 
   - name: Add default branch setting to ~/.gitconfig
-    community.general.git_config:
-    name: init.defaultBranch
-    scope: global
-    value: "{{ git_branch }}"
+    become_user: ubuntu
+    git_config:
+      name: init.defaultBranch
+      scope: global
+      value: "{{ git_branch }}"
     tags:
       - git
 
   - name: Add credential store setting to ~/.gitconfig
-    community.general.git_config:
-    name: credential.credentialStore
-    scope: global
-    value: "{{ git_cred }}"
+    become_user: ubuntu
+    git_config:
+      name: credential.credentialStore
+      scope: global
+      value: "{{ git_cred }}"
     tags:
       - git
 
@@ -289,11 +287,13 @@
       group: ubuntu
       mode: 0770
       force: true
-    with_items: "{{ SetupFiles }}"
+    with_items: 
+      - "{{ SetupFiles }}"
     tags:
-      - voltdb
+      - copy_files
     
   - name: Copy updated Charging demo scripts
+    # Copy the whole directory using fileglob
     become_user: ubuntu
     copy:
       src: "{{ item }}"
@@ -302,12 +302,13 @@
       group: ubuntu
       mode: 0770
       force: true
-    with_items: "{{ DemoFiles }}"
+    with_fileglob:
+      - "demo/*"
     tags:
-      - voltdb
+      - copy_files
+
 
   ### Run volt setup_part_1.sh
-  
   # Want to be able to skip this part if we've already done it
   - name: Check if part 1 has already run
     register: part1_has_run
@@ -380,6 +381,8 @@
     tags:
       - voltdb_setup
 
+  
+  ###======================== End VoltDB Setup Section ==========================###
 
 
 ###========================================= End Tasks =======================================###
