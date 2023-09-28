@@ -1,15 +1,21 @@
-###---- Host file for small K8S cluster
-127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
-::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
+127.0.0.1 localhost
 
+# The following lines are desirable for IPv6 capable hosts
+::1 ip6-localhost ip6-loopback
+fe00::0 ip6-localnet
+ff00::0 ip6-mcastprefix
+ff02::1 ip6-allnodes
+ff02::2 ip6-allrouters
+ff02::3 ip6-allhosts
 
-# Linux hosts
-10.30.0.5       k8smaster
-10.30.0.7       worker01
-10.30.0.8       worker02
+### - Added Manually
+10.1.12.4	voltnode-01
+10.1.12.5	voltnode-02
+10.1.12.6	voltnode-03
+10.1.12.7	voltnode-04
 
-10.20.1.4       dpdk01
-10.20.1.5       dpdk02
-10.20.1.6       dpdk03
-10.20.1.7       dpdk04
-
+### - Added Manually on linuxvnet01
+10.1.6.4        linux-01
+10.1.6.5        linux-02
+10.1.6.6        linux-03
+10.1.6.7        linux-04

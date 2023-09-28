@@ -1,17 +1,62 @@
-### Linux Hosts - Ubuntu
-### Running on Azure VMs
-[dpdk]
-dpdk01
-dpdk02
-dpdk03
-dpdk04
+###=====================================================================### 
+###   Ansible Inventory
+###   Updated with Azure hosts
+###
+###=====================================================================### 
 
-[master]
-k8smaster
+### Terraform created nodes
+#
+[masters]
+master
+
+[masters:vars]
+ansible_ssh_user=ubuntu
 
 [workers]
 worker01
 worker02
+worker03
+
+[workers:vars]
+ansible_ssh_user=ubuntu
+
+
+### PowerShell Nodes - Created with PowerShell
+# Volt Testing
+[voltnodes]
+vdb-02
+vdb-03
+vdb-04
+vdb-05
+
+[voltnodes:vars]
+ansible_ssh_user=ubuntu
+ansible_python_interpreter="/usr/bin/python3"
+
+[voltmgmt]
+vdb-01
+
+[voltmgmt:vars]
+ansible_ssh_user=ubuntu
+ansible_python_interpreter="/usr/bin/python3"
+
+
+### PowerShell Nodes - Created with PowerShell
+# Linux Testing
+[linuxnodes]
+linux-01
+linux-02
+linux-03
+linux-04
+
+[linuxnodes:vars]
+ansible_ssh_user=azureuser
+
+
+###=====================================================================### 
+### For all hosts - per group overrides this
+###=====================================================================### 
 
 [all:vars]
 ansible_ssh_user=root
+ansible_python_interpreter="/usr/bin/python3"

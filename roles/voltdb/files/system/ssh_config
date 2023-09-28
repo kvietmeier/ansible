@@ -1,0 +1,46 @@
+### ~/.ssh/config
+### SSH client configuration
+### 
+### For:  Azure Linux Systems
+
+Host vdb-01
+  HostName vdb-01
+  User ubuntu
+  PasswordAuthentication no
+
+Host vdb-02
+  HostName vdb-02
+  User ubuntu
+  PasswordAuthentication no
+
+Host vdb-03
+  HostName vdb-03
+  User ubuntu
+  PasswordAuthentication no
+
+Host vdb-04
+  HostName vdb-04
+  User ubuntu
+  PasswordAuthentication no
+
+Host vdb-05
+  HostName vdb-05
+  User ubuntu
+  PasswordAuthentication no
+
+
+
+### ================================================================================###
+#                         Common Settings for all SSH targets                         #
+### ================================================================================###
+Host *
+  # Effect is to not populate the known_hosts file every time you connect to a new server
+  UserKnownHostsFile /dev/null
+  # Don't verify that the the key matches a known_host - useful when you rebuild hosts frequently
+  StrictHostKeyChecking no
+  IdentitiesOnly no
+  LogLevel FATAL
+  ForwardX11 yes
+  ForwardAgent yes
+  # Send a null packet every 60s
+  ServerAliveInterval 60

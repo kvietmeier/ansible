@@ -1,0 +1,176 @@
+---
+### File - voltd.yml
+#   Do some post install setup on a Volt node after an install with cloud-init
+#    * Recheck packages
+#    * Create some directories
+#    * Fix the usetty issue
+#    * Compile Volt with ant
+#    * update the users .bashrc
+#
+#   Created By:   Karl Vietmeier
+#
+###
+
+- hosts: all
+  remote_user: azureuser
+  vars:
+    # Various Directories
+    voltdb_dir: ~/voltdb
+    scripts_dir: ~/scripts
+    temp_dir: ~/temp
+    project_dir: ~/testing_output
+
+
+  tasks:
+  ###--- Package Management with apt
+  - name: Update apt repo and cache on all Debian/Ubuntu boxes
+    become: true
+    apt: 
+      update_cache: yes
+      force_apt_get: yes
+      cache_valid_time: 3600
+    tags:
+       - apt
+
+  - name: Upgrade the Distro
+    become: true
+    apt: upgrade=dist force_apt_get=yes
+    tags:
+       - apt
+
+  # In Ubuntu you have to check if a reboot is required
+  - name: Check if a reboot is needed
+    become: true
+    register: reboot_required_file
+    stat: path=/var/run/reboot-required get_md5=no
+  
+  - name: Reboot the box if kernel updated
+    become: true
+    reboot:
+      msg: "Reboot initiated by Ansible for kernel updates"
+      connect_timeout: 5
+      reboot_timeout: 300
+      pre_reboot_delay: 0
+      post_reboot_delay: 30
+      test_command: uptime
+    when: reboot_required_file.stat.exists
+
+  - name: Update apt repo and cache after updates/upgrade
+    become: true
+    apt: 
+      update_cache: yes
+      force_apt_get: yes
+    tags:
+       - apt
+       
+  # Packages we all usually need
+  - name: Install a bunch of stuff we need/want that may or may not be installed
+    become: true
+    apt:
+      name: 
+        - build-essential 
+        - git
+        - vim
+        - tree
+        - numactl 
+        - psmisc
+        - dstat 
+        - nmon
+        - ncdu
+        - slurm
+        - saidar
+        - ccze
+        - net-tools
+        - nfs-common
+        - sysstat
+        #- linux-tools-lowlatency
+        #- linux-tools-common
+        #- linux-tools-generic
+      state: present
+    tags:
+      - apt
+
+  # Need these for DPDK build
+  - name: Install System Libraries
+    become: true
+    apt:
+      name:
+        - librdmacm-dev
+        - librdmacm1
+        - libnuma-dev
+        - libmnl-dev
+        - libpcap-dev
+        - autoconf
+        - lib32z1
+        - meson
+        - pkg-config
+        - cmake
+      state: present
+    tags:
+      - apt
+        
+  # Needed for Kubernetes - don't really need anyway.
+  - name: Disable swap
+    become: true
+    shell: swapoff -a
+    tags:
+      - baseline
+
+  ###--- User environment setup ---###
+  #--- Remove the requiretty directive from /etc/sudoers
+  #--- Needed by some software installers (Ceph for example)
+  - name: Remove requiretty
+    become: true
+    lineinfile: dest=/etc/sudoers regexp="^Defaults.*requiretty" line='Defaults !requiretty'  backup=yes state=present validate='visudo -cf %s'
+    become: yes
+    become_method: sudo
+    tags:
+      - baseline
+
+  # Setup some Project directories
+  - name: Create Project Directory
+    file: path={{ project_dir }} state=directory mode=755
+    tags:
+       - setupenv
+ 
+  - name: Create Temp Directory
+    file: path={{ temp_dir }} state=directory mode=755
+    tags:
+       - setupenv
+ 
+  - name: Create scripts Directory
+    file: path={{ scripts_dir }} state=directory mode=755
+    tags:
+       - setupenv
+
+  ###--- System Configuration
+
+  # Not using Private DNS in Azure so there is no DNS resoltion between 
+  # peered vnets.
+  - name: Copy /etc/hosts
+    become: true
+    copy:
+      src: files/hosts
+      dest: /etc/hosts
+      owner: root
+      group: root
+      mode: 0644
+      backup: yes
+    tags:
+       - baseline
+
+
+  ###--- Applications
+  - name: Build Voltdb
+    command: "{{ item }} chdir={{ voltdb_dir }}"
+    with_items:
+     - ant
+    tags:
+      - voltdb
+ 
+
+
+
+
+  ###--- Misc Cleanup
+  # TBD  

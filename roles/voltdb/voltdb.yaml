@@ -1,0 +1,409 @@
+---
+### File - voltdb.yaml
+#   Do some post install setup on Volt cluster nodes after an install with cloud-init
+#    * Recheck packages
+#    * Add a few we might have missed
+#    * Create some directories
+#    * Fix the usetty issue
+#    * update the users .bashrc/.profile
+#    * copy over scripts we have customized
+#    * Run the Volt setup scripts
+#    * reboot if needed
+#
+#   Created By:   Karl Vietmeier
+#
+#   ToDo:
+#    * Can we run the init, setup, and start commands?
+###
+
+- hosts: voltnodes
+  remote_user: ubuntu
+  ###==========================================  VARS  =========================================###
+  vars:
+    # Various Directories
+    scripts_dir: ~/mybin
+    temp_dir: ~/temp
+    project_dir: ~/project
+    demo_dir: ~/voltdb-charglt
+
+    # Git setup
+    git_user: kvietmeier
+    git_email: karlv@storagenet.org
+    git_editor: vim
+    git_branch: main
+    git_cred: cache
+
+    # Charging demo repo
+    charging_repo: https://github.com/srmadscience/voltdb-charglt
+
+    # Files to copy over
+    SetupFiles:
+      - ntpfix.sh
+      - setup_part_1.sh
+      - setup_part_2.sh
+      - voltdb_start.sh
+      - voltdb_stop.sh
+      - voltwrangler.sh
+      - reinit_voltdb.sh
+      - waituntilclustersizeisx.sh
+      - setup_runoncepercluster.sh
+    DemoFiles:
+      - add_users.sh
+      - setup.sh
+      - runbenchmark.sh
+      - runkvbenchmark.sh
+      - runlargebenchmark.sh
+      - runlargekvbenchmark.sh
+      - remove_users.sh
+      - export_and_import.xml
+      - run_once.sh
+      - run_kv_once.sh
+      - kill_bench.sh
+    volt_hosts:
+      - vdb-02
+      - vdb-03
+      - vdb-04
+      - vdb-05
+    # Extra packages to install - just to be sure
+    volt_packages:
+      - prometheus
+      - ncat
+      - ifstat
+      - cloud-utils
+      - sysstat
+      - collectl
+      - curl
+      - slurm
+      - tcptrack
+      - bmon
+      - maven
+      - dstat
+  ###========================================= End VARS  =======================================###
+
+  ###=========================================== Tasks =========================================###
+  tasks:
+  
+  ###--- Package Management with apt
+  - name: Update apt repo and cache on all Debian/Ubuntu boxes
+    become: true
+    apt: 
+      update_cache: yes
+      force_apt_get: yes
+      cache_valid_time: 3600
+    tags:
+       - apt
+
+  - name: Upgrade the Distro
+    become: true
+    apt: upgrade=dist force_apt_get=yes
+    tags:
+       - apt
+
+  ## In Ubuntu you have to check if a reboot is required
+  - name: Check if a reboot is needed
+    become: true
+    register: reboot_required_file
+    stat: path=/var/run/reboot-required get_md5=no
+  
+  - name: Reboot the box if kernel updated
+    become: true
+    reboot:
+      msg: "Reboot initiated by Ansible for kernel updates"
+      connect_timeout: 5
+      reboot_timeout: 300
+      pre_reboot_delay: 0
+      post_reboot_delay: 30
+      test_command: uptime
+    when: reboot_required_file.stat.exists
+
+  - name: Update apt repo and cache after updates/upgrade
+    become: true
+    apt: 
+      update_cache: yes
+      force_apt_get: yes
+    tags:
+       - apt
+       
+  # Packages required by setup_part_1 - we do it here instead
+  - name: Install VoltDB requirements 
+    become: true
+    apt:
+      name: "{{ volt_packages }}" 
+      state: present
+    tags:
+      - apt
+
+  - name: "All: Update Man Page Database"
+    command: mandb
+    tags:
+     - apt
+
+
+  ###--- System Configuration
+
+  # Not using Private DNS in Azure so there is no DNS resoltion between peered vnets.
+  # --- need static hosts file
+  - name: Copy /etc/hosts
+    become: true
+    copy:
+      src: files/hosts
+      dest: /etc/hosts
+      owner: root
+      group: root
+      mode: 0644
+      backup: yes
+    tags:
+      - system
+
+  # Needed for Kubernetes - don't really need anyway.
+  - name: Disable swap
+    shell: swapoff -a
+    tags:
+      - system
+
+
+  ###======================= User environment setup ===========================###
+  ###                                                                          ###
+
+  #--- Remove the requiretty directive from /etc/sudoers
+  #--- Needed by some software installers (Ceph for example)
+  - name: Remove requiretty
+    become: true
+    become_method: sudo
+    lineinfile: dest=/etc/sudoers regexp="^Defaults.*requiretty" line='Defaults !requiretty'  backup=yes state=present validate='visudo -cf %s'
+    tags:
+      - userenv
+
+  # Setup some Project directories
+  - name: Create Project Directory
+    file: path={{ project_dir }} state=directory mode=755
+    tags:
+       - userenv
+ 
+  - name: Create Temp Directory
+    file: path={{ temp_dir }} state=directory mode=755
+    tags:
+       - userenv
+ 
+  - name: Create scripts Directory
+    file: path={{ scripts_dir }} state=directory mode=755
+    tags:
+       - userenv
+
+  # Tweak .bashrc
+  - name: Setup .bashrc for ubuntu user
+    lineinfile:
+      dest: .bashrc
+      line: |
+
+        # Customize ENV:
+        set -o vi
+        EDITOR=vi
+        PROMPT_COMMAND='history -w'
+      
+      state: present
+      create: yes 
+    tags:
+      - userenv
+
+
+  # Save for future use
+  #- name: Copy .profile for VoltDB
+  #  copy:
+  #    src: .profile
+  #    dest: /home/ubuntu
+  #    owner: ubuntu
+  #    group: ubuntu
+  #    mode: 0644
+  #    force: true
+  #  tags:
+  #    - userenv
+  
+
+  
+  ###--- Setup .gitconfig https://docs.ansible.com/ansible/latest/collections/community/general/git_config_module.html
+  - name: Add user.name to ~/.gitconfig
+    community.general.git_config:
+    name: user.name
+    scope: global
+    value: "{{ git_user }}"
+    tags:
+      - git
+  
+  - name: Add user.email to ~/.gitconfig
+    community.general.git_config:
+    name: user.email
+    scope: global
+    value: "{{ git_email }}"
+    tags:
+      - git
+  
+  - name: Add editor setting to ~/.gitconfig
+    community.general.git_config:
+    name: core.editor
+    scope: global
+    value: "{{ git_editor }}"
+    tags:
+      - git
+
+  - name: Add default branch setting to ~/.gitconfig
+    community.general.git_config:
+    name: init.defaultBranch
+    scope: global
+    value: "{{ git_branch }}"
+    tags:
+      - git
+
+  - name: Add credential store setting to ~/.gitconfig
+    community.general.git_config:
+    name: credential.credentialStore
+    scope: global
+    value: "{{ git_cred }}"
+    tags:
+      - git
+
+
+  ###--- Misc Cleanup
+  # TBD  
+  - name: Get rid of ubuntu login splash
+    file:
+      path: /home/ubuntu/.hushlogin
+      state: touch
+      owner: ubuntu
+      group: ubuntu
+    tags:
+      - userenv
+
+
+
+  ###============================ VoltDB Setup Section ==========================###
+  ###                                                                            ###
+
+  ###---- copy VoltDB Setup scripts 
+  - name: Copy misc Volt setup scripts
+    become_user: ubuntu
+    copy:
+      src: "{{ item }}"
+      dest: /home/ubuntu/bin
+      owner: ubuntu
+      group: ubuntu
+      mode: 0770
+      force: true
+    with_items: "{{ SetupFiles }}"
+    tags:
+      - voltdb
+    
+  - name: Copy updated Charging demo scripts
+    become_user: ubuntu
+    copy:
+      src: "{{ item }}"
+      dest: /home/ubuntu/voltdb-charglt/scripts
+      owner: ubuntu
+      group: ubuntu
+      mode: 0770
+      force: true
+    with_items: "{{ DemoFiles }}"
+    tags:
+      - voltdb
+
+  ### Run volt setup_part_1.sh
+  
+  # Want to be able to skip this part if we've already done it
+  - name: Check if part 1 has already run
+    register: part1_has_run
+    stat: path=/home/ubuntu/.part1_ran get_md5=no
+    tags:
+      - voltdb_setup
+
+  - name: Check if part 2 has already run
+    register: part2_has_run
+    stat: path=/home/ubuntu/.part2_ran get_md5=no
+    tags:
+      - voltdb_setup
+
+  - name: Run Part 1
+    command: /usr/bin/bash /home/ubuntu/bin/setup_part_1.sh 11.4
+    become_user: ubuntu
+    args: 
+      chdir: /home/ubuntu/bin
+    when: not part1_has_run.stat.exists
+    tags:
+      - voltdb_setup
+
+  - name: Reboot before running Part 2
+    become: true
+    reboot:
+      msg: "Reboot initiated by Ansible to prep for Part 2"
+      connect_timeout: 5
+      reboot_timeout: 300
+      pre_reboot_delay: 0
+      post_reboot_delay: 30
+      test_command: uptime
+      test_command: uptime
+    when: not part1_has_run.stat.exists
+    tags:
+      - voltdb_setup
+
+  # Run volt setup_part_2.sh
+  - name: Run Part 2
+    command: /usr/bin/bash /home/ubuntu/bin/setup_part_2.sh
+    become_user: ubuntu
+    args: 
+      chdir: /home/ubuntu/bin
+    when: not part2_has_run.stat.exists
+    tags:
+      - voltdb_setup
+
+  # Need to remove localhost from .vdbhostnames    
+  - name: Remove localhost from .vdbhostnames
+    lineinfile:
+    become_user: ubuntu
+    args: 
+      dest: .vdbhostnames
+      state: absent 
+      regexp: 'localhost'
+    tags:
+      - voltdb_setup
+
+  # Populate .vdbhostnames
+  - name: Populate .vdbhostnames
+    lineinfile:
+    become_user: ubuntu
+    args: 
+      dest: .vdbhostnames
+      line: '{{ item }}'
+    with_items:
+      - vbd-02
+      - vdb-03
+      - vdb-04
+      - vdb-05
+    tags:
+      - voltdb_setup
+
+
+
+###========================================= End Tasks =======================================###
+
+
+
+###========================= Stuff not Needed ============================###
+###--- Applications
+  
+ # - name: Clone Charging Demo
+ #   git: 
+ #     repo: "{{ charging_repo }}"
+ #     dest: "{{ demo_dir }}"
+ #     clone: yes
+ #     force: yes
+ #   #when: charging.stat.exists == false
+ #   tags:
+ #     - voltdb
+
+  # Not Building volt anymore
+  #- name: Build Voltdb
+  #  command: "{{ item }} chdir={{ voltdb_dir }}"
+  #  with_items:
+  #   - ant
+  #  tags:
+  #    - voltdb
+

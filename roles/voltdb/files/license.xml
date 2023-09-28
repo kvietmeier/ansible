@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<license>
+    <permit version="1" scheme="0">
+        <type>Enterprise Edition</type>
+        <issuer>
+            <company>VoltDB</company>
+            <email>support@voltdb.com</email>
+            <url>http://voltdb.com/</url>
+        </issuer>
+        <issuedate>2023-09-05</issuedate>
+        <licensee>Sandbox User</licensee>
+        <expiration>2024-02-01</expiration>
+        <hostcount max="9"/>
+        <features trial="true">
+            <wanreplication>true</wanreplication>
+            <dractiveactive>true</dractiveactive>
+        </features>
+        <note>FOR SANDBOX USE ONLY</note>
+    </permit>
+    <signature>
+        302C021450B22E9586432E46FF6E7DE638C8D5442AA8CE
+        66021464CAC4B48B0B5EDA2A7E692C51FAFB6148969177
+    </signature>
+</license>

@@ -1,0 +1,29 @@
+
+
+###--------------------------------
+### Added by Voltdb setup_part_1.sh
+
+VOLT_VERSION="11.4"
+JAVA_VERSION="jdk-11.0.4"
+
+PATH="${PATH}:${HOME}/voltdb-ent-${VOLT_VERSION}/bin:${HOME}/bin:${HOME}/bin/${JAVA_VERSION}/bin"
+
+JAVA_HOME=${HOME}/bin/${JAVA_VERSION}
+
+# Set VOLTDB_HEAPMAX
+VOLTDB_HEAPMAX=5000
+
+export VOLTDB_HEAPMAX VOLT_VERSION PATH JAVA_HOME
+
+# Set Java Params
+JAVA_MAJOR_VERSION=11
+export JAVA_MAJOR_VERSION
+
+if
+        [ "$JAVA_MAJOR_VERSION" -ge 11 ]
+then
+    JVMOPTS="--add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/sun.nio.ch=ALL-UNNAMED --add-opens java.base/java.net=ALL-UNNAMED --add-opens java.base/java.nio=ALL-UNNAMED"
+fi
+
+###--------------------------------
+
