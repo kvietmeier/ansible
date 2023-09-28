@@ -3,7 +3,7 @@
 #   Do some post install setup on Volt cluster nodes after an install with cloud-init
 #    * Recheck packages
 #    * Add a few we might have missed
-#    * Create some directories
+#    * Create some director
 #    * Fix the usetty issue
 #    * update the users .bashrc/.profile
 #    * copy over scripts we have customized
