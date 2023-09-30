@@ -31,7 +31,7 @@ MX=$2
 INC=$3
 USERCOUNT=$4
 DURATION=600
-JARDIR=$HOME/voltdb-charglt/jars
+JARDIR=${HOME}/voltdb-charglt/jars
 OUTPUTDIR=${HOME}/logs
 OUTPUTFILE=${OUTPUTDIR}/activity.log
 # the list of hosts needs to be comma seperated

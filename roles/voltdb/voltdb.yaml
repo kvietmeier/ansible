@@ -16,7 +16,7 @@
 #    * Can we run the init, setup, and start commands?
 ###
 
-- hosts: voltnodes
+- hosts: all
   remote_user: ubuntu
   ###==========================================  VARS  =========================================###
   vars:
@@ -339,7 +339,6 @@
       reboot_timeout: 300
       pre_reboot_delay: 0
       post_reboot_delay: 30
-      test_command: uptime
       test_command: uptime
     when: not part1_has_run.stat.exists
     tags:

@@ -22,18 +22,33 @@
 #  ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 #  OTHER DEALINGS IN THE SOFTWARE.
 
+###=======================================================================================###
+#   Modified for Azure by:
+#        Karl Vietmeier - Intel Cloud CSA
+###=======================================================================================###
+
 
 cd $HOME
-
 . ${HOME}/.profile
 
+# Vars
+log_dir="${HOME}/logs"
+volt_ver=11.4
+VDBHOSTS=$(tr '\n' ',' < ${HOME}/.vdbhostnames | sed 's/,$//')
+DEMODIR=${HOME}/voltdb-charglt
+BINDIR=${HOME}/voltdb-ent-${volt_ver}/bin/
 MOUNTPOINT=${HOME}
+
+# Setup hosts  (why??)
+origVDBHOSTS=`cat ${HOME}.vdbhosts`
+VDBHOSTNAMES=`cat ${HOME}/.vdbhostnames`
 
 # Check to see if we have the extra disks
 # /voltdbdata exists if we didn't have the extra disks when we ran setup
 if [ -d "/voltdbdata" ] ; then
    MOUNTPOINT=/voltdbdata
 fi
+
 
 # Setup logging
 mkdir -p ${MOUNTPOINT}/log
@@ -44,12 +59,6 @@ touch $LOGFILE
 # See if VoltDB already running...
 VRUN=`ps -deaf | grep org.voltdb.VoltDB | grep java | grep -v grep`
 
-# Setup hosts  (why??)
-VDBHOSTS=`cat ${HOME}.vdbhosts`
-VDBHOSTNAMES=`cat ${HOME}/.vdbhostnames`
-
-# AWS thing
-#THISHOST=`curl http://169.254.169.254/latest/meta-data/local-ipv4` 
 
 if [ -z ${VRUN} ] ; then
   echo `date` Not running... | tee -a  $LOGFILE

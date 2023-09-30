@@ -31,9 +31,15 @@
 cd $HOME
 . ${HOME}/.profile
 
-#$ Vars
+# Vars
 log_dir="${HOME}/logs"
-VOLT_VERSION=11.4
+volt_ver=11.4
+VDBHOSTS=$(tr '\n' ',' < ${HOME}/.vdbhostnames | sed 's/,$//')
+DEMODIR=${HOME}/voltdb-charglt
+BINDIR=${HOME}/voltdb-ent-${volt_ver}/bin/
+
+# See if VoltDB already running...
+VoltPID=$(ps -ef | grep voltdb | grep -v grep | grep -v voltdbprometheusbl | awk '{print $2 }')
 
 
 # Setup log dir
@@ -47,51 +53,49 @@ else
 fi
 
 
+
+
 # See if we need to re-do voltDB...
 #
+#if [ -r "${MOUNTPOINT}/jumpstart_needed.txt" ]
+#then
+#  echo `date` "Rebuilding VoltDB..." | tee -a $LOGFILE 
+#  sh ${HOME}/bin/voltdb_stop.sh | tee -a $LOGFILE 
+#  sh ${HOME}/bin/jumpstart_voltdb.sh NOSERVICE | tee -a $LOGFILE 
+#  sudo rm ${MOUNTPOINT}/jumpstart_needed.txt
+#fi
 
-if [ -r "${MOUNTPOINT}/jumpstart_needed.txt" ]
-then
-  echo `date` "Rebuilding VoltDB..." | tee -a $LOGFILE 
-  sh ${HOME}/bin/voltdb_stop.sh | tee -a $LOGFILE 
-  sh ${HOME}/bin/jumpstart_voltdb.sh NOSERVICE | tee -a $LOGFILE 
-  sudo rm ${MOUNTPOINT}/jumpstart_needed.txt
-fi
+if [ -z "$VoltPID" ] ; then
 
-
-# See if VoltDB already running...
-VRUN=$(ps -deaf | grep org.voltdb.VoltDB | grep java | grep -v grep)
-VDBHOSTS=$(cat ${HOME}/.vdbhostnames)
-
-if [ -z $VRUN ]
-then
-  # Don't use ntp on Azure - 
-  #echo `date` Checking NTP... | tee -a  $LOGFILE
-  #sh -x /home/ubuntu/bin/ntpfix.sh  | tee -a  $LOGFILE
   echo `date` Starting VoltDB... | tee -a  $LOGFILE
-  echo nohup voltdb start  --dir=${MOUNTPOINT}  --host=${VDBHOSTS}  | tee -a $LOGFILE 
-  nohup voltdb start  --dir=${MOUNTPOINT}  --host=${VDBHOSTS} >  $LOGFILE  2>&1  &
+  echo nohup ${BINDIR}/voltdb start  --dir=$DEMODIR --host=$VDBHOSTS | tee -a $LOGFILE 
+  nohup ${BINDIR}/voltdb start  --dir=$DEMODIR --host=$VDBHOSTS > $LOGFILE  2>&1  &
+  
   sleep 5
-  VRUN=`ps -deaf | grep org.voltdb.VoltDB | grep java | grep -v grep | awk '{ print $2}'`
-  echo $VRUN > ${HOME}/.voltdb.PID 		
+
+  VoltPID=$(ps -ef | grep voltdb | grep -v grep | grep -v voltdbprometheusbl | awk '{print $2 }')
+  echo $VoltPID > ${HOME}/.voltdb.PID 		
+
 else	
   echo `date` Already running... | tee -a  $LOGFILE
 fi
+
+#nohup /home/ubuntu/voltdb-ent-${volt_ver}/bin/voltdb start --dir=$DEMODIR --host=$VDBHOSTS > ${log_dir}/voltstart.out 2> ${log_dir}/voltstart.err < /dev/null &
+
 
 #
 # See if we need to start new relic
 #
 
-if [ -r ${HOME}/voltdb*${VOLT_VERSION}/tools/monitoring/newrelic/config/newrelic.properties ]
+if [ -r ${HOME}/voltdb-ent-${volt_ver}/tools/monitoring/newrelic/config/newrelic.properties ]
 then
-  NR=$(ps -deaf | grep voltdb-newrelic | grep -v grep | awk ' {print $2} ')
+  NR=$(ps -deaf | grep voltdb-newrelic | grep -v grep | awk '{print $2}')
 
-  if [ -z $NR ]
-  then
-    cd ${HOME}/voltdb*${VOLT_VERSION}/tools/monitoring/newrelic
-    nohup ./voltdb-newrelic   | tee -a  $LOGFILE &
+  if [ -z "$NR" ] ; then
+    cd ${HOME}/voltdb-ent-${volt_ver}/tools/monitoring/newrelic
+    nohup ./voltdb-newrelic | tee -a  $LOGFILE &
   else
-    echo "new relic running PID $NR" | tee -a  $LOGFILE
+    echo "new relic running PID: $NR" | tee -a  $LOGFILE
   fi
 
 else
