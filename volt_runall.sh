@@ -17,17 +17,32 @@ volt_host="vdb-02,vdb-03,vdb-04,vdb-05"
 
 ###---- Functions
 function playbooks () {
+  echo ""
+  echo "###====================================###"
+  echo "    Running Database Node Playbook"
+  echo "###====================================###"
+  echo ""
   # First step - install binaries etc.
   ansible-playbook --limit voltnodes -i $inventory $playbook
   sleep 5
 
   # Setup mgmt host
+  echo ""
+  echo "###====================================###"
+  echo "    Running Management Node Playbook"
+  echo "###====================================###"
+  echo ""
   ansible-playbook --limit voltmgmt $playbook --tags=git,apt,system,userenv,copy_files
   sleep 5
 }
 
 function init () {
   # Initialize database
+  echo ""
+  echo "###====================================###"
+  echo "    Initializing Databases"
+  echo "###====================================###"
+  echo ""
   ansible voltnodes -i $inventory -m shell -a "/home/ubuntu/voltdb-ent-${volt_ver}/bin/voltdb init --dir=~/chargingdb --config=~/demo_cluster_config.xml --license=~/license.xml --force" --become-user ubuntu
 }
 
@@ -36,6 +51,11 @@ sleep 10
 function start_volt () {
   # Start DB nodes in sequence with Ansible
   # This does not check for already running instances
+  echo ""
+  echo "###====================================###"
+  echo "    Starting Databases"
+  echo "###====================================###"
+  echo ""
 
   for node in 2 3 4 5 ; do	 
     # This works - need both nohup and move & to the end

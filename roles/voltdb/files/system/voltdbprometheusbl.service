@@ -1,0 +1,15 @@
+[Unit]
+Description=VoltDB Prometheus BL
+After=voltdb-service
+[Service]
+Type=forking
+PIDFile=/home/ubuntu/.voltdbprometheusbl.PID
+Restart=always
+RestartSec=30
+TimeoutStartSec=300
+User=ubuntu
+ExecStart=/home/ubuntu/bin/voltdbprometheusbl_start.sh
+ExecStop=/home/ubuntu/bin/voltdbprometheusbl_stop.sh
+
+[Install]
+WantedBy=multi-user.target

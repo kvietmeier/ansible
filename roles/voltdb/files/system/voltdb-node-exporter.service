@@ -1,0 +1,14 @@
+[Unit]
+Description=VoltDB Node Exporter
+After=voltdb-service
+[Service]
+Type=forking
+PIDFile=/home/ubuntu/.voltdbnodeexporter.PID
+Restart=always
+RestartSec=30
+TimeoutStartSec=300
+User=ubuntu
+ExecStart=/home/ubuntu/bin/node_exporter-1.1.2.linux-amd64/node_exporter
+
+[Install]
+WantedBy=multi-user.target

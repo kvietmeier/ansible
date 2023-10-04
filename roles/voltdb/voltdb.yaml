@@ -36,6 +36,9 @@
     # Charging demo repo
     charging_repo: https://github.com/srmadscience/voltdb-charglt
 
+    # My scripts repo
+    scripts_repo: https://github.com/kvietmeier/scripts.git
+
     # Modified files to copy over from $HOME/bin
     SetupFiles:
       - ntpfix.sh
@@ -47,6 +50,7 @@
       - reinit_voltdb.sh
       - waituntilclustersizeisx.sh
       - setup_runoncepercluster.sh
+      - reload_dashboards.sh
     # Database Hosts
     volt_hosts:
       - vdb-02

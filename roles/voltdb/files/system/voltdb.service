@@ -1,0 +1,15 @@
+[Unit]
+Description=VoltDB
+After=network.target
+[Service]
+Type=forking
+PIDFile=/home/ubuntu/.voltdb.PID
+Restart=always
+RestartSec=30
+TimeoutStartSec=300
+User=ubuntu
+ExecStart=/home/ubuntu/bin/voltdb_start.sh
+ExecStop=/home/ubuntu/bin/voltdb_stop.sh
+
+[Install]
+WantedBy=multi-user.target

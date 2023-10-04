@@ -22,6 +22,12 @@
 #  ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 #  OTHER DEALINGS IN THE SOFTWARE.
 
+###=======================================================================================###
+#   Modified for Azure by:
+#        Karl Vietmeier - Intel Cloud CSA
+###=======================================================================================###
+
+
 
 . $HOME/.profile
 
@@ -36,6 +42,11 @@ OUTPUTDIR=${HOME}/logs
 OUTPUTFILE=${OUTPUTDIR}/activity.log
 # the list of hosts needs to be comma seperated
 HOSTS=$(tr '\n' ',' < ../../.vdbhostnames | sed 's/,$//')
+
+# Logging directory for output
+if [ ! -d $OUTPUTDIR ] ; then
+  mkdir $OUTPUTDIR 2> /dev/null
+fi
 
 # Just to be sure
 cd $JARDIR
@@ -66,13 +77,8 @@ function killbench () {
     PID=$(ps -deaf | grep ChargingDemoTransactions.jar  | grep -v grep | awk '{ print $2 }')
   done
 }
-
 ### End Functions
 
-# Logging directory for output
-if [ ! -d $OUTPUTDIR ] ; then
-  mkdir $OUTPUTDIR 2> /dev/null
-fi
 
 # Use function to silently kill off any copy that is currently running...
 killbench
