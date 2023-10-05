@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/bin/bash
 ###=======================================================================================###
 #   First setup script for creating a VoltDB image 
 ###=======================================================================================###
@@ -30,9 +30,10 @@ cd "$(dirname "${BASH_SOURCE[0]}")"
 ### Set parameters
 # Hard coded to versions in the bin directory
 # Could I use 11.0.11?
-JAVA_BUILD_VERSION=jdk-11.0.4
+JAVA_BUILD_VERSION="jdk-11.0.4"
 JAVA_FILE_VERSION=${JAVA_BUILD_VERSION}_linux-x64
-VOLT_VERSION=11.4
+VOLT_VERSION="11.4"
+Kafka_Ver="2.13-2.6.0"
 
 # Azure nvme drives
 disk1="nvme0n2"
@@ -48,17 +49,15 @@ eth0IP=$(ip -4 -o addr show dev eth0| awk '{split($4,a,"/");print a[1]}')
 #	exit 1
 #fi
 
-export eth0IP Volt_VERSION JAVA_BUILD_VERSION JAVA_FILE_VERSION
+export eth0IP Volt_VERSION JAVA_BUILD_VERSION JAVA_FILE_VERSION Kafka_Ver
+export disk1 disk2 data_mnt
 
 ###---- Check Java version
 if 
 	[ ! -d ${JAVA_BUILD_VERSION} ]
 then
-	gunzip ${JAVA_FILE_VERSION}_bin.tar.gz
-	tar xf ${JAVA_FILE_VERSION}_bin.tar
-	gzip ${JAVA_FILE_VERSION}_bin.tar
+	tar xzf ${JAVA_FILE_VERSION}_bin.tar.gz
 fi
-
 
 
 ###====================================== Functions ============================================###
@@ -81,9 +80,11 @@ function setup_grafana () {
 	sudo cp prometheus_datasource.yaml /etc/grafana/provisioning/datasources
 	sudo chgrp grafana /etc/grafana/provisioning/dashboards/grafana_dashboard_signpost.yaml
 	sudo chgrp grafana /etc/grafana/provisioning/datasources/prometheus_datasource.yaml
-	sudo /bin/systemctl daemon-reload
-	sudo /bin/systemctl enable grafana-server
-	sudo /bin/systemctl start grafana-server
+	
+	# We only need it running on the "mgmt server" - we can statt it with Ansible later
+	#sudo /bin/systemctl daemon-reload
+	#sudo /bin/systemctl enable grafana-server
+	#sudo /bin/systemctl start grafana-server
 
 	###---- End Grafana
 }
@@ -110,10 +111,12 @@ function setup_env () {
 
 }
 
-
 function setup_system () {
-
-	sudo cp rc.local /etc/rc.local
+    ###---- Setup system tuning and apps
+    
+	# Why?  No need to rerun checkforssd.sh every time - afte first time they are in/etc/fstab
+	# And we are using systemd anyway.
+	#sudo cp rc.local /etc/rc.local
 	
 	# Disable THP (really don't need this - it is already done)
 	sudo bash -c "echo never >/sys/kernel/mm/transparent_hugepage/enabled"
@@ -127,11 +130,15 @@ function setup_system () {
 	done
 
 	# untar kafka
-	if [ ! -d "kafka_2.13-2.6.0" ] ; then
- 	  tar -xzf kafka_2.13-2.6.0.tgz
-	  cp kafka_server.properties kafka_2.13-2.6.0/config/server.properties
+	if [ ! -d "kafka_${Kafka_Ver}" ] ; then
+ 	  tar -xzf kafka_${Kafka_Ver}.tgz
+	  cp kafka_server.properties kafka_${Kafka_Ver}/config/server.properties
 	  #mkdir /voltdbdata/kafka
 	fi
+
+	###---- Call filesystem.sh to setup external disks
+	sudo bash ./filesystem.sh ${disk1} ${data_mnt}1
+	sudo bash ./filesystem.sh ${disk2} ${data_mnt}2
 
 	# services that start disabled
 	for i in grafana-server 
@@ -139,21 +146,17 @@ function setup_system () {
 	  sudo systemctl disable ${i}.service
     done
 
+	sleep 10
+	
 }
 
 ###================================== End Functions ============================================###
 
 
-###---- Call filesystem.sh
-# Why not use checkforssd?  Looks like it is the same thing.
-sudo bash ./filesystem.sh ${disk1} ${data_mnt}1
-sudo bash ./filesystem.sh ${disk2} ${data_mnt}2
-
-sleep 10
 
 
 ###---- Set up local prometheus
-bash prometheusserver_configure.sh
+#bash prometheusserver_configure.sh
 
 
 ### - don't understand why this is here?
@@ -171,8 +174,7 @@ bash prometheusserver_configure.sh
 #sudo rm /lib/systemd/system/prometheus-node-exporter.service
 
 
-
-# Run functions
+###---- Run functions
 setup_grafana
 setup_env
 setup_system
