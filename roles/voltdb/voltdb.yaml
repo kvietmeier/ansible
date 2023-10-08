@@ -265,6 +265,33 @@
       - git
 
 
+  # Need to remove localhost from .vdbhostnames    
+  - name: Remove localhost from .vdbhostnames
+    lineinfile:
+    become_user: ubuntu
+    args: 
+      dest: .vdbhostnames
+      state: absent 
+      regexp: 'localhost'
+    tags:
+      - userenv
+
+  # Populate .vdbhostnames
+  - name: Populate .vdbhostnames
+    lineinfile:
+    become_user: ubuntu
+    args: 
+      dest: .vdbhostnames
+      line: '{{ item }}'
+    with_items:
+      - vbd-02
+      - vdb-03
+      - vdb-04
+      - vdb-05
+    tags:
+      - userenv
+
+
   ###--- Misc Cleanup
   # TBD  
   - name: Get rid of ubuntu login splash
@@ -358,34 +385,9 @@
     tags:
       - voltdb_setup
 
-  # Need to remove localhost from .vdbhostnames    
-  - name: Remove localhost from .vdbhostnames
-    lineinfile:
-    become_user: ubuntu
-    args: 
-      dest: .vdbhostnames
-      state: absent 
-      regexp: 'localhost'
-    tags:
-      - voltdb_setup
-
-  # Populate .vdbhostnames
-  - name: Populate .vdbhostnames
-    lineinfile:
-    become_user: ubuntu
-    args: 
-      dest: .vdbhostnames
-      line: '{{ item }}'
-    with_items:
-      - vbd-02
-      - vdb-03
-      - vdb-04
-      - vdb-05
-    tags:
-      - voltdb_setup
-
-  
   ###======================== End VoltDB Setup Section ==========================###
+
+
 
 
 ###========================================= End Tasks =======================================###

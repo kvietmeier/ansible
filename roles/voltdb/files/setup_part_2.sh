@@ -31,7 +31,7 @@ cd "$(dirname "${BASH_SOURCE[0]}")"
 
 MOUNTPOINT=$HOME
 
-# If you don't have the 2 extra disks put everything $HOME
+# If you don't have the 2 extra disks put everything in $HOME
 if [ -d "/voltdbdata" ]
 then
   MOUNTPOINT=/voltdbdata
@@ -50,64 +50,83 @@ then
 	MOUNTPOINT_SSD2="/voltdbdatassd2"
 fi
 
-###--- Remove pre-existing/running VoltDB - why is running?
-# Grab the PID
-VRUN=`ps -deaf | grep org.voltdb.VoltDB | grep java | grep -v grep | awk '{ print $2}'`
 
-if [ "$VRUN" != "" ]
-then
-	kill -9 $VRUN
-fi
+###====================================== Functions ============================================###
+###                                                                                             ###
 
-# Cleanup folders
-if [ -d "${MOUNTPOINT}/voltdbroot" ]
-then
-	sudo chown -R ${USER}:${USER} ${MOUNTPOINT}/voltdbroot
-	find ${MOUNTPOINT}/voltdbroot -xdev -mindepth 1 -delete
-fi
+function kill_volt () {
+  ###--- Remove pre-existing/running VoltDB - why is running?
+  # Grab the PID
+  VPID=`ps -deaf | grep org.voltdb.VoltDB | grep java | grep -v grep | awk '{ print $2}'`
 
-if [ -d "${MOUNTPOINT_SSD1}/voltdbroot" ]
-then
-	sudo chown -R ${USER}:${USER} ${MOUNTPOINT_SSD1}/voltdbroot
-	find ${MOUNTPOINT_SSD1}/voltdbroot -xdev -mindepth 1 -delete
-fi
+  if [ "$PID" != "" ]
+  then
+	  kill -9 $VPID
+  fi
 
-if [ -d "${MOUNTPOINT_SSD2}/voltdbroot" ]
-then
-	sudo chown -R ${USER}:${USER} ${MOUNTPOINT_SSD2}/voltdbroot
-	find ${MOUNTPOINT_SSD2}/voltdbroot -xdev -mindepth 1 -delete
-fi
+}
 
-# Fix topics_data issue - see ENG-21379
-mkdir ${MOUNTPOINT_SSD2}/voltdbroot/topics_data 2> /dev/null
-rm -rf ${HOME}/voltdbroot/topics_data
-ln -s ${MOUNTPOINT_SSD2}/voltdbroot/topics_data ${HOME}/voltdbroot/topics_data
+function clean_up () {
+  # Cleanup folders - not sure why we do this but hey - why not?
+  if [ -d "${MOUNTPOINT}/voltdbroot" ] ; then
+  	sudo chown -R ${USER}:${USER} ${MOUNTPOINT}/voltdbroot
+	  find ${MOUNTPOINT}/voltdbroot -xdev -mindepth 1 -delete
+  fi
 
+  if [ -d "${MOUNTPOINT_SSD1}/voltdbroot" ] ; then
+	  sudo chown -R ${USER}:${USER} ${MOUNTPOINT_SSD1}/voltdbroot
+	  find ${MOUNTPOINT_SSD1}/voltdbroot -xdev -mindepth 1 -delete
+  fi
 
-# Settings for a default XML config file
-SITESPERHOST=8
-CMDLOGDIR=${MOUNTPOINT}/voltdbroot/cmdlog
-PASSWD=admin
-KFACTOR=0
-CMDLOGGING=true
-CMDLOG_DIR=${MOUNTPOINT_SSD1}/voltdbroot/cmdlog
-SNAPSHOT_DIR=${MOUNTPOINT_SSD2}/voltdbroot/snapshot
-AUTOSNAPSHOT_DIR=${MOUNTPOINT_SSD2}/voltdbroot/snapshots
+  if [ -d "${MOUNTPOINT_SSD2}/voltdbroot" ] ; then
+	  sudo chown -R ${USER}:${USER} ${MOUNTPOINT_SSD2}/voltdbroot
+	  find ${MOUNTPOINT_SSD2}/voltdbroot -xdev -mindepth 1 -delete
+  fi
 
-# Create the folders we need:
-mkdir -p $CMDLOG_DIR 2> /dev/null
-mkdir -p $SNAPSHOT_DIR 2> /dev/null
+  # Fix topics_data issue - see ENG-21379
+  mkdir ${MOUNTPOINT_SSD2}/voltdbroot/topics_data 2> /dev/null
+  rm -rf ${HOME}/voltdbroot/topics_data
+  ln -s ${MOUNTPOINT_SSD2}/voltdbroot/topics_data ${HOME}/voltdbroot/topics_data
 
-# Go ahead and create a sample XML file.
-cat single_instance_config.xml | sed '1,$s/'PARAM_PASSWORD'/'${PASSWD}'/g' \
-       | sed '1,$s/'PARAM_KFACTOR'/'${KFACTOR}'/g' \
-       | sed '1,$s/'PARAM_CMDLOG_ENABLED'/'${CMDLOGGING}'/g' \
-       | sed '1,$s/'PARAM_SYNC'/'false'/g' \
-       | sed '1,$s/'PARAM_SITESPERHOST'/'${SITESPERHOST}'/g' \
-       | sed '1,$s_'PARAMCMDLOGDIR'_'${CMDLOG_DIR}'_g' \
-       | sed '1,$s_'PARAMCMDSNAPSHOTDIR'_'${SNAPSHOT_DIR}'_g' \
-       | sed '1,$s_'PARAMAUTOSNAPSHOTDIR'_'${AUTOSNAPSHOT_DIR}'_g' \
-       > $MOUNTPOINT/voltdbroot/config.xml
+}
+
+function create_config () {
+  ###---- Create the default cluster configuration XML file.
+
+  # Settings for a default XML config file
+  SITESPERHOST=8
+  CMDLOGDIR=${MOUNTPOINT}/voltdbroot/cmdlog
+  PASSWD=admin
+  KFACTOR=0
+  CMDLOGGING=true
+  CMDLOG_DIR=${MOUNTPOINT_SSD1}/voltdbroot/cmdlog
+  SNAPSHOT_DIR=${MOUNTPOINT_SSD2}/voltdbroot/snapshot
+  AUTOSNAPSHOT_DIR=${MOUNTPOINT_SSD2}/voltdbroot/snapshots
+
+  # Create the folders we need:
+  mkdir -p $CMDLOG_DIR 2> /dev/null
+  mkdir -p $SNAPSHOT_DIR 2> /dev/null
+
+  # Go ahead and create a sample XML file.
+  cat single_instance_config.xml | sed '1,$s/'PARAM_PASSWORD'/'${PASSWD}'/g' \
+    | sed '1,$s/'PARAM_KFACTOR'/'${KFACTOR}'/g' \
+    | sed '1,$s/'PARAM_CMDLOG_ENABLED'/'${CMDLOGGING}'/g' \
+    | sed '1,$s/'PARAM_SYNC'/'false'/g' \
+    | sed '1,$s/'PARAM_SITESPERHOST'/'${SITESPERHOST}'/g' \
+    | sed '1,$s_'PARAMCMDLOGDIR'_'${CMDLOG_DIR}'_g' \
+    | sed '1,$s_'PARAMCMDSNAPSHOTDIR'_'${SNAPSHOT_DIR}'_g' \
+    | sed '1,$s_'PARAMAUTOSNAPSHOTDIR'_'${AUTOSNAPSHOT_DIR}'_g' \
+    > $MOUNTPOINT/voltdbroot/config.xml
+
+}
+
+###================================== End Functions ============================================###
+
+###---- Run functions
+kill_volt
+clean_up
+create_config
+
 
 # Need this?
 rm $HOME/voltdb_crash*txt 2> /dev/null

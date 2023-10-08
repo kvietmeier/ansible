@@ -35,7 +35,11 @@ JAVA_FILE_VERSION=${JAVA_BUILD_VERSION}_linux-x64
 VOLT_VERSION="11.4"
 Kafka_Ver="2.13-2.6.0"
 
-# Azure nvme drives
+# Are we using Azure nvme controller or regular sd controller?
+# sd_drives will always have one drive in it, if not using NVME, nvme_drives wil be empty
+nvme_drives=($(ls -l /dev/disk/by-path | grep nvme | grep -v part | awk '{print substr($11, 7)}' | sort))
+sd_drives=($(ls -l /dev/disk/by-path | grep sd | grep -v part | awk '{print substr($11, 7)}' | sort))
+
 disk1="nvme0n2"
 disk2="nvme0n3"
 data_mnt="/voltdbdatassd"
@@ -64,7 +68,7 @@ fi
 ###                                                                                             ###
 
 function setup_grafana () {
-	###---- Only run on mgmt server!  Don't need on every system.
+	###---- Only run on Grafana on mgmt server!  Don't need on every system.
 	###---- Add Grafana Repo and setup dashboards
 
 	wget -q -O - https://packages.grafana.com/gpg.key | sudo apt-key add -
@@ -73,7 +77,7 @@ function setup_grafana () {
 	sudo apt update
 	sudo apt-get install -y grafana
 
-	# Configure and start Grafana service
+	# Configure the Grafana service
 	sudo cp grafana_dashboard_signpost.yaml /etc/grafana/provisioning/dashboards
 	sudo cp -r ${HOME}/bin/dashboards/* /etc/dashboards
 	sudo find /etc/dashboards -exec chgrp grafana {} \;
@@ -81,7 +85,7 @@ function setup_grafana () {
 	sudo chgrp grafana /etc/grafana/provisioning/dashboards/grafana_dashboard_signpost.yaml
 	sudo chgrp grafana /etc/grafana/provisioning/datasources/prometheus_datasource.yaml
 	
-	# We only need it running on the "mgmt server" - we can statt it with Ansible later
+	# We only need it running on the "mgmt server" - we can start it with Ansible later
 	#sudo /bin/systemctl daemon-reload
 	#sudo /bin/systemctl enable grafana-server
 	#sudo /bin/systemctl start grafana-server
@@ -94,7 +98,7 @@ function setup_env () {
 	
 	echo $eth0IP >> $HOME/.vdbhosts
 
-	# VDB hostnames
+	# VDB hostnames - localhost as default
 	echo "localhost" > $HOME/.vdbhostnames
 
 	# Record default clusterid = 0
@@ -104,11 +108,12 @@ function setup_env () {
 	HASVOLT=$(grep voltdb $HOME/.profile)
 
 	if [ -z $HASVOLT ] ; then
-      cat ${HOME}/bin/extra_profile | sed '1,$s/PARAM_VOLTDB_VERSION/'$1'/g' | sed '1,$s/PARAM_JAVA_VERSION/'${JAVA_BUILD_VERSION}'/g' >> $HOME/.profile
+      cat ${HOME}/bin/extra_profile | sed '1,$s/PARAM_VOLTDB_VERSION/'${VOLT_VERSION}'/g' | sed '1,$s/PARAM_JAVA_VERSION/'${JAVA_BUILD_VERSION}'/g' >> $HOME/.profile
     else
       cat ${HOME}/bin/extra_profile | sed '1,$s/PARAM_VOLTDB_VERSION/'${VOLT_VERSION}'/g' | sed '1,$s/PARAM_JAVA_VERSION/'${JAVA_BUILD_VERSION}'/g' >> $HOME/.profile
     fi
 
+	###---- End Environment
 }
 
 function setup_system () {
@@ -148,36 +153,37 @@ function setup_system () {
 
 	sleep 10
 	
+	###---- End System
 }
 
+
+function setup_prometheus () {
+	###---- This isn't needed at all - we just need node exporter which is already there ----###
+	
+	###---- Set up local prometheus
+	bash prometheusserver_configure.sh
+
+
+	### - don't understand why this is here?
+	## Set up node_exporter
+	tar xzf node_exporter-1.1.2.linux-amd64.tar.gz
+
+	## Disable node_exporter as it's broken.
+	sudo service prometheus-node-exporter stop
+	sudo rm /etc/systemd/system/multi-user.target.wants/prometheus-node-exporter.service
+	sudo rm /lib/systemd/system/prometheus-node-exporter.service
+	
+	###---- End Promtheus
+}
+
+
 ###================================== End Functions ============================================###
-
-
-
-
-###---- Set up local prometheus
-#bash prometheusserver_configure.sh
-
-
-### - don't understand why this is here?
-## Set up node_exporter
-##
-#gunzip node_exporter-1.1.2.linux-amd64.tar.gz
-#tar xvf node_exporter-1.1.2.linux-amd64.tar
-#gzip  node_exporter-1.1.2.linux-amd64.tar
-
-##
-## Disable node_exporter as it's broken.
-##
-#sudo service prometheus-node-exporter stop
-#sudo rm /etc/systemd/system/multi-user.target.wants/prometheus-node-exporter.service
-#sudo rm /lib/systemd/system/prometheus-node-exporter.service
-
 
 ###---- Run functions
 setup_grafana
 setup_env
 setup_system
+#setup_prometheus
 
 
 # So we can skip running it again with Ansible
