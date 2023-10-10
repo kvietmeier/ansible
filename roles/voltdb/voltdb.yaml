@@ -217,7 +217,6 @@
   #    - userenv
   
 
-  
   ###--- Setup .gitconfig https://docs.ansible.com/ansible/latest/collections/community/general/git_config_module.html
   - name: Add user.name to ~/.gitconfig
     become_user: ubuntu
@@ -270,6 +269,7 @@
     lineinfile:
     become_user: ubuntu
     args: 
+      create: true
       dest: .vdbhostnames
       state: absent 
       regexp: 'localhost'
@@ -281,13 +281,11 @@
     lineinfile:
     become_user: ubuntu
     args: 
+      create: true
       dest: .vdbhostnames
       line: '{{ item }}'
     with_items:
-      - vbd-02
-      - vdb-03
-      - vdb-04
-      - vdb-05
+      - "{{ volt_hosts }}"
     tags:
       - userenv
 
