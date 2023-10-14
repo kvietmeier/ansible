@@ -50,6 +50,16 @@ then
 	MOUNTPOINT_SSD2="/voltdbdatassd2"
 fi
 
+# Settings for a default XML config file
+SITESPERHOST=8                             # Adjust based on number of vCPU
+CMDLOGDIR=${MOUNTPOINT}/voltdbroot/cmdlog
+PASSWD=admin
+KFACTOR=1                                  # We are creating clusters - set to 0 for single node
+CMDLOGGING=true
+CMDLOG_DIR=${MOUNTPOINT_SSD1}/voltdbroot/cmdlog
+SNAPSHOT_DIR=${MOUNTPOINT_SSD2}/voltdbroot/snapshot
+AUTOSNAPSHOT_DIR=${MOUNTPOINT_SSD2}/voltdbroot/snapshots
+
 
 ###====================================== Functions ============================================###
 ###                                                                                             ###
@@ -92,17 +102,7 @@ function clean_up () {
 
 function create_config () {
   ###---- Create the default cluster configuration XML file.
-
-  # Settings for a default XML config file
-  SITESPERHOST=8
-  CMDLOGDIR=${MOUNTPOINT}/voltdbroot/cmdlog
-  PASSWD=admin
-  KFACTOR=0
-  CMDLOGGING=true
-  CMDLOG_DIR=${MOUNTPOINT_SSD1}/voltdbroot/cmdlog
-  SNAPSHOT_DIR=${MOUNTPOINT_SSD2}/voltdbroot/snapshot
-  AUTOSNAPSHOT_DIR=${MOUNTPOINT_SSD2}/voltdbroot/snapshots
-
+  
   # Create the folders we need:
   mkdir -p $CMDLOG_DIR 2> /dev/null
   mkdir -p $SNAPSHOT_DIR 2> /dev/null
@@ -116,7 +116,7 @@ function create_config () {
     | sed '1,$s_'PARAMCMDLOGDIR'_'${CMDLOG_DIR}'_g' \
     | sed '1,$s_'PARAMCMDSNAPSHOTDIR'_'${SNAPSHOT_DIR}'_g' \
     | sed '1,$s_'PARAMAUTOSNAPSHOTDIR'_'${AUTOSNAPSHOT_DIR}'_g' \
-    > $MOUNTPOINT/voltdbroot/config.xml
+    > $MOUNTPOINT/cluster_config.xml
 
 }
 
@@ -135,6 +135,7 @@ rm $HOME/voltdb_crash*txt 2> /dev/null
 # We don't need to start/init the database automatically, especially if creating an AMI/VHDX
 # Have that be part of initializing the DB - maybe a wrapper that creates a startup script 
 # with the correct parameters?
+# can probalby remove this - already done in part 1
 ###
 sudo systemctl stop voltdb
 sudo systemctl disable voltdb

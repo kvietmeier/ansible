@@ -1,4 +1,4 @@
-#!//usr/bin/bash
+#!/usr/bin/bash
 
 # This file is part of VoltDB.
 #  Copyright (C) 2008-2020 VoltDB Inc.
@@ -50,6 +50,7 @@ PROMSERVER_PORT=9090
 
 MYCLUSTERID=$(cat ${HOME}/.voltclusterid)
 VOLTHOSTS=$(cat ${HOME}/.vdbhostnames)
+HOSTS=$(tr '\n' ',' < ../../.vdbhostnames | sed 's/,$//')
 LOGDIR=${HOME}/logs
 
 # Does the list of hosts needs to be comma seperated

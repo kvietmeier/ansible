@@ -16,6 +16,7 @@ start_cmd="nohup $volt_bin start --dir=${demo_dir} --host=${volt_host} > $HOME/v
 volt_host="vdb-02,vdb-03,vdb-04,vdb-05"
 
 ###---- Functions
+# Using tags in Playbook to break up tasksd for hosts.
 function playbooks () {
   echo ""
   echo "###====================================###"
@@ -23,7 +24,7 @@ function playbooks () {
   echo "###====================================###"
   echo ""
   # First step - install binaries etc.
-  ansible-playbook --limit voltnodes -i $inventory $playbook
+  ansible-playbook --limit voltnodes -i $inventory $playbook --tags=apt,system,userenv,git,ssh_setup,copy_files,voltdb_setup
   sleep 5
 
   # Setup mgmt host
@@ -32,7 +33,7 @@ function playbooks () {
   echo "    Running Management Node Playbook"
   echo "###====================================###"
   echo ""
-  ansible-playbook --limit voltmgmt $playbook --tags=git,apt,system,userenv,copy_files
+  ansible-playbook --limit voltmgmt $playbook --tags=apt,system,userenv,git,copy_files,mgmt_host,ssh_setup
   sleep 5
 }
 
@@ -70,6 +71,6 @@ function start_volt () {
 
 
 # Call functions
-playbooks
+#playbooks
 init
-start_volt
+#start_volt

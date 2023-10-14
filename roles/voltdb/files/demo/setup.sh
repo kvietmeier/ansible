@@ -31,9 +31,9 @@
 #
 #   Run this before using the benchmraking scripts - it:
 #    * Imports a Charging DB schema  
-#    * Creates 40K users
+#    * Creates 4M users
 #    * Extends it somehow
-#    * Importas a bunch of data
+#    * Imports a bunch of data
 #
 ###===============================================================================###
 

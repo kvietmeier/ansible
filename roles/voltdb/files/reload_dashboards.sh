@@ -25,14 +25,20 @@
 ###=======================================================================================###
 #   Modified for Azure by:
 #        Karl Vietmeier - Intel Cloud CSA
+#
+#   Called from the Charging Demo setup.sh script - resets the Dashboards to 0.
+#   
+#   Usage:  reload_dashboards.sh /home/ubuntu/voltdb-charglt/scripts/ChargeLt.json
+#
 ###=======================================================================================###
-
 
 
 # Setup the Grafana dashboards for the benchmarks
 etc_dash_dir="/etc/dashboards"
 volt_dash_dir="${HOME}/bin/dashboards"
 
+# Stop Grafana
+sudo systemctl stop grafana-server
 
 # Were we called from the Charging Demo setup script
 # If so - copy the Charging Demo dashboards to the Volt bin_dir
@@ -57,6 +63,6 @@ sudo cp -r  ${volt_dash_dir}/* $etc_dash_dir
 sudo find $etc_dash_dir -exec chgrp grafana {} \;
 
 
-# Stop and start Grafana
-sudo /bin/systemctl stop grafana-server
-sudo /bin/systemctl start grafana-server
+# Start Grafana back up with new dashboards
+sudo systemctl daemon-reload
+sudo systemctl start grafana-server
