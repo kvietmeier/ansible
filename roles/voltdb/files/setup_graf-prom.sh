@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/bash
 ###=======================================================================================###
 #   Setup script for  Grafana and Prometheus - extracted from setup_part1
 ###=======================================================================================###
@@ -10,6 +10,7 @@
 #	Related/Required scripts/files:
 #		* grafana_dashboard_signpost.yaml
 #		* prometheus_datasource.yaml
+#       * prometheusserver_configure.sh
 #
 #   Modified for Azure by:
 #        Karl Vietmeier - Intel Cloud CSA
@@ -21,11 +22,16 @@
 # Make sure we are running in the right dir....
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
-### Set parameters
+###--- Vars
+src_dashboard_dir=${HOME}/bin/dashboards
+tgt_dashboard_dir=/etc/grafana/provisioning/dashboards
+tgt_data_dir=/etc/grafana/provisioning/datasources
 
-
-# Need this for .vdbhosts
+# Need these for .vdbhosts and .clusterid
 eth0IP=$(ip -4 -o addr show dev eth0| awk '{split($4,a,"/");print a[1]}')
+clusterid="0"
+
+
 
 ###====================================== Functions ============================================###
 ###                                                                                             ###
@@ -35,6 +41,14 @@ function setup_grafana () {
 	###---- Only run on Grafana on mgmt server!  Don't need on every system.
 	###---- Add Grafana Repo and setup dashboards
 
+	echo ""
+	echo "Installing Grafana"   
+	echo ""
+
+	# Need for config - 
+	echo $eth0IP > $HOME/.vdbhosts
+	echo $clusterid > $HOME/.voltclusterid
+    
 	# Install Grafana
 	wget -q -O - https://packages.grafana.com/gpg.key | sudo apt-key add -
 	echo "deb https://packages.grafana.com/oss/deb stable main" | sudo tee -a /etc/apt/sources.list.d/grafana.list
@@ -42,12 +56,12 @@ function setup_grafana () {
 	sudo apt-get install -y grafana
 
 	# Configure the Grafana service
-	sudo cp grafana_dashboard_signpost.yaml /etc/grafana/provisioning/dashboards
-	sudo cp -r ${HOME}/bin/dashboards/* /etc/dashboards
-	sudo find /etc/dashboards -exec chgrp grafana {} \;
-	sudo cp prometheus_datasource.yaml /etc/grafana/provisioning/datasources
-	sudo chgrp grafana /etc/grafana/provisioning/dashboards/grafana_dashboard_signpost.yaml
-	sudo chgrp grafana /etc/grafana/provisioning/datasources/prometheus_datasource.yaml
+	sudo cp grafana_dashboard_signpost.yaml $tgt_dashboard_dir
+	sudo cp -r ${src_dashboard_dir}/* $tgt_dashboard_dir
+	sudo find $tgt_dashboard_dir -exec chgrp grafana {} \;
+	sudo cp prometheus_datasource.yaml $tgt_data_dir
+	sudo chgrp grafana ${tgt_dashboard_dir}/grafana_dashboard_signpost.yaml
+	sudo chgrp grafana ${tgt_data_dir}/prometheus_datasource.yaml
 	
 	# Start/Enable the service
 	sudo /bin/systemctl daemon-reload
@@ -59,10 +73,13 @@ function setup_grafana () {
 
 function setup_prometheus () {
  
+	echo ""
+	echo "Installing Prometheus"   
+	echo ""
+	
 	###---- Set up local prometheus server
 	bash prometheusserver_configure.sh
 
- 
 	## Disable node_exporter don't need it on mgmt server.
 	sudo systemctl stop prometheus-node-exporter
 	sudo systemctl disable prometheus-node-exporter
@@ -78,7 +95,6 @@ function setup_prometheus () {
 # These only need to run on mgmt system.
 setup_grafana
 setup_prometheus
-
 
 # So we can skip running it again with Ansible
 touch $HOME/.setupgfp_ran

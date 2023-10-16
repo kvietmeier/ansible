@@ -56,6 +56,10 @@
       - reinit_voltdb.sh
       - waituntilclustersizeisx.sh
       - setup_runoncepercluster.sh
+    ConfigFiles:
+      - demo_cluster_config.xml
+      - deployment-default.xml
+      - license.xml
     # Database Hosts - update as required for number of nodes
     volt_hosts:
       - vdb-02
@@ -367,7 +371,21 @@
       - "{{ SetupFiles }}"
     tags:
       - copy_files
-    
+
+  - name: Copy license amd XML cluster config files
+    become_user: ubuntu
+    copy:
+      src: "{{ item }}"
+      dest: /home/ubuntu/
+      owner: ubuntu
+      group: ubuntu
+      mode: 0644
+      force: true
+    with_items: 
+      - "{{ ConfigFiles }}"
+    tags:
+      - copy_files
+
   - name: Copy updated Charging demo scripts
     become_user: ubuntu
     copy:

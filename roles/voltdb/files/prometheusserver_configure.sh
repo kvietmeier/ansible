@@ -50,7 +50,7 @@ PROMSERVER_PORT=9090
 
 MYCLUSTERID=$(cat ${HOME}/.voltclusterid)
 VOLTHOSTS=$(cat ${HOME}/.vdbhostnames)
-HOSTS=$(tr '\n' ',' < ../../.vdbhostnames | sed 's/,$//')
+HOSTS=$(tr '\n' ',' < ${HOME}/.vdbhostnames | sed 's/,$//')
 LOGDIR=${HOME}/logs
 
 # Does the list of hosts needs to be comma seperated
@@ -69,8 +69,8 @@ echo `date` "configuring prometheus " | tee -a $LOGFILE
 ###---- Setup Prometheus
 rm prometheus-2.36.1.linux-amd64.tar.gz 2> /dev/null
 wget https://github.com/prometheus/prometheus/releases/download/v2.36.1/prometheus-2.36.1.linux-amd64.tar.gz
-gunzip prometheus-2.36.1.linux-amd64.tar.gz
-tar xvf prometheus-2.36.1.linux-amd64.tar
+#gunzip prometheus-2.36.1.linux-amd64.tar.gz
+tar xzf prometheus-2.36.1.linux-amd64.tar.gz
 
 
 if [ "$VOLTHOSTS" = "localhost" ] ; then

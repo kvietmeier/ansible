@@ -33,7 +33,7 @@ function playbooks () {
   echo "    Running Management Node Playbook"
   echo "###====================================###"
   echo ""
-  ansible-playbook --limit voltmgmt $playbook --tags=apt,system,userenv,git,copy_files,mgmt_host,ssh_setup
+  ansible-playbook --limit voltmgmt -i $inventory $playbook --tags=apt,system,userenv,git,ssh_setup,copy_files,mgmt_host
   sleep 5
 }
 
@@ -71,6 +71,6 @@ function start_volt () {
 
 
 # Call functions
-#playbooks
+playbooks
 init
-#start_volt
+start_volt
