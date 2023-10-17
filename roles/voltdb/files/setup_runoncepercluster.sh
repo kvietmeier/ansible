@@ -1,9 +1,10 @@
 #!/usr/bin/bash
 # Not sure what this does - loads some data?
 
-. $HOME/.profile
+. ${HOME}/.profile
 
-cd
-cd bin
+servers=$(tr '\n' ',' < ${HOME}/.vdbhostnames | sed 's/,$//')
 
-sqlcmd --servers=$1 < create_runoncepercluster.sql
+cd ${HOME}/bin
+
+sqlcmd --servers=$servers < create_runoncepercluster.sql

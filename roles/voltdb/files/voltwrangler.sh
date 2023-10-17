@@ -218,8 +218,11 @@ then
 
 	cd  /home/ubuntu
 
+  # Simple script to pause until the cluster has formed.
 	sudo -u ubuntu bin/waituntilclustersizeisx.sh $NODECOUNT
-    sudo -u ubuntu bin/setup_runoncepercluster.sh $VDBHOSTS
+
+  # Loads Prometheus configuration into DB.
+  sudo -u ubuntu bin/setup_runoncepercluster.sh $VDBHOSTS
 
     # Grabbing the demo repo
 	if [ "$DEMONAME" = "Running_DB" ]

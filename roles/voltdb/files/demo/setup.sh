@@ -30,10 +30,10 @@
 #   From: https://github.com/srmadscience/voltdb-charglt
 #
 #   Run this before using the benchmraking scripts - it:
-#    * Imports a Charging DB schema  
-#    * Creates 4M users
-#    * Extends it somehow
-#    * Imports a bunch of data
+#    * Imports the Charging DB schema  
+#    * Updates config.xml for "Topics Data"
+#    * Adds Grafana dashboards
+#    * Imports a bunch of data and creates 4M users
 #
 ###===============================================================================###
 
@@ -57,37 +57,90 @@ if [ ! -d $HOME/logs ] ; then
   mkdir $HOME/logs 2> /dev/null
 fi
 
-echo "#========================== Setting Up Charging Demo Environment ===========================###"
 echo ""
-
-# Setup Charging Demo schema
-cd $DDLDIR
-echo "Importing Charging Demo schema"
-echo "sqlcmd --servers=${HOSTS} < ${DDLDIR}/create_db.sql"
-sqlcmd --servers=${HOSTS} < ${DDLDIR}/create_db.sql
 echo ""
-
-# What is the JSON for?  It isn't in the README
-cd ${SCRIPTDIR}
-echo "${HOME}/bin/reload_dashboards.sh ${SCRIPTDIR}/ChargeLt.json"
-${HOME}/bin/reload_dashboards.sh ${SCRIPTDIR}/ChargeLt.json
+echo "###"
+echo "#==================================  Setting up Charging Demo   ==================================###"
+echo "###"
 echo ""
-
-
-# What does this do?
-echo "java  ${JVMOPTS}  -jar $HOME/bin/addtodeploymentdotxml.jar $HOSTS deployment ${SCRIPTDIR}/export_and_import.xml"
-java  ${JVMOPTS}  -jar $HOME/bin/addtodeploymentdotxml.jar $HOSTS deployment ${SCRIPTDIR}/export_and_import.xml
 echo ""
+sleep 5
 
 
-# Populate the database?
-cd $JARDIR
-echo "Populating the database"
-echo "java ${JVMOPTS} -jar ${JARDIR}/CreateChargingDemoData.jar $HOSTS $USERCOUNT 30 100000"
-java ${JVMOPTS} -jar ${JARDIR}/CreateChargingDemoData.jar $HOSTS $USERCOUNT 30 100000
+###--- Functions
+function import_schema () {
+  # Setup Charging Demo schema
+  
+  echo ""
+  echo "#============================= Import Schema =============================###"
+  echo ""
+
+  cd $DDLDIR
+  echo "sqlcmd --servers=${HOSTS} < ${DDLDIR}/create_db.sql"
+  sqlcmd --servers=${HOSTS} < ${DDLDIR}/create_db.sql
+  echo ""
+
+}
+
+function reload_dboards () {
+  # Setup Grafana Dashboards
+  
+  echo ""
+  echo "###==================== Reload Grafana Dashboards ========================###"
+  echo ""
+  cd $SCRIPTDIR
+
+  echo "${HOME}/bin/reload_dashboards.sh ${SCRIPTDIR}/ChargeLt.json"
+  sudo ${HOME}/bin/reload_dashboards.sh ${SCRIPTDIR}/ChargeLt.json
+  echo ""
+  echo ""
+
+}
+
+function update_xml () {
+  # Adds "Topics" fix to deployment XML
+  
+  echo ""
+  echo "###======================= Update Deployment XML =========================###"
+  echo ""
+
+  echo "java  ${JVMOPTS}  -jar $HOME/bin/addtodeploymentdotxml.jar $HOSTS deployment ${SCRIPTDIR}/export_and_import.xml"
+  java  ${JVMOPTS}  -jar $HOME/bin/addtodeploymentdotxml.jar $HOSTS deployment ${SCRIPTDIR}/export_and_import.xml
+  echo ""
+
+}
+
+function import_data () {
+  # Populate the database?
+  
+  echo ""
+  echo "###============================ Import Data ==============================###"
+  echo ""
+  
+  cd $JARDIR
+
+  echo "java ${JVMOPTS} -jar ${JARDIR}/CreateChargingDemoData.jar $HOSTS $USERCOUNT 30 100000"
+  java ${JVMOPTS} -jar ${JARDIR}/CreateChargingDemoData.jar $HOSTS $USERCOUNT 30 100000
+  echo ""
+
+}
+
+
+###--- Main - put a short pause to view output of each section
+import_schema
+sleep 3
+reload_dboards
+sleep 3
+update_xml
+sleep 3
+import_data
+sleep 3
+
+
+
 echo ""
-
-
+echo ""
 echo ""
 echo "#==================================     DONE    ===========================================###"
+echo ""
 echo ""

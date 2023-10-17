@@ -35,7 +35,8 @@
 
 # Setup the Grafana dashboards for the benchmarks
 etc_dash_dir="/etc/dashboards"
-volt_dash_dir="${HOME}/bin/dashboards"
+volt_dash_dir="/home/ubuntu/bin/dashboards"
+
 
 # Stop Grafana
 sudo systemctl stop grafana-server

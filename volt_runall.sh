@@ -33,7 +33,9 @@ function playbooks () {
   echo "    Running Management Node Playbook"
   echo "###====================================###"
   echo ""
-  ansible-playbook --limit voltmgmt -i $inventory $playbook --tags=apt,system,userenv,git,ssh_setup,copy_files,mgmt_host
+  ansible-playbook --limit voltmgmt -i $inventory $playbook --tags=apt,system,userenv,git,ssh_setup,copy_files
+  sleep 2
+  ansible-playbook --limit voltmgmt -i $inventory $playbook --tags=mgmt_host
   sleep 5
 }
 
@@ -64,6 +66,10 @@ function start_volt () {
     ansible vdb-0${node} -m shell -a "nohup /home/ubuntu/voltdb-ent-${volt_ver}/bin/voltdb start --dir=/home/ubuntu/chargingdb --host=vdb-02,vdb-03,vdb-04,vdb-05 > $HOME/voltstart.out 2> $HOME/voltstart.err < /dev/null &"
     sleep 10
   done
+
+
+  # ToDo - Run setup.sh
+  # Add the Prometheus java
 
 }
 

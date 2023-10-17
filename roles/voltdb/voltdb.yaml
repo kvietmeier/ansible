@@ -118,13 +118,13 @@
       force_apt_get: yes
       cache_valid_time: 3600
     tags:
-       - apt
+      - apt
 
   - name: Upgrade the Distro
     become: true
     apt: upgrade=dist force_apt_get=yes
     tags:
-       - apt
+      - apt
 
   - name: Check if a reboot is needed
     ## In Ubuntu you have to check if a reboot is required
@@ -132,7 +132,7 @@
     register: reboot_required_file
     stat: path=/var/run/reboot-required get_md5=no
     tags:
-       - apt
+      - apt
   
   - name: Reboot the box if kernel updated
     become: true
@@ -145,7 +145,7 @@
       test_command: uptime
     when: reboot_required_file.stat.exists
     tags:
-       - apt
+      - apt
 
   - name: Update apt repo and cache after updates/upgrade
     become: true
@@ -153,7 +153,7 @@
       update_cache: yes
       force_apt_get: yes
     tags:
-       - apt
+      - apt
        
   - name: Install VoltDB requirements 
     # Packages required by setup - we do it here instead
@@ -484,7 +484,6 @@
     when: not setupgfp_has_run.stat.exists
     tags:
       - mgmt_host
-
 
 
   ###======================== End VoltDB Setup Section ==========================###
