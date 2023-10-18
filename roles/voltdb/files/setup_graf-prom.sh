@@ -69,7 +69,7 @@ function setup_grafana () {
 	sudo /bin/systemctl enable grafana-server
 	sudo /bin/systemctl start grafana-server
 
-	grafana-cli admin reset-admin-password $PASSWORD
+	sudo grafana-cli admin reset-admin-password $PASSWORD
 	
 	###---- End Grafana
 }

@@ -98,15 +98,22 @@ function reload_dboards () {
 }
 
 function update_xml () {
-  # Adds "Topics" fix to deployment XML
+  # Adds "Topics" fix to deployment XML - needs to run on the db nodes
   
   echo ""
   echo "###======================= Update Deployment XML =========================###"
   echo ""
 
   echo "java  ${JVMOPTS}  -jar $HOME/bin/addtodeploymentdotxml.jar $HOSTS deployment ${SCRIPTDIR}/export_and_import.xml"
-  java  ${JVMOPTS}  -jar $HOME/bin/addtodeploymentdotxml.jar $HOSTS deployment ${SCRIPTDIR}/export_and_import.xml
+  #java  ${JVMOPTS}  -jar $HOME/bin/addtodeploymentdotxml.jar $HOSTS deployment ${SCRIPTDIR}/export_and_import.xml
   echo ""
+
+  for node in $(cat ${HOME}/.vdbhostnames)
+    do
+      # Need to test this one
+      ssh $node "java ${JVMOPTS} -jar $HOME/bin/addtodeploymentdotxml.jar $HOSTS deployment ${SCRIPTDIR}/export_and_import.xml"
+      sleep 5
+    done
 
 }
 

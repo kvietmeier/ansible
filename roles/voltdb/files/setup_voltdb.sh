@@ -3,6 +3,8 @@
 #   First setup script for creating a VoltDB image 
 ###=======================================================================================###
 #
+#   * Merged version setup1 and setup2
+#
 #   Requirements:
 #    	* Ubuntu 18.04 or newer
 #		* Root volume >30GB
@@ -20,7 +22,7 @@
 #        Karl Vietmeier - Intel Cloud CSA
 # 
 #   Usage:
-#   	> setup_part_1.sh <voltDB version>
+#   	> setup_voltdb.sh <voltDB version>
 #       
 ###=======================================================================================###
 

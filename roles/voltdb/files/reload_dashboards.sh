@@ -66,4 +66,5 @@ sudo find $etc_dash_dir -exec chgrp grafana {} \;
 
 # Start Grafana back up with new dashboards
 sudo systemctl daemon-reload
+sudo systemctl enable grafana-server
 sudo systemctl start grafana-server

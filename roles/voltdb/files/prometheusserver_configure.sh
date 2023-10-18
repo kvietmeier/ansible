@@ -96,10 +96,10 @@ fi
 sudo cp prometheus.yml /etc/prometheus/prometheus.yml
 
 
-for i in status stop status start status
+for i in stop enable status start status
 do
   date | tee -a $LOGFILE
-  sudo systemctl  ${i} prometheus.service  | tee -a $LOGFILE
+  sudo systemctl ${i} prometheus.service  | tee -a $LOGFILE
 done
 
 exit 0
