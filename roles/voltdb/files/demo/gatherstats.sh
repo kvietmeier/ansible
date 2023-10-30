@@ -9,6 +9,9 @@
 ###=======================================================================================###
 #   Modified for Azure by:
 #        Karl Vietmeier - Intel Cloud CSA
+# 
+#   Not using voltwrangler - need to source the params elsewhere.
+#
 ###=======================================================================================###
 
 ###---- Input vars

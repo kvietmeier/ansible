@@ -31,7 +31,7 @@
 #
 #   Run this before using the benchmraking scripts - it:
 #    * Imports the Charging DB schema  
-#    * Updates config.xml for "Topics Data"
+#    * Updates config.xml for "Topics Data" (do this up front)
 #    * Adds Grafana dashboards
 #    * Imports a bunch of data and creates 4M users
 #
@@ -134,15 +134,14 @@ function import_data () {
 
 
 ###--- Main - put a short pause to view output of each section
-import_schema
-sleep 3
-reload_dboards
-sleep 3
 update_xml
+sleep 3
+import_schema
 sleep 3
 import_data
 sleep 3
-
+reload_dboards
+sleep 3
 
 
 echo ""

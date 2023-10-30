@@ -1,6 +1,8 @@
 #!/usr/bin/bash
-# Wait until the cluste is up
+# Wait until the cluster is up
 # Called from voltwrangler
+###=======  Don't need without voltwrangler
+
 
 . ${HOME}/.profile
 

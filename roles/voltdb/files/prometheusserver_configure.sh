@@ -29,47 +29,51 @@
 #   
 #   https://github.com/prometheus/prometheus/releases/download/v2.47.0/prometheus-2.47.0.linux-amd64.tar.gz
 #
+#   
+#        === Only run on mgmt node! ===
+#
 ###=======================================================================================###
 
+# Run to enable debugging - uncomment to use
+function debug () {
+  export PS4="\$LINENO: "
+  set -xv
+}
+#debug
 
-### Only run on mgmt node!
 
-
-
-# Make sure we are running in the right dir....
-cd "$(dirname "${BASH_SOURCE[0]}")"
-
-# Make sure we get the right paths
-. ${HOME}/.profile
+cd "$(dirname "${BASH_SOURCE[0]}")"                   # Make sure we are running in the right dir....
+. ${HOME}/.profile                                    # Make sure we get the right paths
 
 ###---- Vars
+target_ports=(9100 9101 9102)                         # Create an array of target ports
 PROMVERSION=prometheus-2.22.0.linux-amd64
 PromVer="2.47.0"
 PromLink="https://github.com/prometheus/prometheus/releases/download/v${PromVer}/prometheus-${PromVer}.linux-amd64.tar.gz"
 PROMSERVER_PORT=9090
-
 MYCLUSTERID=$(cat ${HOME}/.voltclusterid)
 VOLTHOSTS=$(cat ${HOME}/.vdbhostnames)
 HOSTS=$(tr '\n' ',' < ${HOME}/.vdbhostnames | sed 's/,$//')
 LOGDIR=${HOME}/logs
+###---- End Vars
 
-# Does the list of hosts needs to be comma seperated
-#VOLTHOSTS=$(tr '\n' ',' < ../../.vdbhostnames | sed 's/,$//')
-
-# Logging directory for output
+###---- Logging directory for output
 if [ ! -d $LOGDIR ] ; then
   mkdir $LOGDIR 2> /dev/null
 fi
 
 LOGFILE=${LOGDIR}/start_prometheusserver_if_needed`date '+%y%m%d'`.log
 touch $LOGFILE
-
 echo `date` "configuring prometheus " | tee -a $LOGFILE
 
-###---- Setup Prometheus
+
+###=======================================================================================###
+#      Setup Prometheus
+###=======================================================================================###
+
+
 rm prometheus-2.36.1.linux-amd64.tar.gz 2> /dev/null
 wget https://github.com/prometheus/prometheus/releases/download/v2.36.1/prometheus-2.36.1.linux-amd64.tar.gz
-#gunzip prometheus-2.36.1.linux-amd64.tar.gz
 tar xzf prometheus-2.36.1.linux-amd64.tar.gz
 
 
@@ -82,22 +86,21 @@ else
 
   COMMA=
 
-  for i in `echo $VOLTHOSTS | sed '1,$s/,/ /g'`
-    do
-      for p in 9100 9101 9102
-        do
-          echo -n "${COMMA}'${i}:${p}'" >> prometheus.yml
+  for host in `echo $VOLTHOSTS | sed '1,$s/,/ /g'` ; do
+      for port in "${target_ports[@]}" ; do
+          echo -n "${COMMA}'${host}:${port}'" >> prometheus.yml
           COMMA=","
-        done
-    done
+      done
+  done
+  
   echo  ",'localhost:9100']" >> prometheus.yml
+
 fi
 
 sudo cp prometheus.yml /etc/prometheus/prometheus.yml
 
 
-for i in stop enable status start status
-do
+for i in stop enable status start status ; do
   date | tee -a $LOGFILE
   sudo systemctl ${i} prometheus.service  | tee -a $LOGFILE
 done

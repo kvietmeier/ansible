@@ -3,7 +3,7 @@
 #   First setup script for creating a VoltDB image 
 ###=======================================================================================###
 #
-#   * Merged version setup1 and setup2
+	#   * Merged version setup1 and setup2 - NOT WORKING
 #
 #   Requirements:
 #    	* Ubuntu 18.04 or newer

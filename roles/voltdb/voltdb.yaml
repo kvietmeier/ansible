@@ -56,6 +56,8 @@
       - reinit_voltdb.sh
       - waituntilclustersizeisx.sh
       - setup_runoncepercluster.sh
+      - voltdbprometheusbl_start.sh
+      - voltdbprometheusbl_stop.sh
     ConfigFiles:
       - demo_cluster_config.xml
       - deployment-default.xml
@@ -293,9 +295,20 @@
     tags:
       - mgmt_host
 
-  # Save for future use
+  - name: Copy a basic vimrc
+    copy:
+      src: files/vimrc
+      dest: /home/ubuntu/.vimrc
+      owner: ubuntu
+      group: ubuntu
+      mode: 0655
+      force: true
+    tags:
+      - userenv
+  
+  # Save as template for future use
   #- name: Copy startvolt for VoltDB to mgmt host
-  #    - volt_start_all_bash.sh#  copy:
+  #  copy:
   #    when: ansible_hostname == 'vdb-01'
   #    src: volt_start_all_bash.sh
   #    dest: /home/ubuntu
