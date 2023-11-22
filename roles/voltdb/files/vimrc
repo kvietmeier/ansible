@@ -8,7 +8,7 @@ set compatible
 syntax on
 
 " Show line numbers
-set number
+"set number
 
 " Show file stats
 set ruler

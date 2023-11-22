@@ -36,6 +36,10 @@
     # My scripts repo
     scripts_repo: https://github.com/kvietmeier/scripts.git
 
+    # Need dool to replace dstat
+    dool_url: https://github.com/scottchiefbaker/dool/releases/download/v1.3.0/dool-1.3.0-1.noarch.rpm
+    dool_pkg: dool-1.3.0-1.noarch.rpm
+
     # Modified files to copy over from $HOME/bin
     # Will eventually bundle these up in the bin directory
     MgmtSetupFiles:
@@ -83,6 +87,8 @@
       - tree
       - maven
       - dstat
+      - xterm
+      - alien
 
 
   ###========================================= End VARS  =======================================###
@@ -170,6 +176,21 @@
     command: mandb
     tags:
      - apt
+
+  # Install dool - multi-step - replaces dstat
+  - name: Download dool dool-1.3.0-1.noarch.rpm
+    get_url: 
+      url: "{{ dool_url }}"
+      dest: /tmp
+    tags:
+      - apt
+
+  - name: Install dool with alien
+    command: alien -i "{{ dool_pkg }}"
+    args: 
+      chdir: /tmp
+    tags:
+      - apt
 
 
   ###======================= System environment setup =========================###
@@ -306,6 +327,21 @@
     tags:
       - userenv
   
+  - name: Copy my bash aliases
+    copy:
+      src: files/aliases
+      dest: /home/ubuntu/.bash_aliases
+      owner: ubuntu
+      group: ubuntu
+      mode: 0655
+      force: true
+    tags:
+      - userenv
+  
+  # Save as template for future use
+  #- name: Copy startvolt for VoltDB to mgmt host
+  #  copy:
+  #    when: ansible_hostname == 'vdb-01'
   # Save as template for future use
   #- name: Copy startvolt for VoltDB to mgmt host
   #  copy:
@@ -537,7 +573,25 @@
     tags:
       - userenv
 
+  - name: Create symbolic link to benchmark scripts
+    file:
+      dest: /home/ubuntu/bmark
+      src: voltdb-charglt/scripts
+      owner: ubuntu
+      group: ubuntu
+      state: link
+    tags:
+      - mgmt_host
 
+  - name:  Set ownership of link to benchmark scripts
+    file:
+      path: /home/ubuntu/bmark
+      state: directory
+      recurse: yes
+      owner: ubuntu
+      group: ubuntu
+    tags:
+      - mgmt_host
 
 
 ###========================================= End Tasks =======================================###

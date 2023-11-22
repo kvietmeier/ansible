@@ -63,6 +63,9 @@ function setup_grafana () {
 	sudo cp prometheus_datasource.yaml $tgt_data_dir
 	sudo chgrp grafana ${tgt_dashboard_dir}/grafana_dashboard_signpost.yaml
 	sudo chgrp grafana ${tgt_data_dir}/prometheus_datasource.yaml
+	
+	# Seems to be a permissions issue
+	sudo chown -R grafana:grafana /var/lib/grafana/
 
 	# Start/Enable the service
 	sudo /bin/systemctl daemon-reload
