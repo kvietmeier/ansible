@@ -54,5 +54,3 @@ echo ""
 
 # Generate output file with metadata about test prepended
 grep GREPABLE $test_output | sed '1,$s/^/'${TNAME},${VMSize},${CPU_SKU},${CPU_ghz},${OS_SKU},${DEMONAME},${CMDLOGGING},${SPH},${NODECOUNT},$test_output,'/g'
-
-~

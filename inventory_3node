@@ -1,34 +1,27 @@
 ###=====================================================================### 
-###   Ansible Inventory - my defaults
+###   Ansible Inventory - these are a hack but I was short on time
 ###   Updated with Azure hosts
+###
+###   3 node DB cluster
 ###
 ###=====================================================================### 
 
-### Terraform created nodes - generic cluster
-[masters]
-master
+# Volt Testing
+[voltnodes]
+vdb-02
+vdb-03
+vdb-04
 
-[masters:vars]
+[voltnodes:vars]
 ansible_ssh_user=ubuntu
+ansible_python_interpreter="/usr/bin/python3"
 
-[workers]
-worker01
-worker02
-worker03
+[voltmgmt]
+vdb-01
 
-[workers:vars]
+[voltmgmt:vars]
 ansible_ssh_user=ubuntu
-
-### PowerShell Nodes - Created with PowerShell
-# Linux Testing
-[linuxnodes]
-linux-01
-linux-02
-linux-03
-linux-04
-
-[linuxnodes:vars]
-ansible_ssh_user=azureuser
+ansible_python_interpreter="/usr/bin/python3"
 
 
 ###=====================================================================### 

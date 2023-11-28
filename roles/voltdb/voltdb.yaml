@@ -66,12 +66,17 @@
       - demo_cluster_config.xml
       - deployment-default.xml
       - license.xml
-    # Database Hosts - update as required for number of nodes
+    # Database Hosts - update as required for number of nodes (need to fix)
     volt_hosts:
       - vdb-02
       - vdb-03
       - vdb-04
-      - vdb-05
+      #- vdb-05
+      #- vdb-06
+      #- vdb-07
+      #- vdb-08
+      #- vdb-09
+      #- vdb-10
     # Extra packages to install - just to be sure
     volt_packages:
       - prometheus

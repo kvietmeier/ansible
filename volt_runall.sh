@@ -10,9 +10,9 @@
 #
 
 ###---- Vars
+num_nodes=3
 volt_ver=11.4
 volt_user=ubuntu
-inventory=${HOME}/ansible/inventory
 playbook=${HOME}/ansible/roles/voltdb/voltdb.yaml
 volt_bin="/home/ubuntu/voltdb-ent-${volt_ver}/bin/voltdb"
 demo_dir="/home/ubuntu/chargingdb"
@@ -31,6 +31,15 @@ volt_hosts=$(IFS=,; echo "${volt_nodes[*]}")
 
 
 ###=============================== Should not need to edit below this line ====================================###
+
+# Setup for different numbers of nodes
+if [ $num_nodes == "3" ] then
+  inventory=${HOME}/ansible/inventory_3node
+elif [ $num_nodes == "6" ] then
+  inventory=${HOME}/ansible/inventory_6node
+elif [ $num_nodes == "9" ] then
+  inventory=${HOME}/ansible/inventory_9node
+fi
 
 
 ###---- Functions
