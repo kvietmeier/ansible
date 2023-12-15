@@ -25,6 +25,9 @@
 ###=======================================================================================###
 #   Modified for Azure by:
 #        Karl Vietmeier - Intel Cloud CSA
+#
+#   Purpose:  Called by unit file voltdb.service to start the Volt DB.
+#   
 ###=======================================================================================###
 
 
@@ -42,64 +45,88 @@ BINDIR=${HOME}/voltdb-ent-${volt_ver}/bin/
 VoltPID=$(ps -ef | grep voltdb | grep -v grep | grep -v voltdbprometheusbl | awk '{print $2 }')
 
 
-# Setup log dir
-if [ ! -d ${log_dir} ] ; then
-  mkdir -p ${log_dir} 2> /dev/null
-  LOGFILE=${log_dir}/start_voltdb_if_needed-`date '+%y%m%d'-%H%M`.log
-  touch $LOGFILE
-else
-  LOGFILE=${log_dir}/start_voltdb_if_needed-`date '+%y%m%d'-%H%M`.log
-  touch $LOGFILE
-fi
+###=======================================================================================###
+#    Shouldn't need to edit below this line other than to comment/uncomment functions       #
 
 
 
+###=======================================================================================###
+#    Functions - 
+###=======================================================================================###
 
-# See if we need to re-do voltDB...
-#
-#if [ -r "${MOUNTPOINT}/jumpstart_needed.txt" ]
-#then
-#  echo `date` "Rebuilding VoltDB..." | tee -a $LOGFILE 
-#  sh ${HOME}/bin/voltdb_stop.sh | tee -a $LOGFILE 
-#  sh ${HOME}/bin/jumpstart_voltdb.sh NOSERVICE | tee -a $LOGFILE 
-#  sudo rm ${MOUNTPOINT}/jumpstart_needed.txt
-#fi
-
-if [ -z "$VoltPID" ] ; then
-
-  echo `date` Starting VoltDB... | tee -a  $LOGFILE
-  echo nohup ${BINDIR}/voltdb start  --dir=$DEMODIR --host=$VDBHOSTS | tee -a $LOGFILE 
-  nohup ${BINDIR}/voltdb start  --dir=$DEMODIR --host=$VDBHOSTS > $LOGFILE  2>&1  &
-  
-  sleep 5
-
-  VoltPID=$(ps -ef | grep voltdb | grep -v grep | grep -v voltdbprometheusbl | awk '{print $2 }')
-  echo $VoltPID > ${HOME}/.voltdb.PID 		
-
-else	
-  echo `date` Already running... | tee -a  $LOGFILE
-fi
-
-#nohup /home/ubuntu/voltdb-ent-${volt_ver}/bin/voltdb start --dir=$DEMODIR --host=$VDBHOSTS > ${log_dir}/voltstart.out 2> ${log_dir}/voltstart.err < /dev/null &
-
-
-#
-# See if we need to start new relic
-#
-
-if [ -r ${HOME}/voltdb-ent-${volt_ver}/tools/monitoring/newrelic/config/newrelic.properties ]
-then
-  NR=$(ps -deaf | grep voltdb-newrelic | grep -v grep | awk '{print $2}')
-
-  if [ -z "$NR" ] ; then
-    cd ${HOME}/voltdb-ent-${volt_ver}/tools/monitoring/newrelic
-    nohup ./voltdb-newrelic | tee -a  $LOGFILE &
+function logging () {
+  # Setup log dir
+  if [ ! -d ${log_dir} ] ; then
+    mkdir -p ${log_dir} 2> /dev/null
+   LOGFILE=${log_dir}/start_voltdb_if_needed-`date '+%y%m%d'-%H%M`.log
+   touch $LOGFILE
   else
-    echo "new relic running PID: $NR" | tee -a  $LOGFILE
+   LOGFILE=${log_dir}/start_voltdb_if_needed-`date '+%y%m%d'-%H%M`.log
+   touch $LOGFILE
+  fi
+}
+
+function reinit () {
+  # See if we need to re-do voltDB...
+  if [ -r "${MOUNTPOINT}/jumpstart_needed.txt" ]
+  then
+    echo `date` "Rebuilding VoltDB..." | tee -a $LOGFILE 
+    sh ${HOME}/bin/voltdb_stop.sh | tee -a $LOGFILE 
+    sh ${HOME}/bin/jumpstart_voltdb.sh NOSERVICE | tee -a $LOGFILE 
+    sudo rm ${MOUNTPOINT}/jumpstart_needed.txt
+  fi
+}
+
+function startvolt () {
+  if [ -z "$VoltPID" ] ; then
+
+    echo `date` Starting VoltDB... | tee -a  $LOGFILE
+    echo nohup ${BINDIR}/voltdb start  --dir=$DEMODIR --host=$VDBHOSTS | tee -a $LOGFILE 
+    nohup ${BINDIR}/voltdb start  --dir=$DEMODIR --host=$VDBHOSTS > $LOGFILE  2>&1  &
+    
+    sleep 5
+
+    VoltPID=$(ps -ef | grep voltdb | grep -v grep | grep -v voltdbprometheusbl | awk '{print $2 }')
+    echo $VoltPID > ${HOME}/.voltdb.PID 		
+
+  else	
+    echo `date` Already running... | tee -a  $LOGFILE
+  fi
+  
+  # Original command
+  #nohup /home/ubuntu/voltdb-ent-${volt_ver}/bin/voltdb start --dir=$DEMODIR --host=$VDBHOSTS > ${log_dir}/voltstart.out 2> ${log_dir}/voltstart.err < /dev/null &
+}
+
+
+function newrelic () {
+  # See if we need to start new relic
+
+  if [ -r ${HOME}/voltdb-ent-${volt_ver}/tools/monitoring/newrelic/config/newrelic.properties ]
+  then
+    NR=$(ps -deaf | grep voltdb-newrelic | grep -v grep | awk '{print $2}')
+
+    if [ -z "$NR" ] ; then
+      cd ${HOME}/voltdb-ent-${volt_ver}/tools/monitoring/newrelic
+      nohup ./voltdb-newrelic | tee -a  $LOGFILE &
+    else
+      echo "new relic running PID: $NR" | tee -a  $LOGFILE
+    fi
+
+  else
+    echo "new relic not in use " | tee -a  $LOGFILE
   fi
 
-else
-  echo "new relic not in use " | tee -a  $LOGFILE
-fi
+}
+
+
+
+###=======================================================================================###
+#    Main
+###=======================================================================================###
+logging
+#reinit
+startvolt
+newrelic
+
 
 exit 0

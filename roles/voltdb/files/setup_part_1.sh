@@ -11,9 +11,6 @@
 #	
 #	Related/Required scripts/files:
 #		* filesystem.sh (creates mountpoints on data drives and updated /etc/fstab)
-#		* prometheusserver_configure.sh
-#		* grafana_dashboard_signpost.yaml
-#		* prometheus_datasource.yaml
 #		* extra_profile
 #
 #   Modified for Azure by:

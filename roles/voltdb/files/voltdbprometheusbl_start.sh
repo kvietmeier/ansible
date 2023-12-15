@@ -45,12 +45,18 @@ log_file_name="start_voltdbprometheusbl_if_needed"
 
 
 ###=======================================================================================###
+#    Shouldn't need to edit below this line other than to comment/uncomment functions       #
+
+
+
+###=======================================================================================###
 #    Functions - 
-#    Shouldn't need to edit below this line other than to comment/uncomment functions
 ###=======================================================================================###
 
+
 function logging () {
-  # Crreat logfile of script run
+  # Create logfile of script run
+  
   if [ ! -d $LOGDIR ] ; then
     mkdir $LOGDIR 2> /dev/null
   fi

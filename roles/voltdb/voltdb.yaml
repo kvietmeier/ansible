@@ -79,17 +79,15 @@
       #- vdb-10
     # Extra packages to install - just to be sure
     volt_packages:
-      - prometheus
+      #- prometheus
       - ncat
       - ifstat
       - cloud-utils
       - sysstat
       - collectl
-      - curl
       - slurm
       - tcptrack
       - bmon
-      - tree
       - maven
       - dstat
       - xterm

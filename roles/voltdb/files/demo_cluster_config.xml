@@ -24,10 +24,15 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 -->
 
-<!-- Setup file for ChargIT Demo -->
+<!-- Setup file for ChargIT Demo
+  
+  sitesperhost = number of DB nodes
+  kfactor = 1
+
+-->
 
 <deployment>
-  <cluster sitesperhost="8" kfactor="1"/>
+  <cluster sitesperhost="3" kfactor="1"/>
   <commandlog enabled="true" synchronous="false">
     <frequency time="300" transactions="1000"/>
   </commandlog>

@@ -65,7 +65,7 @@ AUTOSNAPSHOT_DIR=${MOUNTPOINT_SSD2}/voltdbroot/snapshots
 ###                                                                                             ###
 
 function kill_volt () {
-  ###--- Remove pre-existing/running VoltDB - why is running?
+  ###--- Remove pre-existing/running VoltDB - why is it running?  (leave - not hurting anything)
   # Grab the PID
   VPID=`ps -deaf | grep org.voltdb.VoltDB | grep java | grep -v grep | awk '{ print $2}'`
 

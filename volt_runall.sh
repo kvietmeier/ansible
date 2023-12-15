@@ -30,19 +30,26 @@ volt_db_nodes=("vdb-02" "vdb-03" "vdb-04" "vdb-05")   # Array of DB Nodes
 volt_hosts=$(IFS=,; echo "${volt_nodes[*]}")
 
 
-###=============================== Should not need to edit below this line ====================================###
+###=========================================================================================###
+#                          Shouldn't need to edit below this line                             #
 
-# Setup for different numbers of nodes
-if [ $num_nodes == "3" ] then
+
+# Check for different numbers of nodes
+if [ $num_nodes -eq 3 ] ; then
   inventory=${HOME}/ansible/inventory_3node
-elif [ $num_nodes == "6" ] then
+fi
+if [ $num_nodes -eq 6 ] ; then
   inventory=${HOME}/ansible/inventory_6node
-elif [ $num_nodes == "9" ] then
+fi
+if [ $num_nodes -eq 9 ] ; then
   inventory=${HOME}/ansible/inventory_9node
 fi
 
 
-###---- Functions
+
+###=======================================================================================###
+#    Functions - 
+###=======================================================================================###
 
 function playbooks () {
   # Using tags in Playbook to break up tasks for hosts.
@@ -97,8 +104,8 @@ function start_volt () {
     # This works - need both nohup and move & to the end
     # Works equally as well as a straight SSH pass through
 
-    echo ansible $node -m shell -a "nohup $volt_bin start --dir=$demo_dir --host=$servers > ~/voltstart.out 2> ~/voltstart.err < /dev/null &" --become-user $volt_user
-    ansible $node -m shell -a "nohup $volt_bin start --dir=$demo_dir --host=$servers > ~/voltstart.out 2> ~/voltstart.err < /dev/null &" --become-user $volt_user
+    echo ansible $node -i $inventory -m shell -a "nohup $volt_bin start --dir=$demo_dir --host=$servers > ~/voltstart.out 2> ~/voltstart.err < /dev/null &" --become-user $volt_user
+    ansible $node -i $inventory -m shell -a "nohup $volt_bin start --dir=$demo_dir --host=$servers > ~/voltstart.out 2> ~/voltstart.err < /dev/null &" --become-user $volt_user
     sleep 10
   done
 
@@ -115,7 +122,7 @@ function prometheus_dbstats_export () {
 
   for node in $(cat $db_hosts_file) ; do	 
     # Need to setup export of stats on each DB node
-    ansible $node -m shell -a "~/bin/voltdbprometheusbl_start.sh 2> ~/voltprometheusbl.err < /dev/null &"
+    ansible $node -i $inventory -m shell -a "~/bin/voltdbprometheusbl_start.sh 2> ~/voltprometheusbl.err < /dev/null &"
     sleep 3
   done
 
@@ -129,16 +136,17 @@ function run_demo_setup () {
   echo "###=========================================###"
   echo ""
   
-  ansible voltmgmt -m shell -a "${bmark_dir}/setup.sh" --become-user $volt_user
+  ansible voltmgmt -i $inventory -m shell -a "${bmark_dir}/setup.sh" --become-user $volt_user
   
 }
 
-###---- END Functions
 
+###=======================================================================================###
+#    Main - 
+###=======================================================================================###
 
-# Call functions
 playbooks
 init
 start_volt
 #prometheus_dbstats_export
-run_demo_setup
+#run_demo_setup
