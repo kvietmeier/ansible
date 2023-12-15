@@ -12,6 +12,12 @@
 #	Related/Required scripts/files:
 #		* filesystem.sh (creates mountpoints on data drives and updated /etc/fstab)
 #		* extra_profile
+#		* voltdb.service
+#		* Prometheus setup:
+#          -  prometheus.service
+#          -  prometheus.yml
+#          -  prometheus_start.sh
+#          -  prometheus_stop.sh
 #
 #   Modified for Azure by:
 #        Karl Vietmeier - Intel Cloud CSA
@@ -103,7 +109,7 @@ function setup_system () {
 	#for  i in voltdb voltdbprometheusbl voltdbprometheus voltdb-node-exporter awscfboot prometheus
 	# Stripped it down - only need to be able to restart volt after a reboot.
 	# Leave it disabled for now
-	for  i in voltdb 
+	for  i in voltdb prometheus 
 	do
 	  sudo cp ${i}.service /lib/systemd/system/${i}.service
 	  sudo systemctl disable ${i}.service
@@ -132,12 +138,57 @@ function setup_system () {
 }
 
 
+function setup_prometheus () {
+	# Each node needs a prometheus server running
+
+	MYCLUSTERID=$(cat /home/ubuntu/.voltclusterid)
+	VOLTHOSTS=$(cat /home/ubuntu/.vdbhostnames)
+	PROMVERSION=prometheus-2.22.0.linux-amd64
+	PROMSERVER_PORT=9090
+	
+	# Get Prometheus - specific version
+	rm prometheus-2.36.1.linux-amd64.tar.gz 2> /dev/null
+	wget https://github.com/prometheus/prometheus/releases/download/v2.36.1/prometheus-2.36.1.linux-amd64.tar.gz
+	gunzip prometheus-2.36.1.linux-amd64.tar.gz
+	tar xvf prometheus-2.36.1.linux-amd64.tar
+
+	if [ "$VOLTHOSTS" = "localhost" ] ; then
+		cat prometheus.yml.template | sed '1,$s/VOLTDB_CLUSTER_NAME/Site'${MYCLUSTERID}'/g' > prometheus.yml
+	else
+		cat prometheus.yml.template | sed '1,$s/VOLTDB_CLUSTER_NAME/Site'${MYCLUSTERID}'/g'  | grep -v localhost > prometheus.yml
+		echo -n "             - targets: [" >> prometheus.yml
+
+		COMMA=
+
+		for i in `echo $VOLTHOSTS | sed '1,$s/,/ /g'`
+		  	do
+		   	for p in 9100 9101 9102
+				do
+					echo -n "${COMMA}'${i}:${p}'" >> prometheus.yml
+					COMMA=","
+			  	done
+			done
+		echo  ",'localhost:9100']" >> prometheus.yml
+	fi
+	
+	sudo cp prometheus.yml /etc/prometheus/prometheus.yml
+
+	for i in status stop status start status
+		do
+			date
+			sudo systemctl  ${i} prometheus.service 
+		done
+
+	exit 0
+
+}
+
 ###================================== End Functions ============================================###
 
 ###---- Run functions
 setup_env
 setup_system
-
+setup_prometheus
 
 # So we can skip running it again with Ansible
 touch $HOME/.part1_ran

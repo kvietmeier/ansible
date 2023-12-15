@@ -50,18 +50,22 @@
       - volt_start_all_bash.sh
       - setup_graf-prom.sh
     SetupFiles:
-      - ntpfix.sh
       - setup_part_1.sh
       - setup_part_2.sh
       - setup_voltdb.sh
       - filesystem.sh
+      - voltdbprometheusbl_start.sh
+      - voltdbprometheusbl_stop.sh
+      - prometheus.service
+      - prometheus.yml
+      - prometheus_start.sh
+      - prometheus_stop.sh
       - voltdb_start.sh
       - voltdb_stop.sh
       - reinit_voltdb.sh
+      - ntpfix.sh
       - waituntilclustersizeisx.sh
       - setup_runoncepercluster.sh
-      - voltdbprometheusbl_start.sh
-      - voltdbprometheusbl_stop.sh
     ConfigFiles:
       - demo_cluster_config.xml
       - deployment-default.xml
@@ -492,6 +496,8 @@
         if [ "$JAVA_MAJOR_VERSION" -ge 11 ] ; then
           JVMOPTS="--add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/sun.nio.ch=ALL-UNNAMED --add-opens java.base/java.net=ALL-UNNAMED --add-opens java.base/java.nio=ALL-UNNAMED"
         fi
+
+        set -o vi
     tags:
       - mgmt_host
 

@@ -22,29 +22,30 @@ license_file="/home/ubuntu/license.xml"
 start_cmd="nohup $volt_bin start --dir=${demo_dir} --host=${volt_host} > $HOME/voltstart.out 2> $HOME/voltstart.err < /dev/null &"
 
 # Reference a list of DB nodes
-db_hosts_file=${HOME}/ansible/vdbhosts.txt            # Has list of DB nodes
-servers=$(tr '\n' ',' < $db_hosts_file | sed 's/,$//')
+#db_hosts_file=${HOME}/ansible/vdbhosts.txt            # Has list of DB nodes
 
 # Might not need these - trying not to hard code stuff in the script
 volt_db_nodes=("vdb-02" "vdb-03" "vdb-04" "vdb-05")   # Array of DB Nodes
 volt_hosts=$(IFS=,; echo "${volt_nodes[*]}")
 
-
-###=========================================================================================###
-#                          Shouldn't need to edit below this line                             #
-
-
 # Check for different numbers of nodes
 if [ $num_nodes -eq 3 ] ; then
   inventory=${HOME}/ansible/inventory_3node
+  db_hosts_file=${HOME}/ansible/vdb3hosts.txt            # Has list of DB nodes
 fi
 if [ $num_nodes -eq 6 ] ; then
   inventory=${HOME}/ansible/inventory_6node
+  db_hosts_file=${HOME}/ansible/vdb6hosts.txt            # Has list of DB nodes
 fi
 if [ $num_nodes -eq 9 ] ; then
   inventory=${HOME}/ansible/inventory_9node
+  db_hosts_file=${HOME}/ansible/vdb9hosts.txt            # Has list of DB nodes
 fi
 
+servers=$(tr '\n' ',' < $db_hosts_file | sed 's/,$//')
+
+###=========================================================================================###
+#                          Shouldn't need to edit below this line                             #
 
 
 ###=======================================================================================###
@@ -145,8 +146,8 @@ function run_demo_setup () {
 #    Main - 
 ###=======================================================================================###
 
-playbooks
-init
-start_volt
-#prometheus_dbstats_export
-#run_demo_setup
+#playbooks
+#init
+#start_volt
+prometheus_dbstats_export
+run_demo_setup
