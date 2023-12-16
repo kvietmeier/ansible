@@ -56,6 +56,28 @@
       - filesystem.sh
       - voltdbprometheusbl_start.sh
       - voltdbprometheusbl_stop.sh
+      - voltdbprometheus_start.sh
+      - voltdbprometheus_stop.sh
+      - prometheusserver_configure.sh
+      - prometheus.service
+      - prometheus.yml
+      - prometheus_start.sh
+      - prometheus_stop.sh
+      - voltdb_start.sh
+      - voltdb_stop.sh
+      - reinit_voltdb.sh
+      - ntpfix.sh
+      - waituntilclustersizeisx.sh
+      - setup_runoncepercluster.sh
+    ConfigFiles:
+      - demo_cluster_config.xml
+      - deployment-default.xml
+      - license.xml
+    # Database Hosts - update as required for number of nodes (need to fix)
+    volt_hosts:
+      - vdb-02
+      - vdb-03
+      - prometheusserver_configure.sh
       - prometheus.service
       - prometheus.yml
       - prometheus_start.sh
@@ -505,6 +527,15 @@
 
   - name: Run Part 1
     command: /usr/bin/bash /home/ubuntu/bin/setup_part_1.sh 11.4
+    become_user: ubuntu
+    args: 
+      chdir: /home/ubuntu/bin
+    when: not part1_has_run.stat.exists
+    tags:
+      - voltdb_setup
+
+  - name: Start Prometheus
+    command: /usr/bin/bash /home/ubuntu/bin/voltdbprometheus_start.sh
     become_user: ubuntu
     args: 
       chdir: /home/ubuntu/bin

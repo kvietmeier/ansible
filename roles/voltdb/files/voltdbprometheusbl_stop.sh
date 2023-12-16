@@ -22,45 +22,45 @@
 #  ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 #  OTHER DEALINGS IN THE SOFTWARE.
 
-###=======================================================================================###
-#   Modified for Azure by:
-#        Karl Vietmeier - Intel Cloud CSA
-#
-#   https://prometheus.io/download/
-#   
-#   https://github.com/prometheus/prometheus/releases/download/v2.47.0/prometheus-2.47.0.linux-amd64.tar.gz
-#
-#   Purpose: Call to kill the Volt Prometheus server
-#   
-###=======================================================================================###
+cd $HOME
 
-PROMETHEUSBL_PORT=9102
+. ${HOME}/.profile
+PROMETHEUS_PORT=9102
 LOGDIR=${HOME}/logs
 
-cd $HOME
-. ${HOME}/.profile
-
-# Logging directory for output
+###---- Logging directory for output
 if [ ! -d $LOGDIR ] ; then
   mkdir $LOGDIR 2> /dev/null
 fi
 
-LOGFILEBL=${LOGDIR}/stop_voltdbprometheusbl_if_needed`date '+%y%m%d'`.log
-touch $LOGFILEBL
+LOGFILE=${LOGDIR}/start_voltdbprometheusbl_if_needed`date '+%y%m%d'`.log
+touch $LOGFILE
+echo `date` "configuring prometheus " | tee -a $LOGFILE
 
+
+
+#
 # See if we need to stop prometheus client for voltdb
+#
+
 curl -m 1 localhost:${PROMETHEUSBL_PORT} > /tmp/$$curl.log
 
-if [ -s /tmp/$$curl.log ] ; then
-  # kill it if it is running
-  OLDPROCESS=$(ps -deaf | grep voltdbprometheusbl.jar | grep -v grep | awk '{ print $2 }')
-
-  if [ "$OLDPROCESS" != "" ] ; then
-	  echo `date` killed process $OLDPROCESS
-	  kill  $OLDPROCESS
-	  rm ${HOME}/.voltdbprometheusbl.PID 2> /dev/null
-  fi
+if
+	[ -s /tmp/$$curl.log ]
+then
+	# kill it if its hung...
+	OLDPROCESS=`ps -deaf | grep voltdbprometheusbl.jar | grep -v grep | awk '{ print $2 }'`
+	
+	if
+	        [ "$OLDPROCESS" != "" ]
+	then
+		echo `date` killed process $OLDPROCESS
+		kill  $OLDPROCESS
+		rm ${HOME}/.voltdbprometheusbl.PID 2> /dev/null
+	fi
 
 fi
 
 rm /tmp/$$curl.log
+
+exit 0

@@ -22,6 +22,9 @@
 #  ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 #  OTHER DEALINGS IN THE SOFTWARE.
 
+### Changed logging dir and port
+
+
 cd $HOME
 
 . ${HOME}/.profile
@@ -34,35 +37,31 @@ if [ ! -d $LOGDIR ] ; then
   mkdir $LOGDIR 2> /dev/null
 fi
 
-LOGFILE=${LOGDIR}/start_voltdbprometheusbl_if_needed`date '+%y%m%d'`.log
+LOGFILE=${LOGDIR}/stop_voltdbprometheus_if_needed`date '+%y%m%d'`.log
 touch $LOGFILE
 echo `date` "configuring prometheus " | tee -a $LOGFILE
 
 
 #
-# See if we need to start prometheus client for voltdb
+# See if we need to stop prometheus client for voltdb
 #
 
-curl -m 1 localhost:${PROMETHEUSBL_PORT}/metrics > /tmp/$$curl.log
+curl -m 1 localhost:${PROMETHEUS_PORT} > /tmp/$$curl.log
 
-if [ -s /tmp/$$curl.log ] ; then
-  echo `date` "voltdbprometheusbl.jar already running" | tee -a  $LOGFILEBL
-else
+if
+	[ -s /tmp/$$curl.log ]
+then
 	# kill it if its hung...
- 	OLDPROCESS=`ps -deaf | grep voltdbprometheusbl.jar | grep -v grep | awk '{ print $2 }'`
+	OLDPROCESS=`ps -deaf | grep voltdb-prometheus| grep -v grep | awk '{ print $2 }'`
 	
-	if [ "$OLDPROCESS" != "" ] ; then
-	  echo `date` killed process $OLDPROCESS
-	  kill -9 $OLDPROCESS
+	if
+	        [ "$OLDPROCESS" != "" ]
+	then
+		echo `date` killed process $OLDPROCESS
+		kill -9 $OLDPROCESS
+		rm ${HOME}/.voltdbprometheus.PID 2> /dev/null
 	fi
 
-	cd ${HOME}/bin
-	echo `date` "starting voltdbprometheusbl.jar on port $PROMETHEUSBL_PORT" | tee -a  $LOGFILEBL
-
-	nohup java -jar voltdbprometheusbl.jar --webserverport=$PROMETHEUSBL_PORT --procedureList=PROCEDUREPROFILE,ORGANIZEDTABLESTATS,ORGANIZEDINDEXSTATS,SNAPSHOTSTATS,ORGANIZEDSQLSTMTSTATS,${BL_PROCEDURES} >>  $LOGFILEBL 2>&1  &
-        
-	VRUN=`ps -deaf | grep voltdbprometheusbl.jar | grep java | grep -v grep | awk '{ print $2}'`
-	echo $VRUN > ${HOME}/.voltdbprometheusbl.PID
 fi
 
 rm /tmp/$$curl.log

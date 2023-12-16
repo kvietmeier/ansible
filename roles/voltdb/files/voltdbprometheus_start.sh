@@ -22,6 +22,8 @@
 #  ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 #  OTHER DEALINGS IN THE SOFTWARE.
 
+### Changed logging dir and port
+
 cd $HOME
 
 . ${HOME}/.profile
@@ -34,35 +36,38 @@ if [ ! -d $LOGDIR ] ; then
   mkdir $LOGDIR 2> /dev/null
 fi
 
-LOGFILE=${LOGDIR}/start_voltdbprometheusbl_if_needed`date '+%y%m%d'`.log
+LOGFILE=${LOGDIR}/start_voltdbprometheus_if_needed`date '+%y%m%d'`.log
 touch $LOGFILE
 echo `date` "configuring prometheus " | tee -a $LOGFILE
 
 
-#
 # See if we need to start prometheus client for voltdb
 #
 
-curl -m 1 localhost:${PROMETHEUSBL_PORT}/metrics > /tmp/$$curl.log
+curl -m 1 localhost:${PROMETHEUS_PORT} > /tmp/$$curl.log
 
-if [ -s /tmp/$$curl.log ] ; then
-  echo `date` "voltdbprometheusbl.jar already running" | tee -a  $LOGFILEBL
+if
+	[ -s /tmp/$$curl.log ]
+then
+	echo `date` "voltdb-prometheus already running" | tee -a  $LOGFILE
 else
 	# kill it if its hung...
- 	OLDPROCESS=`ps -deaf | grep voltdbprometheusbl.jar | grep -v grep | awk '{ print $2 }'`
+	OLDPROCESS=`ps -deaf | grep voltdb-prometheus| grep -v grep | awk '{ print $2 }'`
 	
-	if [ "$OLDPROCESS" != "" ] ; then
-	  echo `date` killed process $OLDPROCESS
-	  kill -9 $OLDPROCESS
+	if
+	        [ "$OLDPROCESS" != "" ]
+	then
+		echo `date` killed process $OLDPROCESS
+		kill -9 $OLDPROCESS
 	fi
 
-	cd ${HOME}/bin
-	echo `date` "starting voltdbprometheusbl.jar on port $PROMETHEUSBL_PORT" | tee -a  $LOGFILEBL
 
-	nohup java -jar voltdbprometheusbl.jar --webserverport=$PROMETHEUSBL_PORT --procedureList=PROCEDUREPROFILE,ORGANIZEDTABLESTATS,ORGANIZEDINDEXSTATS,SNAPSHOTSTATS,ORGANIZEDSQLSTMTSTATS,${BL_PROCEDURES} >>  $LOGFILEBL 2>&1  &
-        
-	VRUN=`ps -deaf | grep voltdbprometheusbl.jar | grep java | grep -v grep | awk '{ print $2}'`
-	echo $VRUN > ${HOME}/.voltdbprometheusbl.PID
+	cd ${HOME}/voltdb*${VOLT_VERSION}/tools/monitoring/prometheus
+	echo `date` " starting voltdb-prometheus on port $PROMETHEUS_PORT" | tee -a  $LOGFILE
+	nohup ./voltdb-prometheus --webserverport=$PROMETHEUS_PORT >  $LOGFILE  2>&1 &
+
+	VRUN=`ps -deaf | grep voltdb-prometheus | grep java | grep -v grep | awk '{ print $2}'`
+        echo $VRUN > ${HOME}/.voltdbprometheus.PID
 fi
 
 rm /tmp/$$curl.log

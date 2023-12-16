@@ -33,6 +33,7 @@ cd $HOME
 . ${HOME}/.profile
 
 PROMETHEUS_PORT=9090
+LOGDIR=${HOME}/logs
 
 ###---- Logging directory for output
 if [ ! -d $LOGDIR ] ; then

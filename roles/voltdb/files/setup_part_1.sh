@@ -144,7 +144,7 @@ function setup_prometheus () {
 	MYCLUSTERID=$(cat /home/ubuntu/.voltclusterid)
 	VOLTHOSTS=$(cat /home/ubuntu/.vdbhostnames)
 	PROMVERSION=prometheus-2.22.0.linux-amd64
-	PROMSERVER_PORT=9090
+	PROMSERVER_PORT=9102
 	
 	# Get Prometheus - specific version
 	rm prometheus-2.36.1.linux-amd64.tar.gz 2> /dev/null
@@ -168,16 +168,18 @@ function setup_prometheus () {
 					COMMA=","
 			  	done
 			done
-		echo  ",'localhost:9100']" >> prometheus.yml
+		echo  "['localhost:9100']" >> prometheus.yml
 	fi
 	
-	sudo cp prometheus.yml /etc/prometheus/prometheus.yml
+	# Why?
+	#sudo cp prometheus.yml /etc/prometheus/prometheus.yml
 
-	for i in status stop status start status
-		do
-			date
-			sudo systemctl  ${i} prometheus.service 
-		done
+	# Not going to run it as a service
+	#for i in status stop status start status
+	#	do
+	#		date
+	#		sudo systemctl  ${i} prometheus.service 
+	#	done
 
 	exit 0
 
