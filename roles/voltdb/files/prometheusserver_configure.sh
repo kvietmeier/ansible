@@ -42,19 +42,24 @@ function debug () {
 #debug
 
 
-cd "$(dirname "${BASH_SOURCE[0]}")"                   # Make sure we are running in the right dir....
 . ${HOME}/.profile                                    # Make sure we get the right paths
+cd "$(dirname "${BASH_SOURCE[0]}")"                   # Make sure we are running in the right dir....
 
 ###---- Vars
+# Ports - 
 target_ports=(9100 9101 9102)                         # Create an array of target ports
-PROMVERSION=prometheus-2.22.0.linux-amd64
-PromVer="2.47.0"
-PromLink="https://github.com/prometheus/prometheus/releases/download/v${PromVer}/prometheus-${PromVer}.linux-amd64.tar.gz"
 PROMSERVER_PORT=9090
+# Versions - 
+PromVer="2.36.1"
+PromBin="prometheus-${PromVer}.linux-amd64.tar.gz"
+PromLink="https://github.com/prometheus/prometheus/releases/download/v${PromVer}/prometheus-${PromVer}.linux-amd64.tar.gz"
+
+# Files/hosts etc.
 MYCLUSTERID=$(cat ${HOME}/.voltclusterid)
 VOLTHOSTS=$(cat ${HOME}/.vdbhostnames)
 HOSTS=$(tr '\n' ',' < ${HOME}/.vdbhostnames | sed 's/,$//')
 LOGDIR=${HOME}/logs
+
 ###---- End Vars
 
 ###---- Logging directory for output
@@ -64,17 +69,18 @@ fi
 
 LOGFILE=${LOGDIR}/start_prometheusserver_if_needed`date '+%y%m%d'`.log
 touch $LOGFILE
-echo `date` "configuring prometheus " | tee -a $LOGFILE
+echo "$(date) - configuring prometheus" | tee -a $LOGFILE
 
 
 ###=======================================================================================###
 #      Setup Prometheus
 ###=======================================================================================###
 
-
-rm prometheus-2.36.1.linux-amd64.tar.gz 2> /dev/null
-wget https://github.com/prometheus/prometheus/releases/download/v2.36.1/prometheus-2.36.1.linux-amd64.tar.gz
-tar xzf prometheus-2.36.1.linux-amd64.tar.gz
+# Grab the version we need/want
+rm $PromBin 2> /dev/null
+wget $PromLink
+tar xzf $PromBin
+rm $PromBin 2> /dev/null
 
 
 if [ "$VOLTHOSTS" = "localhost" ] ; then

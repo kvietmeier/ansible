@@ -77,25 +77,6 @@
     volt_hosts:
       - vdb-02
       - vdb-03
-      - prometheusserver_configure.sh
-      - prometheus.service
-      - prometheus.yml
-      - prometheus_start.sh
-      - prometheus_stop.sh
-      - voltdb_start.sh
-      - voltdb_stop.sh
-      - reinit_voltdb.sh
-      - ntpfix.sh
-      - waituntilclustersizeisx.sh
-      - setup_runoncepercluster.sh
-    ConfigFiles:
-      - demo_cluster_config.xml
-      - deployment-default.xml
-      - license.xml
-    # Database Hosts - update as required for number of nodes (need to fix)
-    volt_hosts:
-      - vdb-02
-      - vdb-03
       - vdb-04
       #- vdb-05
       #- vdb-06
@@ -107,6 +88,7 @@
     volt_packages:
       #- prometheus
       - ncat
+      - cpuid
       - ifstat
       - cloud-utils
       - sysstat
@@ -115,7 +97,6 @@
       - tcptrack
       - bmon
       - maven
-      - dstat
       - xterm
       - alien
 
@@ -524,7 +505,6 @@
       - mgmt_host
 
   ### Run volt setup_part_1.sh
-
   - name: Run Part 1
     command: /usr/bin/bash /home/ubuntu/bin/setup_part_1.sh 11.4
     become_user: ubuntu
@@ -556,6 +536,7 @@
     tags:
       - voltdb_setup
 
+  ### Run volt setup_part_2.sh
   - name: Run Part 2
     command: /usr/bin/bash /home/ubuntu/bin/setup_part_2.sh
     become_user: ubuntu

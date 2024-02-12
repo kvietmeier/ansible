@@ -38,23 +38,28 @@ JAVA_FILE_VERSION=${JAVA_BUILD_VERSION}_linux-x64
 VOLT_VERSION="11.4"
 Kafka_Ver="2.13-2.6.0"
 
-###--- Data disk information
-#  Are we using Azure nvme controller or regular sd controller?
-#  SCSI - sd_drives will always have one drive in it
-#         / isn't always on sda but LUNs for data disks start at 11
-#         If not using NVME, nvme_drives wil be empty
-#  NVME - You will still have sda for the ephemeral /tmp disk
-#         LUNS for data disks start at 1 an3ile
-
+# Are we using Azure nvme controller or regular sd controller?
+# sd_drives will always have one drive in it, if not using NVME, nvme_drives wil be empty
 nvme_drives=($(ls -l /dev/disk/by-path | grep nvme | grep -v part | awk '{print substr($11, 7)}' | sort))
-sd_drives=($(ls -l /dev/disk/by-path | grep sd | egrep "lun-11|lun-12" | awk '{print $11}' | awk -F '/' '{print $3}' | sort))
+sd_drives=($(ls -l /dev/disk/by-path | grep sd | grep -v part | awk '{print substr($11, 7)}' | sort))
+
+# Hard coded for now - w/NVME controller nvme0n1 = system disk
+disk1="nvme0n2"
+disk2="nvme0n3"
 data_mnt="/voltdbdatassd"
-disk_num=1
+
 
 # Need this for .vdbhosts
 eth0IP=$(ip -4 -o addr show dev eth0| awk '{split($4,a,"/");print a[1]}')
 
-export disk_num eth0IP Volt_VERSION JAVA_BUILD_VERSION JAVA_FILE_VERSION Kafka_Ver data_mnt
+# Hardcode for automation
+#if [ "$#" != "1" ] ; then
+#	echo Usage: $0 voltdb_version
+#	exit 1
+#fi
+
+export eth0IP Volt_VERSION JAVA_BUILD_VERSION JAVA_FILE_VERSION Kafka_Ver
+export disk1 disk2 data_mnt
 
 ###---- Check Java version
 if 
@@ -66,6 +71,7 @@ fi
 
 ###====================================== Functions ============================================###
 ###                                                                                             ###
+
 
 function setup_env () {
 	###---- Setup local user environment
@@ -80,7 +86,10 @@ function setup_env () {
 
 	# Add VoltDB and Java to the PATH in .profile
 	HASVOLT=$(grep voltdb $HOME/.profile)
-	if [ -z "$HASVOLT" ] ; then
+
+	if [ -z $HASVOLT ] ; then
+      cat ${HOME}/bin/extra_profile | sed '1,$s/PARAM_VOLTDB_VERSION/'${VOLT_VERSION}'/g' | sed '1,$s/PARAM_JAVA_VERSION/'${JAVA_BUILD_VERSION}'/g' >> $HOME/.profile
+    else
       cat ${HOME}/bin/extra_profile | sed '1,$s/PARAM_VOLTDB_VERSION/'${VOLT_VERSION}'/g' | sed '1,$s/PARAM_JAVA_VERSION/'${JAVA_BUILD_VERSION}'/g' >> $HOME/.profile
     fi
 
@@ -116,6 +125,7 @@ function setup_system () {
 	fi
 
 	###---- Call filesystem.sh to setup external disks
+	i=1
     
 	# Do the right thing depending on drive type - still a bit of a hack
 	# Makes assumptions - 
@@ -125,27 +135,30 @@ function setup_system () {
 	if [ ${#nvme_drives[@]} -ne 0 ] ; then
       for nvme in "${nvme_drives[@]:1}"
         do
-          sudo bash ./filesystem.sh ${nvme} ${data_mnt}${disk_num}
+          sudo bash ./filesystem.sh ${nvme} ${data_mnt}${i}
           #echo "sudo bash ./filesystem.sh ${nvme} ${data_mnt}${i}"
-          disk_num=$((++disk_num))
+          i=$((++i))
       	done
     fi
     if [ ${#sd_drives[@]} -ne 0 ] ; then
-      for sd in "${sd_drives[@]}"
+      for sd in "${sd_drives[@]:2}"
         do
-          sudo bash ./filesystem.sh ${sd} ${data_mnt}${disk_num}
+          sudo bash ./filesystem.sh ${sd} ${data_mnt}${i}
           #echo "sudo bash ./filesystem.sh ${sd} ${data_mnt}${i}"
-          disk_num=$((++disk_num))
+          i=$((++i))
         done
 
 
     fi
 
-	# services that start disabled  (don't need right now)
-	#for i in grafana-server voltdb
-	#do
-	#  sudo systemctl disable ${i}.service
-    #done
+	#sudo bash ./filesystem.sh ${disk1} ${data_mnt}1
+	#sudo bash ./filesystem.sh ${disk2} ${data_mnt}2
+
+	# services that start disabled
+	for i in grafana-server voltdb
+	do
+	  sudo systemctl disable ${i}.service
+    done
 
 	sleep 10
 	

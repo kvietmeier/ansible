@@ -32,18 +32,27 @@ JSONSIZE=$5
 DELTAPROP=$6
 DURATION=600
 
-if 	
-	[ "$ST" = "" -o "$MX" = "" -o "$INC" = "" -o "$USERCOUNT" = "" -o "$JSONSIZE" = "" -o "$DELTAPROP" = "" ]
-then
+# Did we provide the correct parameters?
+if [ "$ST" = "" -o "$MX" = "" -o "$INC" = "" -o "$USERCOUNT" = "" -o "$JSONSIZE" = "" -o "$DELTAPROP" = "" ] ; then
 	echo Usage: $0 start_tps end_tps inc_tps usercount blobsize percent_of_changes
-
 	exit 1
 fi
 
-cd
-mkdir logs 2> /dev/null
+JARDIR=${HOME}/voltdb-charglt/jars
+cd $JARDIR
 
-cd voltdb-charglt/jars 
+HOSTS=$(tr '\n' ',' < ../../.vdbhostnames | sed 's/,$//')
+
+###--- Setup Output
+OUTPUTDIR=${HOME}/logs
+OUTPUTFILE=${OUTPUTDIR}/activity.log
+# the list of hosts needs to be comma seperated
+
+# Logging directory for output
+if [ ! -d $OUTPUTDIR ] ; then
+  mkdir $OUTPUTDIR 2> /dev/null
+fi
+
 
 # silently kill off any copy that is currently running...
 kill -9 `ps -deaf | grep ChargingDemoKVStore.jar  | grep -v grep | awk '{ print $2 }'` 2> /dev/null
@@ -54,23 +63,19 @@ sleep 2
 
 CT=${ST}
 
-while
-	[ "${CT}" -le "${MX}" ]
-do
-
-
+while [ "${CT}" -le "${MX}" ] ; do
 	DT=`date '+%Y%m%d_%H%M'`
 	echo "Starting a $DURATION second run at ${ST} Transactions Per Second"
-	echo `date` java ${JVMOPTS}  -jar ChargingDemoKVStore.jar  `cat $HOME/.vdbhostnames`  ${USERCOUNT} ${CT} $DURATION 60 $JSONSIZE $DELTAPROP >> $HOME/logs/activity.log
-	java ${JVMOPTS}  -jar ChargingDemoKVStore.jar  `cat $HOME/.vdbhostnames`  ${USERCOUNT} ${CT} $DURATION 60 $JSONSIZE $DELTAPROP 
-	if
-                [ "$?" = "1" ]
-        then
-                break;
-        fi
+	echo $(date) java ${JVMOPTS}  -jar ChargingDemoKVStore.jar $HOSTS ${USERCOUNT} ${CT} $DURATION 60 $JSONSIZE $DELTAPROP >> $OUTPUTFILE
+	java ${JVMOPTS}  -jar ChargingDemoKVStore.jar $HOSTS ${USERCOUNT} ${CT} $DURATION 60 $JSONSIZE $DELTAPROP 
+
+	if [ "$?" = "1" ] ; then
+    	break;
+    fi
 
 	CT=`expr $CT + ${INC}`
 
 	sleep 15
 done
+
 exit 0

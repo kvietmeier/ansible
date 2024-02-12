@@ -1,5 +1,6 @@
 #!/usr/bin/bash
-# Kill running benchmark threads
+# Kill running benchmark threads - you have to loop because the bmark script will 
+# keep spawning new ones until it is done.
 
 . $HOME/.profile
 

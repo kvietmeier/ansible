@@ -33,7 +33,7 @@ OS_SKU=$(ssh ubuntu@vdb-02 -i ~/.ssh/vdb-mgmt_priv curl -s -H Metadata:true --no
 CPU_SKU=$(ssh ubuntu@vdb-03 -i ~/.ssh/vdb-mgmt_priv lscpu | egrep 'Model name' | awk '{print $6}')
 CPU_ghz=$(ssh ubuntu@vdb-03 -i ~/.ssh/vdb-mgmt_priv lscpu | egrep 'Model name' | awk '{print $9}')
 
-# Grab VM info - Hard code if needed
+# Grab VM info - Hard code f needed
 #Instance="Standard_E16bds_v5"
 #OS_SKU="Ubuntu_20.04"
 #CPU_SKU="8372C"
@@ -47,31 +47,26 @@ DEMONAME="ChargingDemo"
 SPH=3
 NODECOUNT=4
 
-#output_csv = ${test_output}.csv
-
-###---- End vars
-
-# Put test metadata at the top of the file - makes for fewer columns
-cat <<EOF 
-Demo Name,, $DEMONAME 
-Testname,, $TNAME
-VM Instance,, $Instance
-OS Version,, $OS_SKU
-CPU SKU,, $CPU_SKU
-Base Freq,, $CPU_ghz
-Logging,, $CMDLOGGING
-SPH,, $SPH
-Node Count,, $NODECOUNT
-Output File,, $test_output
-
-EOF
+# Create Metadata for each test run (extra column so you can remove the filler column)
+echo "Demo Name,, $DEMONAME"
+echo "Testname,, $TNAME"
+echo "VM Instance,, $Instance"
+echo "OS Version,, $OS_SKU"
+echo "CPU SKU,, $CPU_SKU"
+echo "Base Freq,, $CPU_ghz"
+echo "Logging,, $CMDLOGGING"
+echo "SPH,, $SPH"
+echo "Node Count,, $NODECOUNT"
+echo "Output File,, $test_output"
+echo ""
 
 # Create column headers
+#echo -n "Testname,Instance,CPU_SKU,CPU_GHZ,OS_SKU,DemoName,Logging,SPH,NodeCount,SourceFile,Date_Time,Filler,Target_TPMS,Actual_TPMS,"
 echo -n "Date_Time,Filler,Target_TPMS,Actual_TPMS,"
 
 for i in RQU KV_GET KV_PUT ; do
   for j in AVG 50 99 99.9 99.99 99.999 MAX MAX_FREQ ; do
-   echo -n ${i}_${j}, 
+   echo -n ${i}_${j},
   done
 done
 
@@ -79,4 +74,16 @@ echo ""
 
 # Generate output file with metadata about test prepended
 # Convert to csv - bit of a hack but it works. Relies on time being at a specific location
-grep GREPABLE $test_output | sed '1,$s/./-/14' | sed '1,$s/./-/17' | sed 's/:/,/g' 
+grep GREPABLE $test_output | sed '1,$s/./-/14' | sed '1,$s/./-/17' | sed 's/:/,/g'
+#grep GREPABLE $test_output | sed '1,$s/^/'${TNAME},${Instance},${CPU_SKU},${CPU_ghz},${OS_SKU},${DEMONAME},${CMDLOGGING},${SPH},${NODECOUNT},${test_output},'/g' | sed '1,$s/./-/107' | sed '1,$s/./-/110' | sed 's/:/,/g'
+
+# Testing - 
+#grep GREPABLE $test_output | sed '1,$s/^/'${TNAME},${Instance},${CPU_SKU},${CPU_ghz},${OS_SKU},${DEMONAME},${CMDLOGGING},${SPH},${NODECOUNT},${test_output},'/g' | sed '1,$s/./-/105' | sed '1,$s/./-/108' | sed 's/:/,/g' | sed 's/-/:/105' | sed 's/-/:/108' > foo.txt
+#grep GREPABLE $test_output | sed '1,$s/^/'${TNAME},${Instance},${CPU_SKU},${CPU_ghz},${OS_SKU},${DEMONAME},${CMDLOGGING},${SPH},${NODECOUNT},${test_output},'/g'
+
+
+
+
+
+
+

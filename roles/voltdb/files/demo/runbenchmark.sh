@@ -27,10 +27,10 @@
 #        Karl Vietmeier - Intel Cloud CSA
 ###=======================================================================================###
 
-
-
+# Just to be sure
 . $HOME/.profile
 
+###--- vars
 # Numbers are in K - so 10=10000K
 ST=$1
 MX=$2
@@ -38,23 +38,24 @@ INC=$3
 USERCOUNT=$4
 DURATION=600
 JARDIR=${HOME}/voltdb-charglt/jars
+HOSTS=$(tr '\n' ',' < ../../.vdbhostnames | sed 's/,$//')
+
+###--- Setup Output
 OUTPUTDIR=${HOME}/logs
 OUTPUTFILE=${OUTPUTDIR}/activity.log
 # the list of hosts needs to be comma seperated
-HOSTS=$(tr '\n' ',' < ../../.vdbhostnames | sed 's/,$//')
 
 # Logging directory for output
 if [ ! -d $OUTPUTDIR ] ; then
   mkdir $OUTPUTDIR 2> /dev/null
 fi
 
-# Just to be sure
-cd $JARDIR
-
-if [ "$MX" = "" -o "$ST" = "" -o "$INC" = "" -o "$USERCOUNT" = "" ] ; then
+###--- Check input
+if [ "$ST" = "" -o "$MX" = "" -o "$INC" = "" -o "$USERCOUNT" = "" ] ; then
   echo Usage: $0 start_tps max_tps increment usercount
   exit 1
 fi
+
 
 ### Functions:
 function killbench () {
@@ -77,29 +78,33 @@ function killbench () {
     PID=$(ps -deaf | grep ChargingDemoTransactions.jar  | grep -v grep | awk '{ print $2 }')
   done
 }
+
+function runbenchmark () {
+  # Walk through the iterations
+  CT=${ST}
+  
+  while [ "${CT}" -le "${MX}" ] ; do
+  
+    DT=$(date '+%Y%m%d_%H%-M-%S')
+    echo "Starting a $DURATION second run at ${CT} Transactions Per Millisecond"
+    echo $(date) java ${JVMOPTS} -jar ChargingDemoTransactions.jar $HOSTS ${USERCOUNT} ${CT} ${DURATION} 60 >> ${OUTPUTFILE}
+    java ${JVMOPTS} -jar ChargingDemoTransactions.jar $HOSTS ${USERCOUNT} ${CT} ${DURATION} 60 
+  
+    if [ "$?" = "1" ] ; then
+      break;
+    fi
+
+    CT=`expr $CT + ${INC}`
+
+  done
+}
 ### End Functions
 
 
+###--- Main
+cd $JARDIR
 # Use function to silently kill off any copy that is currently running...
 killbench
-
-
-# Walk through the iterations
-# Pipe sdtout to a file to examine later
-CT=${ST}
-while [ "${CT}" -le "${MX}" ] ; do
-  
-  DT=`date '+%Y%m%d_%H%M%S'`
-  echo "Starting a $DURATION second run at ${CT} Transactions Per Millisecond"
-  echo `date` java ${JVMOPTS}  -jar ChargingDemoTransactions.jar $HOSTS ${USERCOUNT} ${CT} ${DURATION} 60 >> ${OUTPUTFILE}
-  java ${JVMOPTS}  -jar ChargingDemoTransactions.jar $HOSTS ${USERCOUNT} ${CT} ${DURATION} 60 
-  
-  if [ "$?" = "1" ] ; then
-    break;
-  fi
-
-  CT=`expr $CT + ${INC}`
-
-done
+runbenchmark
 
 exit 0
