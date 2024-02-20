@@ -49,10 +49,12 @@ cd "$(dirname "${BASH_SOURCE[0]}")"                   # Make sure we are running
 # Ports - 
 target_ports=(9100 9101 9102)                         # Create an array of target ports
 PROMSERVER_PORT=9090
+
+### - removing  - install the rpm.
 # Versions - 
-PromVer="2.36.1"
-PromBin="prometheus-${PromVer}.linux-amd64.tar.gz"
-PromLink="https://github.com/prometheus/prometheus/releases/download/v${PromVer}/prometheus-${PromVer}.linux-amd64.tar.gz"
+#PromVer="2.36.1"
+#PromBin="prometheus-${PromVer}.linux-amd64.tar.gz"
+#PromLink="https://github.com/prometheus/prometheus/releases/download/v${PromVer}/prometheus-${PromVer}.linux-amd64.tar.gz"
 
 # Files/hosts etc.
 MYCLUSTERID=$(cat ${HOME}/.voltclusterid)
@@ -77,10 +79,10 @@ echo "$(date) - configuring prometheus" | tee -a $LOGFILE
 ###=======================================================================================###
 
 # Grab the version we need/want
-rm $PromBin 2> /dev/null
-wget $PromLink
-tar xzf $PromBin
-rm $PromBin 2> /dev/null
+#rm $PromBin 2> /dev/null
+#wget $PromLink
+#tar xzf $PromBin
+#rm $PromBin 2> /dev/null
 
 
 if [ "$VOLTHOSTS" = "localhost" ] ; then

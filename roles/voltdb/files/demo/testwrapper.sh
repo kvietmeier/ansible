@@ -32,4 +32,4 @@ function test_output () {
 test_output
 
 #  Run bmark with default values
-./runbenchmark.sh $start_tps $max_tps $increment $usercount >> $RESULTSFILE 2>&1 &
+./runbenchmark.sh $start_tps $max_tps $increment $usercount > $RESULTSFILE 2>&1 

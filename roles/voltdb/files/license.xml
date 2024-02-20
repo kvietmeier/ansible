@@ -1,24 +1,20 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <license>
-    <permit version="1" scheme="0">
-        <type>Enterprise Edition</type>
+    <permit version="3">
+        <type>Trial</type>
         <issuer>
-            <company>VoltDB</company>
-            <email>support@voltdb.com</email>
-            <url>http://voltdb.com/</url>
+            <company>Volt Active Data</company>
+            <email>support@voltactivedata.com</email>
+            <url>https://voltactivedata.com/</url>
         </issuer>
-        <issuedate>2023-09-05</issuedate>
-        <licensee>Sandbox User</licensee>
-        <expiration>2024-02-01</expiration>
-        <hostcount max="9"/>
-        <features trial="true">
-            <wanreplication>true</wanreplication>
-            <dractiveactive>true</dractiveactive>
-        </features>
-        <note>FOR SANDBOX USE ONLY</note>
+        <issuedate>2024-02-13</issuedate>
+        <licensee>IntelTrial6N</licensee>
+        <expiration>2024-06-30</expiration>
+        <hostcount max="6"/>
+        <features trial="true"/>
     </permit>
     <signature>
-        302C021450B22E9586432E46FF6E7DE638C8D5442AA8CE
-        66021464CAC4B48B0B5EDA2A7E692C51FAFB6148969177
+        302C0214570244703D107DFAE296C7FAD2C94E4A77E273
+        56021465D6C347C3A0939BDE8C5F97570799D0CA3A2BB7
     </signature>
 </license>

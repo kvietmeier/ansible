@@ -86,7 +86,7 @@
       #- vdb-10
     # Extra packages to install - just to be sure
     volt_packages:
-      #- prometheus
+      - prometheus-node-exporter
       - ncat
       - cpuid
       - ifstat
@@ -514,14 +514,14 @@
     tags:
       - voltdb_setup
 
-  - name: Start Prometheus
-    command: /usr/bin/bash /home/ubuntu/bin/voltdbprometheus_start.sh
-    become_user: ubuntu
-    args: 
-      chdir: /home/ubuntu/bin
-    when: not part1_has_run.stat.exists
-    tags:
-      - voltdb_setup
+  #- name: Start Prometheus
+  #  command: /usr/bin/bash /home/ubuntu/bin/voltdbprometheus_start.sh
+  #  become_user: ubuntu
+  #  args: 
+  #    chdir: /home/ubuntu/bin
+  #  when: not part1_has_run.stat.exists
+  #  tags:
+  #    - voltdb_setup
 
   - name: Reboot before running Part 2
     become: true
@@ -545,6 +545,15 @@
     when: not part2_has_run.stat.exists
     tags:
       - voltdb_setup
+
+  ### mgmt host tasks - 
+  - name: Install Prometheus Server on mgmt host
+    become: true
+    apt:
+      name: prometheus
+      state: present
+    tags:
+      - mgmt_host
 
   - name: Run Grafana and Promtheus setup script on mgmt host
     command: /usr/bin/bash /home/ubuntu/bin/setup_graf-prom.sh

@@ -51,7 +51,7 @@ then
 fi
 
 # Settings for a default XML config file
-SITESPERHOST=8                             # Adjust based on number of vCPU
+SITESPERHOST=16                             # Adjust based on number of vCPU
 CMDLOGDIR=${MOUNTPOINT}/voltdbroot/cmdlog
 PASSWD=admin
 KFACTOR=1                                  # We are creating clusters - set to 0 for single node
@@ -137,8 +137,8 @@ rm $HOME/voltdb_crash*txt 2> /dev/null
 # with the correct parameters?
 # can probalby remove this - already done in part 1
 ###
-sudo systemctl stop voltdb
-sudo systemctl disable voltdb
+#sudo systemctl stop voltdb
+#sudo systemctl disable voltdb
 
 
 # So we can skip running it again with Ansible

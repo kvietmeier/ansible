@@ -102,7 +102,7 @@ function setup_system () {
 	#for  i in voltdb voltdbprometheusbl voltdbprometheus voltdb-node-exporter awscfboot prometheus
 	# Stripped it down - only need to be able to restart volt after a reboot.
 	# Leave it disabled for now
-	for  i in voltdb prometheus 
+	for i in voltdb 
 	do
 	  sudo cp ${i}.service /lib/systemd/system/${i}.service
 	  sudo systemctl disable ${i}.service

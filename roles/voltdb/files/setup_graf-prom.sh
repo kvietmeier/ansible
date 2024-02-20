@@ -80,7 +80,7 @@ function setup_grafana () {
 function setup_prometheus () {
  
 	echo ""
-	echo "Installing Prometheus"   
+	echo "Configuring Prometheus"   
 	echo ""
 	
 	###---- Set up local prometheus server
