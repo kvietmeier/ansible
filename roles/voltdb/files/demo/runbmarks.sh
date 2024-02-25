@@ -17,6 +17,7 @@
 
 ### Jumps of 1
 ./runbenchmark.sh 130 150 1 4000000 > 1.130-150-16.out
+./runbenchmark.sh 140 160 1 4000000 > 1.140-160-16.out
 ./runbenchmark.sh 150 170 1 4000000 > 1.150-170-16.out
 ./runbenchmark.sh 160 180 1 4000000 > 1.160-180-16.out
 ./runbenchmark.sh 170 190 1 4000000 > 1.170-190-16.out

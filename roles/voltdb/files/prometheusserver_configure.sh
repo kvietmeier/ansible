@@ -41,20 +41,21 @@ function debug () {
 }
 #debug
 
-
 . ${HOME}/.profile                                    # Make sure we get the right paths
 cd "$(dirname "${BASH_SOURCE[0]}")"                   # Make sure we are running in the right dir....
 
 ###---- Vars
+# Versions - 
+PromVer="2.36.1"
+PromBin="prometheus-${PromVer}.linux-amd64.tar.gz"
+PromLink="https://github.com/prometheus/prometheus/releases/download/v${PromVer}/prometheus-${PromVer}.linux-amd64.tar.gz"
+
 # Ports - 
+#   9100: Default node_exporter
+#   9101: Customized VoltDB NE
+#   9102: Database Stats exporter
 target_ports=(9100 9101 9102)                         # Create an array of target ports
 PROMSERVER_PORT=9090
-
-### - removing  - install the rpm.
-# Versions - 
-#PromVer="2.36.1"
-#PromBin="prometheus-${PromVer}.linux-amd64.tar.gz"
-#PromLink="https://github.com/prometheus/prometheus/releases/download/v${PromVer}/prometheus-${PromVer}.linux-amd64.tar.gz"
 
 # Files/hosts etc.
 MYCLUSTERID=$(cat ${HOME}/.voltclusterid)
@@ -78,16 +79,25 @@ echo "$(date) - configuring prometheus" | tee -a $LOGFILE
 #      Setup Prometheus
 ###=======================================================================================###
 
-# Grab the version we need/want
-#rm $PromBin 2> /dev/null
-#wget $PromLink
-#tar xzf $PromBin
-#rm $PromBin 2> /dev/null
+# First get rid of the package if we have it
+if [ -f $PromBin ] ; then
+  rm $PromBin 2> /dev/null
+fi
 
+# Grab a new one (not sure why we do this)
+wget $PromLink
+tar xzf $PromBin
 
+# Clean up
+rm $PromBin 2> /dev/null
+
+# Setup the prometheus.xml file
+
+# Are we a single node?
 if [ "$VOLTHOSTS" = "localhost" ] ; then
   cat prometheus.yml.template | sed '1,$s/VOLTDB_CLUSTER_NAME/Site'${MYCLUSTERID}'/g' > prometheus.yml
 
+# No - then setup the DB nodes
 else
   cat prometheus.yml.template | sed '1,$s/VOLTDB_CLUSTER_NAME/Site'${MYCLUSTERID}'/g'  | grep -v localhost > prometheus.yml
   echo -n "             - targets: [" >> prometheus.yml
@@ -105,13 +115,18 @@ else
 
 fi
 
+# Ovewwrite the existing one
 sudo cp prometheus.yml /etc/prometheus/prometheus.yml
 
+# Copy our unit file
+sudo cp prometheus.service /usr/local/lib/systemd/system/
 
+# Restart everything
 for i in stop enable status start status ; do
   date | tee -a $LOGFILE
   sudo systemctl ${i} prometheus.service  | tee -a $LOGFILE
 done
+
 
 exit 0
 

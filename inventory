@@ -19,7 +19,8 @@ worker03
 [workers:vars]
 ansible_ssh_user=ubuntu
 
-### PowerShell Nodes - Created with PowerShell
+
+### Linux nodes for general use
 # Linux Testing
 [linuxnodes]
 linux-01
@@ -29,6 +30,24 @@ linux-04
 
 [linuxnodes:vars]
 ansible_ssh_user=azureuser
+
+
+# Volt Testing
+[voltnodes]
+vdb-02
+vdb-03
+vdb-04
+
+[voltnodes:vars]
+ansible_ssh_user=ubuntu
+ansible_python_interpreter="/usr/bin/python3"
+
+[voltmgmt]
+vdb-01
+
+[voltmgmt:vars]
+ansible_ssh_user=ubuntu
+ansible_python_interpreter="/usr/bin/python3"
 
 
 ###=====================================================================### 

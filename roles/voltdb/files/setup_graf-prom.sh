@@ -10,11 +10,13 @@
 #	Related/Required scripts/files:
 #		* grafana_dashboard_signpost.yaml
 #		* prometheus_datasource.yaml
-#       * prometheusserver_configure.sh
 #
 #   Modified for Azure by:
 #        Karl Vietmeier - Intel Cloud CSA
-# 
+#
+#        Merged in prometheusserver_configure.sh and used a more standardsetup.
+#        https://devopscube.com/install-configure-prometheus-linux/
+
 #   Usage:
 #       
 ###=======================================================================================###
@@ -32,11 +34,35 @@ PASSWORD="n0mad1c"
 eth0IP=$(ip -4 -o addr show dev eth0| awk '{split($4,a,"/");print a[1]}')
 clusterid="0"
 
+# Files/hosts etc.
+MYCLUSTERID=$(cat ${HOME}/.voltclusterid)
+VOLTHOSTS=$(cat ${HOME}/.vdbhostnames)
+HOSTS=$(tr '\n' ',' < ${HOME}/.vdbhostnames | sed 's/,$//')
+LOGDIR=${HOME}/logs
+
+# prometheus Versions - 
+PromVer="2.36.1"
+PromTar="prometheus-${PromVer}.linux-amd64.tar.gz"
+PromDir="prometheus-${PromVer}.linux-amd64"
+PromTempDir="prometheus-files"
+PromLink="https://github.com/prometheus/prometheus/releases/download/v${PromVer}/prometheus-${PromVer}.linux-amd64.tar.gz"
+
+# Ports - 
+#   9100: Default node_exporter
+#   9101: Customized VoltDB NE
+#   9102: Database Stats exporter
+target_ports=(9100 9101 9102)    # Create an array of target ports
+PROMSERVER_PORT=9090
 
 
 ###====================================== Functions ============================================###
-###                                                                                             ###
+###         
 
+# Check if a user exists - 
+# usage:  if ! user_exists username; then....
+user_exists() { 
+	id -u $1 > /dev/null 2>&1
+}                                                                                    ###
 
 function setup_grafana () {
 	###---- Only run on Grafana on mgmt server!  Don't need on every system.
@@ -78,13 +104,108 @@ function setup_grafana () {
 }
 
 function setup_prometheus () {
- 
+	###=======================================================================================###
+	#      Setup Prometheus
+	###=======================================================================================###
+
 	echo ""
-	echo "Configuring Prometheus"   
+	echo "Installing and Configuring Prometheus"   
 	echo ""
 	
+
+	### Steps to manually install a specific version
+	# First get rid of the package if we have it
+	if [ -f $PromTar ] ; then
+	  rm $PromTar 2> /dev/null
+	fi
+
+	# Grab a new tarball, untar/compress amd move (not sure why we do this)
+	wget $PromLink
+	tar xzf $PromTar
+	mv $PromDir prometheus-files
+
+	# Create a Prometheus user, required directories, 
+	# and make Prometheus the user as the owner of those directories.
+
+	# Does prometheus user exist if not - create it?
+	user_exists prometheus
+	if [ $? -eq 1 ] ; then
+		sudo useradd --no-create-home --shell /bin/false prometheus
+	fi
+
+	###---- Logging directory for output
+	if [ ! -d /etc/prometheus ] ; then
+  		sudo mkdir /etc/prometheus 2> /dev/null
+	fi
+	if [ ! -d /var/lib/prometheus ] ; then
+  		sudo mkdir /var/lib/prometheus 2> /dev/null
+	fi
+	#sudo mkdir /etc/prometheus
+	#sudo mkdir /var/lib/prometheus
+	sudo chown prometheus:prometheus /etc/prometheus
+	sudo chown prometheus:prometheus /var/lib/prometheus
+
+    # Copy prometheus and promtool binary to /usr/local/bin and change the 
+	# ownership to prometheus user.
+	sudo cp ./prometheus-files/prometheus /usr/local/bin/
+	sudo cp ./prometheus-files/promtool /usr/local/bin/
+	sudo chown prometheus:prometheus /usr/local/bin/prometheus
+	sudo chown prometheus:prometheus /usr/local/bin/promtool
+
+    # Move the consoles and console_libraries directories from prometheus-files to 
+	# /etc/prometheus folder and change the ownership to prometheus user.
+	sudo cp -r ./prometheus-files/consoles /etc/prometheus
+	sudo cp -r ./prometheus-files/console_libraries /etc/prometheus
+	sudo chown -R prometheus:prometheus /etc/prometheus/consoles
+	sudo chown -R prometheus:prometheus /etc/prometheus/console_libraries
+
+	# Clean up
+	rm $PromBin 2> /dev/null
+
+	# Setup the prometheus.xml file
+
+	# Are we a single node?
+	if [ "$VOLTHOSTS" = "localhost" ] ; then
+	  cat prometheus.yml.template | sed '1,$s/VOLTDB_CLUSTER_NAME/Site'${MYCLUSTERID}'/g' > prometheus.yml
+
+	# No - then setup the DB nodes
+	else
+	  cat prometheus.yml.template | sed '1,$s/VOLTDB_CLUSTER_NAME/Site'${MYCLUSTERID}'/g'  | grep -v localhost > prometheus.yml
+	  echo -n "             - targets: [" >> prometheus.yml
+
+	  COMMA=
+
+		for host in `echo $VOLTHOSTS | sed '1,$s/,/ /g'` ; do
+ 			for port in "${target_ports[@]}" ; do
+  		        echo -n "${COMMA}'${host}:${port}'" >> prometheus.yml
+				COMMA=","
+    		done
+		done
+  
+  		echo  ",'localhost:9100']" >> prometheus.yml
+
+	fi
+
+	# Overwrite the existing one
+	sudo cp ./prometheus.yml /etc/prometheus/prometheus.yml
+
+	# Copy our unit file
+	sudo cp ./prometheus.service /etc/systemd/system/
+
+	# Set permissions - 
+	sudo chown -R prometheus:prometheus /var/lib/prometheus/
+	sudo chown prometheus:prometheus /etc/prometheus/prometheus.yml
+
+	# Restart everything
+	sudo systemctl daemon-reload
+	for i in enable start status ; do
+	  date | tee -a $LOGFILE
+	  sudo systemctl ${i} prometheus.service  | tee -a $LOGFILE
+	done
+
+
 	###---- Set up local prometheus server
-	bash prometheusserver_configure.sh
+	#bash prometheusserver_configure.sh
 
 	## Disable node_exporter don't need it on mgmt server.
 	sudo systemctl is-active --quiet prometheus-node-exporter

@@ -51,11 +51,11 @@ then
 fi
 
 # Settings for a default XML config file
-SITESPERHOST=16                             # Adjust based on number of vCPU
+SITESPERHOST=16                          # Adjust based on number of vCPU
+KFACTOR=1                                # We are creating clusters - set to 0 for single node
+CMDLOGGING=true
 CMDLOGDIR=${MOUNTPOINT}/voltdbroot/cmdlog
 PASSWD=admin
-KFACTOR=1                                  # We are creating clusters - set to 0 for single node
-CMDLOGGING=true
 CMDLOG_DIR=${MOUNTPOINT_SSD1}/voltdbroot/cmdlog
 SNAPSHOT_DIR=${MOUNTPOINT_SSD2}/voltdbroot/snapshot
 AUTOSNAPSHOT_DIR=${MOUNTPOINT_SSD2}/voltdbroot/snapshots

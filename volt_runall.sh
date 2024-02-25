@@ -17,7 +17,7 @@ playbook=${HOME}/ansible/roles/voltdb/voltdb.yaml
 volt_bin="/home/ubuntu/voltdb-ent-${volt_ver}/bin/voltdb"
 demo_dir="/home/ubuntu/chargingdb"
 bmark_dir="/home/ubuntu/voltdb-charglt/scripts/"
-config_file="/home/ubuntu/demo_cluster_config.xml"
+demo_file="/home/ubuntu/demo_cluster_config.xml"
 license_file="/home/ubuntu/license.xml"
 start_cmd="nohup $volt_bin start --dir=${demo_dir} --host=${volt_host} > $HOME/voltstart.out 2> $HOME/voltstart.err < /dev/null &"
 
@@ -30,27 +30,27 @@ volt_hosts=$(IFS=,; echo "${volt_nodes[*]}")
 
 # Check for different numbers of nodes
 if [ $num_nodes -eq 3 ] ; then
-  inventory=${HOME}/ansible/inventory_3node
-  db_hosts_file=${HOME}/ansible/vdb3hosts.txt            # Has list of DB nodes
+  inventory=${HOME}/ansible/volt/inventory_3node
+  db_hosts_file=${HOME}/ansible/volt/vdb3hosts.txt            # Has list of DB nodes
 fi
 if [ $num_nodes -eq 6 ] ; then
-  inventory=${HOME}/ansible/inventory_6node
-  db_hosts_file=${HOME}/ansible/vdb6hosts.txt            # Has list of DB nodes
+  inventory=${HOME}/ansible/volt/inventory_6node
+  db_hosts_file=${HOME}/ansible/volt/vdb6hosts.txt            # Has list of DB nodes
 fi
 if [ $num_nodes -eq 9 ] ; then
-  inventory=${HOME}/ansible/inventory_9node
-  db_hosts_file=${HOME}/ansible/vdb9hosts.txt            # Has list of DB nodes
+  inventory=${HOME}/ansible/volt/inventory_9node
+  db_hosts_file=${HOME}/ansible/volt/vdb9hosts.txt            # Has list of DB nodes
 fi
 
 servers=$(tr '\n' ',' < $db_hosts_file | sed 's/,$//')
 
 ###=========================================================================================###
-#                          Shouldn't need to edit below this line                             #
+###                        Shouldn't need to edit below this line                           ###
 
 
-###=======================================================================================###
+###=========================================================================================###
 #    Functions - 
-###=======================================================================================###
+###=========================================================================================###
 
 function playbooks () {
   # Using tags in Playbook to break up tasks for hosts.
@@ -146,8 +146,9 @@ function run_demo_setup () {
 #    Main - 
 ###=======================================================================================###
 
-playbooks
-init
-start_volt
+# Call the functions - comment/uncomment as needed
+#playbooks
+#init
+#start_volt
 prometheus_dbstats_export
 run_demo_setup

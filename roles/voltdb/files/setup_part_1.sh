@@ -101,10 +101,10 @@ function setup_system () {
 	# Copy unit files for services that start enabled
 	#for  i in voltdb voltdbprometheusbl voltdbprometheus voltdb-node-exporter awscfboot prometheus
 	# Stripped it down - only need to be able to restart volt after a reboot.
-	# Leave it disabled for now
 	for i in voltdb 
 	do
 	  sudo cp ${i}.service /lib/systemd/system/${i}.service
+	  # Leave it disabled for now
 	  sudo systemctl disable ${i}.service
 	done
 
@@ -137,8 +137,6 @@ function setup_system () {
           #echo "sudo bash ./filesystem.sh ${sd} ${data_mnt}${i}"
           disk_num=$((++disk_num))
         done
-
-
     fi
 
 	# services that start disabled  (don't need right now)
@@ -162,6 +160,12 @@ function setup_prometheus () {
 	MYCLUSTERID=$(cat /home/ubuntu/.voltclusterid)
 	VOLTHOSTS=$(cat /home/ubuntu/.vdbhostnames)
 	
+	## Disable node_exporter as it's broken.
+	###--- We don't install it in the first place
+	#sudo service prometheus-node-exporter stop
+	#sudo rm /etc/systemd/system/multi-user.target.wants/prometheus-node-exporter.service
+	#sudo rm /lib/systemd/system/prometheus-node-exporter.service
+ 
 	# Get Prometheus - specific version
 	rm $PromBin 2> /dev/null
 	wget $PromLink

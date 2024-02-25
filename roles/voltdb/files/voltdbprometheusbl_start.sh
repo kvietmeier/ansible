@@ -26,7 +26,7 @@ cd $HOME
 
 . ${HOME}/.profile
 
-PROMETHEUS_PORT=9102
+PROMETHEUSBL_PORT=9102
 LOGDIR=${HOME}/logs
 
 ###---- Logging directory for output
@@ -34,9 +34,9 @@ if [ ! -d $LOGDIR ] ; then
   mkdir $LOGDIR 2> /dev/null
 fi
 
-LOGFILE=${LOGDIR}/start_voltdbprometheusbl_if_needed`date '+%y%m%d'`.log
-touch $LOGFILE
-echo `date` "configuring prometheus " | tee -a $LOGFILE
+LOGFILEBL=${LOGDIR}/start_voltdbprometheusbl_if_needed`date '+%y%m%d'`.log
+touch $LOGFILEBL
+echo `date` "configuring prometheus " | tee -a $LOGFILEBL
 
 
 #

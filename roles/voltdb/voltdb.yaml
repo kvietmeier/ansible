@@ -547,13 +547,13 @@
       - voltdb_setup
 
   ### mgmt host tasks - 
-  - name: Install Prometheus Server on mgmt host
-    become: true
-    apt:
-      name: prometheus
-      state: present
-    tags:
-      - mgmt_host
+  #- name: Install Prometheus Server on mgmt host
+  # become: true
+  #  apt:
+  #    name: prometheus
+  #    state: present
+  #  tags:
+  #    - mgmt_host
 
   - name: Run Grafana and Promtheus setup script on mgmt host
     command: /usr/bin/bash /home/ubuntu/bin/setup_graf-prom.sh

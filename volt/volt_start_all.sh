@@ -7,7 +7,7 @@ volt_user=ubuntu
 volt_host="vdb-02,vdb-03,vdb-04,vdb-05"
 volt_bin="/home/ubuntu/voltdb-ent-${volt_ver}/bin/voltdb"
 demo_dir="/home/ubuntu/chargingdb"
-start_cmd="nohup $volt_bin start --dir=${demo_dir} --host=${volt_host} > $HOME/voltstart.out 2> $HOME/voltstart.err < /dev/null &"
+start_cmd="nohup $volt_bin start --dir=${demo_dir} --host=${volt_host} -add-opens java.base/sun.nio.ch=ALL-UNNAMED > $HOME/voltstart.out 2> $HOME/voltstart.err < /dev/null &"
 
 
 for node in 2 3 4 5
