@@ -23,8 +23,8 @@
 #  OTHER DEALINGS IN THE SOFTWARE.
 
 cd $HOME
-
 . ${HOME}/.profile
+
 PROMETHEUS_PORT=9102
 LOGDIR=${HOME}/logs
 
@@ -33,27 +33,21 @@ if [ ! -d $LOGDIR ] ; then
   mkdir $LOGDIR 2> /dev/null
 fi
 
-LOGFILE=${LOGDIR}/start_voltdbprometheusbl_if_needed`date '+%y%m%d'`.log
+LOGFILEBL=${LOGDIR}/stop_voltdbprometheusbl_if_needed`date '+%m%d%y%H-%M'`.log
 touch $LOGFILE
-echo `date` "configuring prometheus " | tee -a $LOGFILE
-
+echo `date` "Stopping DBstat export.jar" | tee -a $LOGFILEBL
 
 
 #
 # See if we need to stop prometheus client for voltdb
 #
-
 curl -m 1 localhost:${PROMETHEUSBL_PORT} > /tmp/$$curl.log
 
-if
-	[ -s /tmp/$$curl.log ]
-then
+if [ -s /tmp/$$curl.log ] ; then
 	# kill it if its hung...
 	OLDPROCESS=`ps -deaf | grep voltdbprometheusbl.jar | grep -v grep | awk '{ print $2 }'`
 	
-	if
-	        [ "$OLDPROCESS" != "" ]
-	then
+	if [ "$OLDPROCESS" != "" ] ; then
 		echo `date` killed process $OLDPROCESS
 		kill  $OLDPROCESS
 		rm ${HOME}/.voltdbprometheusbl.PID 2> /dev/null

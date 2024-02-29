@@ -33,7 +33,7 @@ cd "$(dirname "${BASH_SOURCE[0]}")"
 ### Set parameters
 # Hard coded to versions in the bin directory
 # Could I use 11.0.11?
-JAVA_BUILD_VERSION="jdk-11.0.4"
+JAVA_BUILD_VERSION="jdk-11.0.11"
 JAVA_FILE_VERSION=${JAVA_BUILD_VERSION}_linux-x64
 VOLT_VERSION="11.4"
 Kafka_Ver="2.13-2.6.0"
@@ -152,7 +152,7 @@ function setup_system () {
 
 
 function setup_prometheus () {
-	# Each node needs a prometheus server running
+	# Don't do this - we setup Node Exporter elsewhere
 	PromVer="2.36.1"
 	PromBin="prometheus-${PromVer}.linux-amd64.tar.gz"
 	PromLink="https://github.com/prometheus/prometheus/releases/download/v${PromVer}/prometheus-${PromVer}.linux-amd64.tar.gz"

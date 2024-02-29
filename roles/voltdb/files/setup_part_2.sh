@@ -32,21 +32,18 @@ cd "$(dirname "${BASH_SOURCE[0]}")"
 MOUNTPOINT=$HOME
 
 # If you don't have the 2 extra disks put everything in $HOME
-if [ -d "/voltdbdata" ]
-then
+if [ -d "/voltdbdata" ] ; then
   MOUNTPOINT=/voltdbdata
   MOUNTPOINT_SSD1=${MOUNTPOINT}
   MOUNTPOINT_SSD2=${MOUNTPOINT}
 fi
 
 # Check for extra SSD mountpoints
-if [ -d "/voltdbdatassd1" ]
-then
+if [ -d "/voltdbdatassd1" ] ; then
 	MOUNTPOINT_SSD1="/voltdbdatassd1"
 fi
 
-if [ -d "/voltdbdatassd2" ]
-then
+if [ -d "/voltdbdatassd2" ] ; then
 	MOUNTPOINT_SSD2="/voltdbdatassd2"
 fi
 
@@ -69,8 +66,7 @@ function kill_volt () {
   # Grab the PID
   VPID=`ps -deaf | grep org.voltdb.VoltDB | grep java | grep -v grep | awk '{ print $2}'`
 
-  if [ "$PID" != "" ]
-  then
+  if [ "$VPID" != "" ] ; then
 	  kill -9 $VPID
   fi
 

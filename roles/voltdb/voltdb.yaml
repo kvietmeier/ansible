@@ -40,6 +40,11 @@
     dool_url: https://github.com/scottchiefbaker/dool/releases/download/v1.3.0/dool-1.3.0-1.noarch.rpm
     dool_pkg: dool-1.3.0-1.noarch.rpm
 
+    # Java - 
+    jdk_8_path: /usr/lib/jvm/java-8-openjdk-amd64/bin/java 
+    jdk_11_path: /usr/lib/jvm/java-11-openjdk-amd64/bin/java 
+    jdk_17_path: /usr/lib/jvm/java-17-openjdk-amd64/bin/java 
+
     # Modified files to copy over from $HOME/bin
     # Will eventually bundle these up in the bin directory
     MgmtSetupFiles:
@@ -78,9 +83,9 @@
       - vdb-02
       - vdb-03
       - vdb-04
-      #- vdb-05
-      #- vdb-06
-      #- vdb-07
+      - vdb-05
+      - vdb-06
+      - vdb-07
       #- vdb-08
       #- vdb-09
       #- vdb-10
@@ -99,6 +104,9 @@
       - maven
       - xterm
       - alien
+      - default-jre
+      - openjdk-11-jre-headless
+      - openjdk-17-jre-headless
 
 
   ###========================================= End VARS  =======================================###
@@ -119,12 +127,17 @@
     tags:
       - voltdb_setup
 
+  - name: Check if we setup custom node_exporter
+    register: custom_ne_started
+    stat: path=/home/ubuntu/.custom_ne_started get_md5=no
+    tags:
+      - voltdb_setup
+
   - name: Check if we already setup Grafa and Prometheus on mgmt host
     register: setupgfp_has_run
     stat: path=/home/ubuntu/.setupgfp_ran get_md5=no
     tags:
       - mgmt_host
-  
 
   ###=========================== Pkg Mgmt with apt ============================###
   ###                                                                          ###
@@ -226,6 +239,16 @@
     tags:
       - system
 
+  # Set JAVA_HOME Globally as insurance
+  - name: Set JAVA_HOME in /etc/environment
+    lineinfile:
+      dest: /etc/environment
+      state: present
+      regexp: '^JAVA_HOME'
+      line: 'JAVA_HOME={{ jdk_11_path }}'
+    tags:
+      - system
+
 
   ###======================= User environment setup ===========================###
   ###                                                                          ###
@@ -315,17 +338,6 @@
     tags:
       - ssh_setup
 
-  - name: Copy private key for VoltDB
-    copy:
-      src: files/keys/vdb-mgmt_priv
-      dest: /home/ubuntu/.ssh/vdb-mgmt_priv
-      owner: ubuntu
-      group: ubuntu
-      mode: 0600
-      force: true
-    tags:
-      - mgmt_host
-
   - name: Copy a basic vimrc
     copy:
       src: files/vimrc
@@ -348,6 +360,15 @@
     tags:
       - userenv
   
+  - name: Get rid of ubuntu login splash
+    file:
+      path: /home/ubuntu/.hushlogin
+      state: touch
+      owner: ubuntu
+      group: ubuntu
+    tags:
+      - userenv
+
   # Save as template for future use
   #- name: Copy startvolt for VoltDB to mgmt host
   #  copy:
@@ -413,9 +434,33 @@
       - git
 
 
-
   ###============================ VoltDB Setup Section ==========================###
   ###                                                                            ###
+
+  # Need to remove localhost from .vdbhostnames    
+  - name: Remove localhost from .vdbhostnames
+    lineinfile:
+    become_user: ubuntu
+    args: 
+      create: true
+      dest: .vdbhostnames
+      state: absent 
+      regexp: 'localhost'
+    tags:
+      - voltenv
+
+  # Populate .vdbhostnames
+  - name: Populate .vdbhostnames
+    lineinfile:
+    become_user: ubuntu
+    args: 
+      create: true
+      dest: .vdbhostnames
+      line: '{{ item }}'
+    with_items:
+      - "{{ volt_hosts }}"
+    tags:
+      - voltenv
 
   - name: Copy modified Volt bin dir scripts
     become_user: ubuntu
@@ -458,6 +503,92 @@
       - "demo/*"
     tags:
       - copy_files
+
+  ### Run volt setup_part_1.sh
+  - name: Run Part 1
+    command: /usr/bin/bash /home/ubuntu/bin/setup_part_1.sh 11.4
+    become_user: ubuntu
+    args: 
+      chdir: /home/ubuntu/bin
+    when: not part1_has_run.stat.exists
+    tags:
+      - voltdb_setup
+
+  - name: Reboot before running Part 2
+    become: true
+    reboot:
+      msg: "Reboot initiated by Ansible to prep for Part 2"
+      connect_timeout: 5
+      reboot_timeout: 300
+      pre_reboot_delay: 0
+      post_reboot_delay: 30
+      test_command: uptime
+    when: not part1_has_run.stat.exists
+    tags:
+      - voltdb_setup
+
+  ### Run volt setup_part_2.sh
+  - name: Run Part 2
+    command: /usr/bin/bash /home/ubuntu/bin/setup_part_2.sh
+    become_user: ubuntu
+    args: 
+      chdir: /home/ubuntu/bin
+    when: not part2_has_run.stat.exists
+    tags:
+      - voltdb_setup
+
+  # Get the custom Node exporter running
+  - name: Setup/Start Volt Prometheus Exporter
+    command: /usr/bin/bash /home/ubuntu/bin/voltdbprometheus_start.sh
+    become_user: ubuntu
+    args: 
+      chdir: /home/ubuntu/bin
+    when: not custom_ne_startup.stat.exists
+    tags:
+      - voltdb_setup
+
+  ###
+  ### mgmt host tasks - 
+  ###
+  - name: Run Grafana and Promtheus setup script on mgmt host
+    command: /usr/bin/bash /home/ubuntu/bin/setup_graf-prom.sh
+    become_user: ubuntu
+    args: 
+      chdir: /home/ubuntu/bin
+    when: not setupgfp_has_run.stat.exists
+    tags:
+      - mgmt_host
+  
+  - name: Copy private key for VoltDB
+    copy:
+      src: files/keys/vdb-mgmt_priv
+      dest: /home/ubuntu/.ssh/vdb-mgmt_priv
+      owner: ubuntu
+      group: ubuntu
+      mode: 0600
+      force: true
+    tags:
+      - mgmt_host
+
+  - name: Create symbolic link to benchmark scripts
+    file:
+      dest: /home/ubuntu/bmark
+      src: voltdb-charglt/scripts
+      owner: ubuntu
+      group: ubuntu
+      state: link
+    tags:
+      - mgmt_host
+
+  - name:  Set ownership of link to benchmark scripts
+    file:
+      path: /home/ubuntu/bmark
+      state: directory
+      recurse: yes
+      owner: ubuntu
+      group: ubuntu
+    tags:
+      - mgmt_host
 
   - name: Copy modified Volt bin dir scripts to Mgmt Server
     become_user: ubuntu
@@ -504,124 +635,8 @@
     tags:
       - mgmt_host
 
-  ### Run volt setup_part_1.sh
-  - name: Run Part 1
-    command: /usr/bin/bash /home/ubuntu/bin/setup_part_1.sh 11.4
-    become_user: ubuntu
-    args: 
-      chdir: /home/ubuntu/bin
-    when: not part1_has_run.stat.exists
-    tags:
-      - voltdb_setup
-
-  #- name: Start Prometheus
-  #  command: /usr/bin/bash /home/ubuntu/bin/voltdbprometheus_start.sh
-  #  become_user: ubuntu
-  #  args: 
-  #    chdir: /home/ubuntu/bin
-  #  when: not part1_has_run.stat.exists
-  #  tags:
-  #    - voltdb_setup
-
-  - name: Reboot before running Part 2
-    become: true
-    reboot:
-      msg: "Reboot initiated by Ansible to prep for Part 2"
-      connect_timeout: 5
-      reboot_timeout: 300
-      pre_reboot_delay: 0
-      post_reboot_delay: 30
-      test_command: uptime
-    when: not part1_has_run.stat.exists
-    tags:
-      - voltdb_setup
-
-  ### Run volt setup_part_2.sh
-  - name: Run Part 2
-    command: /usr/bin/bash /home/ubuntu/bin/setup_part_2.sh
-    become_user: ubuntu
-    args: 
-      chdir: /home/ubuntu/bin
-    when: not part2_has_run.stat.exists
-    tags:
-      - voltdb_setup
-
-  ### mgmt host tasks - 
-  #- name: Install Prometheus Server on mgmt host
-  # become: true
-  #  apt:
-  #    name: prometheus
-  #    state: present
-  #  tags:
-  #    - mgmt_host
-
-  - name: Run Grafana and Promtheus setup script on mgmt host
-    command: /usr/bin/bash /home/ubuntu/bin/setup_graf-prom.sh
-    become_user: ubuntu
-    args: 
-      chdir: /home/ubuntu/bin
-    when: not setupgfp_has_run.stat.exists
-    tags:
-      - mgmt_host
-
-
   ###======================== End VoltDB Setup Section ==========================###
 
-  ###--- Misc Cleanup
-
-  # Need to remove localhost from .vdbhostnames    
-  - name: Remove localhost from .vdbhostnames
-    lineinfile:
-    become_user: ubuntu
-    args: 
-      create: true
-      dest: .vdbhostnames
-      state: absent 
-      regexp: 'localhost'
-    tags:
-      - userenv
-
-  # Populate .vdbhostnames
-  - name: Populate .vdbhostnames
-    lineinfile:
-    become_user: ubuntu
-    args: 
-      create: true
-      dest: .vdbhostnames
-      line: '{{ item }}'
-    with_items:
-      - "{{ volt_hosts }}"
-    tags:
-      - userenv
-
-  - name: Get rid of ubuntu login splash
-    file:
-      path: /home/ubuntu/.hushlogin
-      state: touch
-      owner: ubuntu
-      group: ubuntu
-    tags:
-      - userenv
-
-  - name: Create symbolic link to benchmark scripts
-    file:
-      dest: /home/ubuntu/bmark
-      src: voltdb-charglt/scripts
-      owner: ubuntu
-      group: ubuntu
-      state: link
-    tags:
-      - mgmt_host
-
-  - name:  Set ownership of link to benchmark scripts
-    file:
-      path: /home/ubuntu/bmark
-      state: directory
-      recurse: yes
-      owner: ubuntu
-      group: ubuntu
-    tags:
-      - mgmt_host
 
 
 ###========================================= End Tasks =======================================###
@@ -649,3 +664,10 @@
   #  tags:
   #    - voltdb
 
+  #- name: Install Prometheus Server on mgmt host
+  # become: true
+  #  apt:
+  #    name: prometheus
+  #    state: present
+  #  tags:
+  #    - mgmt_host

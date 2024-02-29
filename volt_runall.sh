@@ -60,7 +60,7 @@ function playbooks () {
   echo "###=========================================###"
   echo ""
 
-  ansible-playbook --limit voltnodes -i $inventory $playbook --tags=apt,system,userenv,git,ssh_setup,copy_files,voltdb_setup
+  ansible-playbook --limit voltnodes -i $inventory $playbook --tags=apt,system,userenv,volt_env,git,ssh_setup,copy_files,voltdb_setup
   
   sleep 5
 
@@ -71,7 +71,7 @@ function playbooks () {
   echo "###=========================================###"
   echo ""
 
-  ansible-playbook --limit voltmgmt -i $inventory $playbook --tags=apt,system,userenv,git,ssh_setup,copy_files
+  ansible-playbook --limit voltmgmt -i $inventory $playbook --tags=apt,system,userenv,volt_env,git,ssh_setup,copy_files
   sleep 2
 
   ansible-playbook --limit voltmgmt -i $inventory $playbook --tags=mgmt_host
@@ -147,8 +147,8 @@ function run_demo_setup () {
 ###=======================================================================================###
 
 # Call the functions - comment/uncomment as needed
-#playbooks
+playbooks
 #init
 #start_volt
-prometheus_dbstats_export
-run_demo_setup
+#prometheus_dbstats_export
+#run_demo_setup

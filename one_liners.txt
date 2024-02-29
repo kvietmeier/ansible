@@ -1,1 +1,29 @@
+# Example calling Volt playbook
 ansible-playbook --limit voltmgmt roles/voltdb/voltdb.yaml --tags=foo
+
+# Get DB status
+ansible -i ./volt/inventory_3node vdb-01 -m shell -a "echo \"exec @SystemInformation overview;\" | /home/ubuntu/voltdb-ent-11.4/bin/sqlcmd --servers=vdb-02 | grep HOSTNAME | awk '{ print $3 }' | sort"
+ansible -i ./volt/inventory_3node vdb-01 -m shell -a "echo \"exec @SystemInformation deployment;\" | /home/ubuntu/voltdb-ent-11.4/bin/sqlcmd --servers=vdb-02 "
+
+# Get java versions - 
+ansible -i volt/inventory_3node voltnodes,voltmgmt -a "java --version"
+ansible -i volt/inventory_6node voltnodes,voltmgmt -a "java --version"
+ansible -i volt/inventory_6node voltnodes,voltmgmt -a "sudo update-alternatives --config java"
+
+# Disks - not working
+ansible -i volt/inventory_6node voltnodes -a "sudo lsblk | grep disk"
+ansible -i volt/inventory_3node voltnodes -a "sudo lsblk | grep disk"
+
+# Prometheus - 
+ansible -i volt/inventory_3node voltnodes -m apt -a "name=prometheus-node-exporter state=latest"
+ansible -i volt/inventory_3node voltnodes -a "systemctl status prometheus-node-exporter"
+ansible -i volt/inventory_3node voltmgmt -m apt -a "name=prometheus state=latest"
+ansible -i volt/inventory_3node voltmgmt -a "systemctl status prometheus"
+
+# Run specific tasks`
+ansible-playbook --limit voltmgmt -i volt/inventory_3node ${HOME}/ansible/roles/voltdb/voltdb.yaml --tags=apt,system,userenv,git,ssh_setup,copy_files
+ansible-playbook --limit voltmgmt -i volt/inventory_3node ${HOME}/ansible/roles/voltdb/voltdb.yaml --tags=mgmt_host
+
+
+
+

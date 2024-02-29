@@ -16,20 +16,13 @@
 #
 #        Merged in prometheusserver_configure.sh and used a more standardsetup.
 #        https://devopscube.com/install-configure-prometheus-linux/
-
-#   Usage:
-#       
+#
 ###=======================================================================================###
 
 # Make sure we are running in the right dir....
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
 ###--- Vars
-src_dashboard_dir=${HOME}/bin/dashboards
-tgt_dashboard_dir=/etc/grafana/provisioning/dashboards
-tgt_data_dir=/etc/grafana/provisioning/datasources
-PASSWORD="n0mad1c"
-
 # Need these for .vdbhosts and .clusterid
 eth0IP=$(ip -4 -o addr show dev eth0| awk '{split($4,a,"/");print a[1]}')
 clusterid="0"
@@ -40,7 +33,13 @@ VOLTHOSTS=$(cat ${HOME}/.vdbhostnames)
 HOSTS=$(tr '\n' ',' < ${HOME}/.vdbhostnames | sed 's/,$//')
 LOGDIR=${HOME}/logs
 
-# prometheus Versions - 
+# Grafana - 
+src_dashboard_dir=${HOME}/bin/dashboards
+tgt_dashboard_dir=/etc/grafana/provisioning/dashboards
+tgt_data_dir=/etc/grafana/provisioning/datasources
+PASSWORD="n0mad1c"
+
+# Prometheus -
 PromVer="2.36.1"
 PromTar="prometheus-${PromVer}.linux-amd64.tar.gz"
 PromDir="prometheus-${PromVer}.linux-amd64"
@@ -54,6 +53,8 @@ PromLink="https://github.com/prometheus/prometheus/releases/download/v${PromVer}
 target_ports=(9100 9101 9102)    # Create an array of target ports
 PROMSERVER_PORT=9090
 
+
+###--- End vars
 
 ###====================================== Functions ============================================###
 ###         
@@ -76,7 +77,7 @@ function setup_grafana () {
 	echo $eth0IP > $HOME/.vdbhosts
 	echo $clusterid > $HOME/.voltclusterid
     
-	# Install Grafana
+	# Download ame install Grafana
 	wget -q -O - https://packages.grafana.com/gpg.key | sudo apt-key add -
 	echo "deb https://packages.grafana.com/oss/deb stable main" | sudo tee -a /etc/apt/sources.list.d/grafana.list
 	sudo apt update
@@ -87,16 +88,18 @@ function setup_grafana () {
 	sudo cp -r ${src_dashboard_dir}/* $tgt_dashboard_dir
 	sudo find $tgt_dashboard_dir -exec chgrp grafana {} \;
 	sudo cp prometheus_datasource.yaml $tgt_data_dir
-	sudo chgrp grafana ${tgt_dashboard_dir}/grafana_dashboard_signpost.yaml
-	sudo chgrp grafana ${tgt_data_dir}/prometheus_datasource.yaml
 	
 	# Seems to be a permissions issue
+	sudo chgrp grafana ${tgt_dashboard_dir}/grafana_dashboard_signpost.yaml
+	sudo chgrp grafana ${tgt_data_dir}/prometheus_datasource.yaml
 	sudo chown -R grafana:grafana /var/lib/grafana/
 
 	# Start/Enable the service
-	sudo /bin/systemctl daemon-reload
-	sudo /bin/systemctl enable grafana-server
-	sudo /bin/systemctl start grafana-server
+	sudo systemctl daemon-reload
+	for i in enable start ; do
+	  date | tee -a $LOGFILE
+	  sudo systemctl ${i} grafana-server  | tee -a $LOGFILE
+	done
 
 	sudo grafana-cli admin reset-admin-password $PASSWORD
 	
@@ -186,28 +189,32 @@ function setup_prometheus () {
 
 	fi
 
-	# Overwrite the existing one
+	# Copy config and unit files
 	sudo cp ./prometheus.yml /etc/prometheus/prometheus.yml
-
-	# Copy our unit file
 	sudo cp ./prometheus.service /etc/systemd/system/
 
 	# Set permissions - 
-	sudo chown -R prometheus:prometheus /var/lib/prometheus/
 	sudo chown prometheus:prometheus /etc/prometheus/prometheus.yml
+	sudo chown -R prometheus:prometheus /var/lib/prometheus/
 
 	# Restart everything
 	sudo systemctl daemon-reload
-	for i in enable start status ; do
-	  date | tee -a $LOGFILE
-	  sudo systemctl ${i} prometheus.service  | tee -a $LOGFILE
+	for i in enable start ; do
+	  sudo systemctl ${i} prometheus.service
 	done
 
 
 	###---- Set up local prometheus server
 	#bash prometheusserver_configure.sh
 
-	## Disable node_exporter don't need it on mgmt server.
+	
+	
+	###---- End Prometheus
+}
+
+
+function disable_node_exporter () {
+    ## Disable node_exporter don't need it on mgmt server.
 	sudo systemctl is-active --quiet prometheus-node-exporter
 
 	if  [ "$?" = "0" ] ; then
@@ -219,18 +226,18 @@ function setup_prometheus () {
 	
 	# Make sure it doesn't start
 	sudo systemctl disable prometheus-node-exporter
-	
-	###---- End Prometheus
+
 }
 
 
 ###================================== End Functions ============================================###
 
 ###---- Run functions
-
 # These only need to run on mgmt system.
+disable_node_exporter
 setup_grafana
 setup_prometheus
+
 
 # So we can skip running it again with Ansible
 touch $HOME/.setupgfp_ran

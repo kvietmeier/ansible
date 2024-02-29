@@ -7,8 +7,8 @@
 #
 #   Requirements:
 #    	* Ubuntu 18.04 or newer
-#		* Root volume >30GB
-#		* 2 data volumes >128GB
+#		* Root volume >= 128GB
+#		* 2 data volumes = 256GB
 #		* a $HOME/bin directory with the VoltDB utility scripts and utility packages 
 #	
 #	Related/Required scripts/files:
@@ -69,10 +69,10 @@ eth0IP=$(ip -4 -o addr show dev eth0| awk '{split($4,a,"/");print a[1]}')
 
 
 # Settings for a default XML config file
-SITESPERHOST=8
+SITESPERHOST=16
 CMDLOGDIR=${MOUNTPOINT}/voltdbroot/cmdlog
 PASSWD=admin
-KFACTOR=0
+KFACTOR=1
 CMDLOGGING=true
 CMDLOG_DIR=${MOUNTPOINT_SSD1}/voltdbroot/cmdlog
 SNAPSHOT_DIR=${MOUNTPOINT_SSD2}/voltdbroot/snapshot

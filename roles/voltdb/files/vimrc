@@ -14,10 +14,6 @@ set laststatus=2
 set showmode
 set showcmd
 
-" keep cursor in the middle of the screen while scrolling up and down.
-set scrolloff=999
-
-
 " Whitespace/formatting/code
 syntax on
 set tabstop=2
@@ -25,7 +21,7 @@ set shiftwidth=2
 set softtabstop=2
 set expandtab
 set autoindent
-set si "Smart indent
+"set si "Smart indent
 set showmatch
 "set wrap
 "set textwidth=72

@@ -21,20 +21,43 @@
 #  OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 #  ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 #  OTHER DEALINGS IN THE SOFTWARE.
+###=======================================================================================###
+#
+#   This sets up databse stats export to Prometheus
+#
+#   Modified for Azure by:
+#        Karl Vietmeier - Intel Cloud CSA
+#
+###=======================================================================================###
 
 cd $HOME
-
 . ${HOME}/.profile
 
-PROMETHEUSBL_PORT=9102
+
+###--- Vars
 LOGDIR=${HOME}/logs
+PROMETHEUSBL_PORT=9102
+
+# Commamd gets really long.....
+JavaFlag1="--webserverport=${PROMETHEUSBL_PORT}"
+JavaFlag2="--add-opens=java.base/sun.nio.ch=ALL-UNNAMED"
+JavaFlag3="--procedureList=PROCEDUREPROFILE,ORGANIZEDTABLESTATS,ORGANIZEDINDEXSTATS,SNAPSHOTSTATS,ORGANIZEDSQLSTMTSTATS,${BL_PROCEDURES}"
+
+# These are for bug fixes etc.
+#"--add-opens=java.base/jdk.internal.ref=ALL-UNNAMED"
+#"--add-opens=java.base/sun.nio.ch=ALL-UNNAMED"
+
+
+
+###--- End Vars
+
 
 ###---- Logging directory for output
 if [ ! -d $LOGDIR ] ; then
   mkdir $LOGDIR 2> /dev/null
 fi
 
-LOGFILEBL=${LOGDIR}/start_voltdbprometheusbl_if_needed`date '+%y%m%d'`.log
+LOGFILEBL=${LOGDIR}/start_voltdbprometheusbl_if_needed`date '+%m%d%y%H-%M'`.log
 touch $LOGFILEBL
 echo `date` "configuring prometheus " | tee -a $LOGFILEBL
 
@@ -59,10 +82,11 @@ else
 	cd ${HOME}/bin
 	echo `date` "starting voltdbprometheusbl.jar on port $PROMETHEUSBL_PORT" | tee -a  $LOGFILEBL
 
-	nohup java -jar voltdbprometheusbl.jar --webserverport=$PROMETHEUSBL_PORT --procedureList=PROCEDUREPROFILE,ORGANIZEDTABLESTATS,ORGANIZEDINDEXSTATS,SNAPSHOTSTATS,ORGANIZEDSQLSTMTSTATS,${BL_PROCEDURES} >>  $LOGFILEBL 2>&1  &
+	#nohup java -jar voltdbprometheusbl.jar --webserverport=$PROMETHEUSBL_PORT --procedureList=PROCEDUREPROFILE,ORGANIZEDTABLESTATS,ORGANIZEDINDEXSTATS,SNAPSHOTSTATS,ORGANIZEDSQLSTMTSTATS,${BL_PROCEDURES} >>  $LOGFILEBL 2>&1  &
+	nohup java -jar voltdbprometheusbl.jar  ${JavaFlag1} ${JavaFlag2} ${JavaFlag3} >>  $LOGFILEBL 2>&1  &
         
-	VRUN=`ps -deaf | grep voltdbprometheusbl.jar | grep java | grep -v grep | awk '{ print $2}'`
-	echo $VRUN > ${HOME}/.voltdbprometheusbl.PID
+	PPID=`ps -deaf | grep voltdbprometheusbl.jar | grep java | grep -v grep | awk '{ print $2}'`
+	echo $PPID > ${HOME}/.voltdbprometheusbl.PID
 fi
 
 rm /tmp/$$curl.log
