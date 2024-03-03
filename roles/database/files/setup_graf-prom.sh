@@ -41,7 +41,7 @@ PASSWORD="n0mad1c"
 
 # Prometheus -
 PromVer="2.36.1"
-PromTar="prometheus-${PromVer}.linux-amd64.tar.gz"
+PromTarBall="prometheus-${PromVer}.linux-amd64.tar.gz"
 PromDir="prometheus-${PromVer}.linux-amd64"
 PromTempDir="prometheus-files"
 PromLink="https://github.com/prometheus/prometheus/releases/download/v${PromVer}/prometheus-${PromVer}.linux-amd64.tar.gz"
@@ -115,17 +115,31 @@ function setup_prometheus () {
 	echo "Installing and Configuring Prometheus"   
 	echo ""
 	
+	# Check to see if Promttheus is running and kill it
+	sudo systemctl is-active --quiet prometheus.service
+	if  [ "$?" = "0" ] ; then
+  	    echo stopping Prometheus Service  ...
+	  	sudo systemctl stop prometheus.service
+	else
+		echo "Prometheus not running, proceed"
+	fi
+	
 
 	### Steps to manually install a specific version
 	# First get rid of the package if we have it
-	if [ -f $PromTar ] ; then
-	  rm $PromTar 2> /dev/null
+	if [ -f $PromTarBall ] ; then
+	  rm $PromTarBall 2> /dev/null
 	fi
+
+	if [ -d $PromTempDir ] ; then
+	  echo "We've already run, delete the target dir"
+	  rm -rf $PromTempDir
+    fi
 
 	# Grab a new tarball, untar/compress amd move (not sure why we do this)
 	wget $PromLink
-	tar xzf $PromTar
-	mv $PromDir prometheus-files
+	tar xzf $PromTarBall
+	mv $PromDir $PromTempDir
 
 	# Create a Prometheus user, required directories, 
 	# and make Prometheus the user as the owner of those directories.
@@ -150,10 +164,16 @@ function setup_prometheus () {
 
     # Copy prometheus and promtool binary to /usr/local/bin and change the 
 	# ownership to prometheus user.
-	sudo cp ./prometheus-files/prometheus /usr/local/bin/
-	sudo cp ./prometheus-files/promtool /usr/local/bin/
-	sudo chown prometheus:prometheus /usr/local/bin/prometheus
-	sudo chown prometheus:prometheus /usr/local/bin/promtool
+	if [ ! -f /usr/local/bin/prometheus ] ; then
+		sudo cp ./prometheus-files/prometheus /usr/local/bin/
+	else 
+		sudo chown prometheus:prometheus /usr/local/bin/prometheus
+	fi
+	if [ ! -f /usr/local/bin/promtool ] ; then
+		sudo cp ./prometheus-files/promtool /usr/local/bin/
+	else 
+		sudo chown prometheus:prometheus /usr/local/bin/promtool
+	fi
 
     # Move the consoles and console_libraries directories from prometheus-files to 
 	# /etc/prometheus folder and change the ownership to prometheus user.

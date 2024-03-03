@@ -1,6 +1,6 @@
 ---
-### File - voltd.yml
-#   Do some post install setup on a Volt node after an install with cloud-init
+### File - database.yml
+#   Do some post install setup on a database node after an install with cloud-init
 #    * Recheck packages
 #    * Create some directories
 #    * Fix the usetty issue

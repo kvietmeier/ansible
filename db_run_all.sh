@@ -148,7 +148,7 @@ function run_demo_setup () {
 
 # Call the functions - comment/uncomment as needed
 playbooks
-#init
-#start_volt
-#prometheus_dbstats_export
-#run_demo_setup
+init
+start_volt
+prometheus_dbstats_export
+run_demo_setup

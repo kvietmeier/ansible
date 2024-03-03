@@ -543,7 +543,7 @@
     become_user: ubuntu
     args: 
       chdir: /home/ubuntu/bin
-    when: not custom_ne_startup.stat.exists
+    when: not custom_ne_started.stat.exists
     tags:
       - voltdb_setup
 
