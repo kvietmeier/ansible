@@ -6,7 +6,7 @@ The scratch directory has some snippets of code and a playbook to prep a node fo
 
 RHEL related tasks/vars are in the archive folder, updating to work with Ubuntu
 
-Updated to add a role to setup a VoltDB testing platform on Azure
+Updated to add a role to setup a Database testing platform on Azure
 
 
 ```
@@ -22,11 +22,6 @@ Updated to add a role to setup a VoltDB testing platform on Azure
 │   └── roles
 ├── filter_plugins
 │   └── default.yml
-├── foobar.txt
-│   ├── vdb-02
-│   ├── vdb-03
-│   ├── vdb-04
-│   └── vdb-05
 ├── group_vars
 │   ├── all.yml
 │   └── private_vars.yml
@@ -35,14 +30,14 @@ Updated to add a role to setup a VoltDB testing platform on Azure
 ├── inventory
 ├── library
 │   └── default.yml
-├── ports_volt.txt
+├── db_ports.txt
 ├── roles
 │   ├── bootstrap
 │   ├── ceph
 │   ├── common
 │   ├── kubernetes
 │   ├── rhelosp
-│   └── voltdb
+│   └── database
 ├── scratch
 │   ├── bootstrap.yml
 │   ├── cbt.yml
@@ -50,10 +45,10 @@ Updated to add a role to setup a VoltDB testing platform on Azure
 │   └── snippets.yml
 ├── site.yml
 ├── testing.sh
-├── volt_init.sh
-├── volt_kill.sh
-├── volt_playbook.sh
-├── volt_runall.sh
-├── volt_setup_mgmt.sh
-└── volt_start_all.sh
+├── db_init.sh
+├── db_kill.sh
+├── db_playbook.sh
+├── db_runall.sh
+├── db_setup_mgmt.sh
+└── db_start_all.sh
 ```
