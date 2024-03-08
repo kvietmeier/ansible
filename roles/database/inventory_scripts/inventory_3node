@@ -1,0 +1,33 @@
+###=====================================================================### 
+###   Ansible Inventory - these are a hack but I was short on time
+###   Updated with Azure hosts
+###
+###   3 node DB cluster
+###
+###=====================================================================### 
+
+# Volt Testing
+[voltnodes]
+vdb-02
+vdb-03
+vdb-04
+
+[voltnodes:vars]
+ansible_ssh_user=ubuntu
+ansible_python_interpreter="/usr/bin/python3"
+
+[voltmgmt]
+vdb-01
+
+[voltmgmt:vars]
+ansible_ssh_user=ubuntu
+ansible_python_interpreter="/usr/bin/python3"
+
+
+###=====================================================================### 
+### For all hosts - per group overrides this
+###=====================================================================### 
+
+[all:vars]
+ansible_ssh_user=root
+ansible_python_interpreter="/usr/bin/python3"
