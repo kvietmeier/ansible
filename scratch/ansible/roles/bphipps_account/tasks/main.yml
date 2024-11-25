@@ -1,0 +1,83 @@
+---
+
+
+    # Create Global users.  Users which should be created on all build slaves
+    # 1st the group of the user. 2nd the user itself. 3rd add authorized SSH keys
+
+    - name: Create user groups
+      group: name="{{item.group}}" state=present
+      with_items: "{{global_users_to_create}}"
+
+    - name: Create bphipps user
+      user:
+        name: "{{item.name}}"
+        comment: "{{item.comment}}"
+        group: "{{item.group}}"
+        shell: "/bin/bash"
+        # password: "{{item.password}}"
+        state: present
+        append: yes
+        createhome: yes
+        update_password: always
+      with_items: "{{global_users_to_create}}"
+
+    - name: Set extra groups for sudo access in Ubuntu
+      user: name="{{item.name}}" groups=sudo
+      with_items: "{{global_users_to_create}}"
+      when: ansible_os_family == "Debian"
+
+    - name: Set extra groups for sudo access in CentOS
+      user: name="{{item.name}}" groups=wheel
+      with_items: "{{global_users_to_create}}"
+      when: ansible_os_family == "RedHat"
+
+    - name: Set extra groups for sudo access in ClearLinux
+      user: name="{{item.name}}" groups=wheelnopw
+      with_items: "{{global_users_to_create}}"
+      when: ansible_os_family == "ClearLinux"
+
+    - name: Set SSH authorized_keys for global users
+      authorized_key: user="{{item.0.name}}" key="{{lookup('file', item.1)}}"
+      with_subelements:
+        - "{{global_users_to_create}}"
+        - authorized_key_files
+
+#    - name: set passwd field to *
+#      command: /usr/sbin/usermod -p \* "{{item.name}}"
+#      with_items: "{{global_users_to_create}}"
+
+#    - name: removing certain accounts
+#      user: name="{{item.name}}" remove=yes state=absent
+#      with_items: "{{global_users_to_remove}}"
+
+    - name: editing /etc/sudoers file for nopasswd in CentOS
+      lineinfile: "dest=/etc/sudoers state=present regexp='^%wheel' line='%wheel ALL=(ALL) NOPASSWD: ALL'"
+      when: ansible_os_family == "RedHat"
+
+    - name: editing /etc/sudoers file for nopasswd in Ubuntu
+      lineinfile: "dest=/etc/sudoers state=present regexp='^%sudo' line='%sudo ALL=(ALL) NOPASSWD: ALL'"
+      when: ansible_os_family == "Debian"
+
+    # Install pkgs Brian likes to have available
+    - name: install ubuntu pkgs
+      apt:
+        state: latest
+        name: "{{item}}"
+        update_cache: true
+      with_items: "ubuntu_pkgs"
+      when: ansible_os_family == "Debian"
+
+    - name: install centos pkgs
+      yum:
+        state: latest
+        name: "{{item}}"
+        update_cache: true
+      with_items: "centos_pkgs"
+      when: ansible_os_family == "RedHat"
+
+    - name: install ClearLinux bundles
+      swupd:
+        state: present
+        name: "{{item}}"
+      with_items: "clear_bundles"
+      when: ansible_os_family == "ClearLinux"

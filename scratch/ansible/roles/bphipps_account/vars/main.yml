@@ -1,0 +1,24 @@
+---
+# vim: filetype=yaml
+
+global_users_to_create:
+  -  name: bphipps
+     comment: "bphipps"
+     group: bphipps
+     groups: sudo
+     authorized_key_files:
+         - ssh_public_keys/bphipps.pub
+
+ubuntu_pkgs:
+  - vim
+  - htop
+  - screen
+
+centos_pkgs:
+  - epel-release
+  - vim
+  - htop
+  - screen
+
+clear_bundles:
+  - editors

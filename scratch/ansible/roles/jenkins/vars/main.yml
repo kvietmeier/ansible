@@ -1,0 +1,7 @@
+---
+# vim: filetype=yaml
+
+
+bundles:
+  - java-basic
+  - openssh-server

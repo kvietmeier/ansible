@@ -1,0 +1,8 @@
+---
+
+    - name: install ClearLinux bundles
+      swupd:
+        state: present
+        name: "{{item}}"
+      with_items: "bundles"
+      when: ansible_os_family == "ClearLinux"
