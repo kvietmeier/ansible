@@ -1,8 +1,19 @@
 ###=====================================================================### 
 ###   Ansible Inventory - my defaults
-###   Updated with Azure hosts
+###   Updated with GCP hosts
 ###
 ###=====================================================================### 
+
+### Linux nodes for general use
+# Linux Testing
+[clients]
+client-vm1
+client-vm2
+client-vm3
+
+[clients:vars]
+ansible_ssh_user=labuser
+
 
 ### Terraform created nodes - generic cluster
 [masters]
@@ -18,18 +29,6 @@ worker03
 
 [workers:vars]
 ansible_ssh_user=ubuntu
-
-
-### Linux nodes for general use
-# Linux Testing
-[linuxnodes]
-linux-01
-linux-02
-linux-03
-linux-04
-
-[linuxnodes:vars]
-ansible_ssh_user=azureuser
 
 
 # Volt Testing
