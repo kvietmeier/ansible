@@ -14,6 +14,10 @@ client-vm3
 [clients:vars]
 ansible_ssh_user=labuser
 
+### VAST Cluster
+[cluster]
+vcluster
+
 
 ### Terraform created nodes - generic cluster
 [masters]
