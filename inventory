@@ -1,29 +1,34 @@
-###=====================================================================### 
-###   Ansible Inventory - my defaults
-###   Updated with GCP hosts
-###
-###=====================================================================### 
 
-### Linux nodes for general use
+#=====================================================================
+#   Ansible Inventory - my defaults
+#   Updated with GCP hosts
+#
+#=====================================================================
+
+# Linux nodes for general use
 # Linux Testing
 [clients]
-client-vm1
-client-vm2
-client-vm3
+linux01
+linux02
+linux03
+linux04
+#linux05
+#linux06
+
 
 [clients:vars]
 ansible_ssh_user=labuser
 
-### VAST Cluster
+# VAST Cluster
 [cluster]
 vcluster
 
 
-### Terraform created nodes - generic cluster
-[masters]
-master
+# Terraform created nodes - generic cluster
+[leaders]
+lead
 
-[masters:vars]
+[leaders:vars]
 ansible_ssh_user=ubuntu
 
 [workers]
@@ -35,27 +40,9 @@ worker03
 ansible_ssh_user=ubuntu
 
 
-# Volt Testing
-[voltnodes]
-vdb-02
-vdb-03
-vdb-04
-
-[voltnodes:vars]
-ansible_ssh_user=ubuntu
-ansible_python_interpreter="/usr/bin/python3"
-
-[voltmgmt]
-vdb-01
-
-[voltmgmt:vars]
-ansible_ssh_user=ubuntu
-ansible_python_interpreter="/usr/bin/python3"
-
-
-###=====================================================================### 
-### For all hosts - per group overrides this
-###=====================================================================### 
+#====================================================================#
+# For all hosts - per group overrides this
+#====================================================================#
 
 [all:vars]
 ansible_ssh_user=root

@@ -1,0 +1,63 @@
+###=====================================================================### 
+###   Ansible Inventory - my defaults
+###   Updated with GCP hosts
+###
+###=====================================================================### 
+
+### Linux nodes for general use
+# Linux Testing
+[clients]
+client-vm1
+client-vm2
+client-vm3
+client-vm4
+
+[clients:vars]
+ansible_ssh_user=labuser
+
+### VAST Cluster
+[cluster]
+vcluster
+
+
+### Terraform created nodes - generic cluster
+[masters]
+master
+
+[masters:vars]
+ansible_ssh_user=ubuntu
+
+[workers]
+worker01
+worker02
+worker03
+
+[workers:vars]
+ansible_ssh_user=ubuntu
+
+
+# Volt Testing
+[voltnodes]
+vdb-02
+vdb-03
+vdb-04
+
+[voltnodes:vars]
+ansible_ssh_user=ubuntu
+ansible_python_interpreter="/usr/bin/python3"
+
+[voltmgmt]
+vdb-01
+
+[voltmgmt:vars]
+ansible_ssh_user=ubuntu
+ansible_python_interpreter="/usr/bin/python3"
+
+
+###=====================================================================### 
+### For all hosts - per group overrides this
+###=====================================================================### 
+
+[all:vars]
+ansible_ssh_user=root
+ansible_python_interpreter="/usr/bin/python3"
