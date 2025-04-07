@@ -1,29 +1,40 @@
-# Example calling DB playbook
+# Example calling a playbook
 ansible-playbook --limit voltmgmt roles/voltdb/voltdb.yaml --tags=foo
 
-# Get DB status
-ansible -i ./database/inventory_3node vdb-01 -m shell -a "echo \"exec @SystemInformation overview;\" | /home/ubuntu/voltdb-ent-11.4/bin/sqlcmd --servers=vdb-02 | grep HOSTNAME | awk '{ print $3 }' | sort"
-ansible -i ./database/inventory_3node vdb-01 -m shell -a "echo \"exec @SystemInformation deployment;\" | /home/ubuntu/voltdb-ent-11.4/bin/sqlcmd --servers=vdb-02 "
-
 # Get java versions - 
-ansible -i database/inventory_3node dbnodes,voltmgmt -a "java --version"
-ansible -i database/inventory_6node dbnodes,voltmgmt -a "java --version"
-ansible -i database/inventory_6node dbnodes,voltmgmt -a "sudo update-alternatives --config java"
+ansible -i ./inventory -a "java --version"
 
-# Disks - not working
-ansible -i database/inventory_6node dbnodes -a "sudo lsblk | grep disk"
-ansible -i database/inventory_3node dbnodes -a "sudo lsblk | grep disk"
+# Check the date
+ansible -i ./inventory clients -a date
 
-# Prometheus - 
-ansible -i database/inventory_3node dbnodes -m apt -a "name=prometheus-node-exporter state=latest"
-ansible -i database/inventory_3node dbnodes -a "systemctl status prometheus-node-exporter"
-ansible -i database/inventory_3node dbmgmt -m apt -a "name=prometheus state=latest"
-ansible -i database/inventory_3node dbmgmt -a "systemctl status prometheus"
-
-# Run specific tasks
-ansible-playbook --limit dbmgmt -i volt/inventory_3node ${HOME}/ansible/roles/voltdb/voltdb.yaml --tags=apt,system,userenv,git,ssh_setup,copy_files
-ansible-playbook --limit dbmgmt -i volt/inventory_3node ${HOME}/ansible/roles/voltdb/voltdb.yaml --tags=mgmt_host
+# Install packages
+ansible -i ./inventory cnodes -m dnf -a "name=wget state=installed"
+ansible -i ./inventory cnodes -m dnf -a "name=curl state=installed"
+ansible -i ./inventory cnodes -m dnf -a "name=jq state=installed"
 
 
+ansible -i ./inventory cnodes -a "wget https://github.com/breuner/elbencho/releases/latest/download/elbencho-static-x86_64.tar.gz"
+ansible -i ./inventory clients -a "rm elbencho-static-x86_64.tar.gz"
+
+ansible -i inventory cnodes -m copy -a "src=files/elbencho dest=~ owner=centos group=centos mode=0755" --become-user=centos
 
 
+ansible -i ./inventory 
+
+
+ansible -i ./inventory clients -a "elbencho --service"
+ansible -i ./inventory cnodes -a "elbencho --service --port 1611"
+ansible -i ./inventory cnodes -a "elbencho --service --port 1612"
+
+ansible -i ./inventory cnodes -a "ip -4 a show dev eth0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}' | head -n1" | awk '{ print $2":1611"; }"
+ip -4 a show dev eth0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}' | head -n1" | awk '{ print $2":1612"; }
+
+
+10.100.2.106:1611
+10.100.2.105:1611
+10.100.2.100:1611
+10.100.2.106:1612
+10.100.2.100:1612
+10.100.2.105:1612
+
+elbencho --netbench --serversfile ./cnodes.txt --clients ./clients.txt -b 1 --respsize 1m -s 1t -t 10 --timelimit 30

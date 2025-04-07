@@ -6,38 +6,42 @@
 #=====================================================================
 
 # Linux nodes for general use
-# Linux Testing
 [clients]
 linux01
 linux02
 linux03
 linux04
-#linux05
-#linux06
+linux05
+linux06
 
 
 [clients:vars]
 ansible_ssh_user=labuser
 
 # VAST Cluster
-[cluster]
-vcluster
+[cnodes]
+10.100.2.100
+10.100.2.105
+10.100.2.106
+
+[cnodes:vars]
+ansible_ssh_user=centos
 
 
 # Terraform created nodes - generic cluster
-[leaders]
-lead
+#[leaders]
+#lead
 
-[leaders:vars]
-ansible_ssh_user=ubuntu
+#[leaders:vars]
+#ansible_ssh_user=ubuntu
 
-[workers]
-worker01
-worker02
-worker03
+#[workers]
+#worker01
+#worker02
+#worker03
 
-[workers:vars]
-ansible_ssh_user=ubuntu
+#[workers:vars]
+#ansible_ssh_user=ubuntu
 
 
 #====================================================================#
