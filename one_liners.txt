@@ -11,9 +11,12 @@ ansible -i ./inventory clients -a date
 ansible -i ./inventory cnodes -m dnf -a "name=wget state=installed"
 ansible -i ./inventory cnodes -m dnf -a "name=curl state=installed"
 ansible -i ./inventory cnodes -m dnf -a "name=jq state=installed"
+ansible -i ./inventory cnodes -m dnf -a "name=kernel-devel-5.14.0-503.23.1.el9_5.x86_64 state=installed"
 
-
+# Grab static elbencho binary
 ansible -i ./inventory cnodes -a "wget https://github.com/breuner/elbencho/releases/latest/download/elbencho-static-x86_64.tar.gz"
+
+# Remove file
 ansible -i ./inventory clients -a "rm elbencho-static-x86_64.tar.gz"
 
 ansible -i inventory cnodes -m copy -a "src=files/elbencho dest=~ owner=centos group=centos mode=0755" --become-user=centos
@@ -22,11 +25,26 @@ ansible -i inventory cnodes -m copy -a "src=files/elbencho dest=~ owner=centos g
 ansible -i ./inventory 
 
 
+# Update grub after kernel upgrade
+ansible -i ./inventory linux01 -m shell -a "grubby --set-default /boot/vmlinuz-5.14.0-503.35.1.el9_5.x86_64"
+ansible -i ./inventory linux03,linux04,linux05,linux06 -m shell -a "grubby --set-default /boot/vmlinuz-5.14.0-503.35.1.el9_5.x86_64"
+ansible -i ./inventory linux03,linux04,linux05,linux06 -m shell -a "reboot"
+
+
+[root@linux01 vastnfs-4.0.32]# ls -l dist
+total 21M
+-rw-r--r--. 1 root root 1.5M Apr  7 16:35 vastnfs-4.0.32-kernel_5.14.0_503.35.1.el9_5.x86_64.rpm
+-rw-r--r--. 1 root root  19M Apr  7 16:37 vastnfs-debuginfo-4.0.32-kernel_5.14.0_503.35.1.el9_5.x86_64.rpm
+-rw-r--r--. 1 root root 920K Apr  7 16:35 vastnfs-debugsource-4.0.32-kernel_5.14.0_503.35.1.el9_5.x86_64.rpm
+
+
 ansible -i ./inventory clients -a "elbencho --service"
 ansible -i ./inventory cnodes -a "elbencho --service --port 1611"
 ansible -i ./inventory cnodes -a "elbencho --service --port 1612"
 
 ansible -i ./inventory cnodes -a "ip -4 a show dev eth0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}' | head -n1" | awk '{ print $2":1611"; }"
+
+
 ip -4 a show dev eth0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}' | head -n1" | awk '{ print $2":1612"; }
 
 
@@ -38,3 +56,10 @@ ip -4 a show dev eth0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}' | head -n1" | awk '{
 10.100.2.105:1612
 
 elbencho --netbench --serversfile ./cnodes.txt --clients ./clients.txt -b 1 --respsize 1m -s 1t -t 10 --timelimit 30
+
+# Install NFS Driver
+ansible -i ./inventory clients -b -m yum -a "name=/root/vastnfs-4.0.32/dist/vastnfs-4.0.32-kernel_5.14.0_503.35.1.el9_5.x86_64.rpm state=present disable_gpg_check=yes"
+#
+ansible -i ./inventory clients -b -m reboot
+
+udo mount -o vers=3,nconnect=8,remoteports=10.132.0.211-10.132.0.233 :/share1 /mnt/share1

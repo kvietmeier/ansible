@@ -1,0 +1,33 @@
+---
+- name: Build VastNFS Driver
+  hosts: clients  # Specify your host group or target machine here
+  become: yes
+  tasks:
+    - name: Ensure build.sh is executable
+      file:
+        path: /root/vastnfs-4.0.32/build.sh
+        mode: 'u+x'
+
+    - name: Change to vastnfs-4.0.32 directory and run build script
+      shell: ./build.sh bin
+      args:
+        chdir: /root/vastnfs-4.0.32/
+        
+    - name: Check current directory
+      shell: pwd
+      register: result
+      args:
+        chdir: /root/vastnfs-4.0.32/
+
+    - name: Show current directory
+      debug:
+        var: result.stdout
+
+    - name: Install VastNFS RPM already present on host
+      yum:
+        name: /root/vastnfs-4.0.32/dist/vastnfs-4.0.32-kernel_5.14.0_503.35.1.el9_5.x86_64.rpm
+        state: present
+
+    - name: Reboot the host
+      reboot:
+        reboot_timeout: 600
