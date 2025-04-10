@@ -1,0 +1,60 @@
+---
+- name: Install VAST NFS Driver
+  hosts: clients
+  become: yes
+  vars:
+    download_script_url: "https://vast-nfs.s3.amazonaws.com/download.sh"
+    output_log: "/tmp/cloud-init-out.txt"
+
+  tasks:
+    - name: Ensure working directory is /root
+      ansible.builtin.file:
+        path: /root
+        state: directory
+
+    - name: Download and execute the script to get the tarball filename
+      ansible.builtin.shell: |
+        curl -sSf {{ download_script_url }} | bash -s -- | grep "Downloaded:" | awk '{print $2}'
+      register: downloaded_filename
+      args:
+        chdir: /root
+
+    - name: Set extracted directory name (remove .tar.xz)
+      set_fact:
+        nfs_tarball: "{{ downloaded_filename.stdout }}"
+        nfs_dir: "{{ downloaded_filename.stdout | regex_replace('\\.tar\\.xz$', '') }}"
+
+    - name: Extract the tarball
+      ansible.builtin.unarchive:
+        src: "/root/{{ nfs_tarball }}"
+        dest: /root
+        remote_src: yes
+
+    - name: Download the NFS driver install script
+      ansible.builtin.get_url:
+        url: "{{ download_script_url }}"
+        dest: /root/downloadnfsdrsiver.sh
+        mode: '0755'
+
+    - name: Log attempt to run build.sh
+      ansible.builtin.shell: |
+        echo "Attempting to run build.sh in {{ nfs_dir }}" >> {{ output_log }}
+        ls -la "/root/{{ nfs_dir }}" >> {{ output_log }}
+      args:
+        executable: /bin/bash
+
+    - name: Run build.sh with bin argument and log output
+      ansible.builtin.shell: "./build.sh bin >> {{ output_log }} 2>&1"
+      args:
+        chdir: "/root/{{ nfs_dir }}"
+        executable: /bin/bash
+
+    - name: Log completion status of build.sh
+      ansible.builtin.shell: echo "build.sh completed with exit code $?" >> {{ output_log }}
+      args:
+        executable: /bin/bash
+
+    - name: Log install_tools.sh run message
+      ansible.builtin.shell: echo "script install_tools.sh ran" >> {{ output_log }}
+      args:
+        executable: /bin/bash

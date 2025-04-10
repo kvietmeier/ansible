@@ -1,0 +1,60 @@
+###--- Download, untar, build, and install the latest version of the VAST NFS Driver
+###---  It will reboot the client
+###
+---
+- name: Install VAST NFS Driver from dynamic download
+  hosts: clients
+  become: yes
+  vars:
+    download_script_url: "https://vast-nfs.s3.amazonaws.com/download.sh"
+    output_log: "/tmp/cloud-init-out.txt"
+
+  tasks:
+    - name: Ensure /root exists
+      ansible.builtin.file:
+        path: /root
+        state: directory
+
+    - name: Download and execute the script to get the tarball filename
+      ansible.builtin.shell: |
+        curl -sSf {{ download_script_url }} | bash -s -- | grep "Downloaded:" | awk '{print $2}'
+      register: downloaded_filename
+      args:
+        chdir: /root
+
+    - name: Set extracted directory name (remove .tar.xz)
+      set_fact:
+        nfs_tarball: "{{ downloaded_filename.stdout }}"
+        nfs_version_dir: "{{ downloaded_filename.stdout | regex_replace('\\.tar\\.xz$', '') }}"
+
+    - name: Extract the tarball
+      ansible.builtin.unarchive:
+        src: "/root/{{ nfs_tarball }}"
+        dest: /root
+        remote_src: yes
+
+    - name: Log attempt to run build.sh
+      ansible.builtin.shell: |
+        echo "Attempting to run build.sh in {{ nfs_version_dir }}" >> {{ output_log }}
+        ls -la "/root/{{ nfs_version_dir }}" >> {{ output_log }}
+      args:
+        executable: /bin/bash
+
+    - name: Check if RPM already exists
+      ansible.builtin.stat:
+        path: "/root/{{ nfs_version_dir }}/dist"
+      register: dist_check
+
+    - name: Run build.sh with bin argument and log output
+      ansible.builtin.shell: |
+        ./build.sh bin >> {{ output_log }} 2>&1
+        echo "build.sh completed with exit code $?" >> {{ output_log }}
+        echo "script install_tools.sh ran" >> {{ output_log }}
+      args:
+        chdir: "/root/{{ nfs_version_dir }}"
+        executable: /bin/bash
+      when: not dist_check.stat.exists
+
+    - name: Find the generated VastNFS RPM in dist folder
+      ansible.builtin.find:
+        paths: "/root
