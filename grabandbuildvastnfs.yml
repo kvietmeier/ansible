@@ -1,5 +1,12 @@
+###======================================================================================###
+###  Purpose:  Download, build, and install the latest version of the VAST NFS driver
+###  
+###  Created By: Karl Vitemeier, Cloud Solutions Architect - VAST Data  
+###
+###======================================================================================###
+
 ---
-- name: Install VAST NFS Driver
+- name: Install VAST NFS Driver from dynamic download
   hosts: clients
   become: yes
   vars:
@@ -7,10 +14,22 @@
     output_log: "/tmp/cloud-init-out.txt"
 
   tasks:
-    - name: Ensure working directory is /root
+    - name: Ensure /root exists
       ansible.builtin.file:
         path: /root
         state: directory
+
+    - name: Remove existing tarball if present
+      ansible.builtin.file:
+        path: "/root/{{ nfs_tarball }}"
+        state: absent
+      when: nfs_tarball is defined
+
+    - name: Remove existing extracted folder if present
+      ansible.builtin.file:
+        path: "/root/{{ nfs_version_dir }}"
+        state: absent
+      when: nfs_version_dir is defined
 
     - name: Download and execute the script to get the tarball filename
       ansible.builtin.shell: |
@@ -22,7 +41,7 @@
     - name: Set extracted directory name (remove .tar.xz)
       set_fact:
         nfs_tarball: "{{ downloaded_filename.stdout }}"
-        nfs_dir: "{{ downloaded_filename.stdout | regex_replace('\\.tar\\.xz$', '') }}"
+        nfs_version_dir: "{{ downloaded_filename.stdout | regex_replace('\\.tar\\.xz$', '') }}"
 
     - name: Extract the tarball
       ansible.builtin.unarchive:
@@ -30,31 +49,45 @@
         dest: /root
         remote_src: yes
 
-    - name: Download the NFS driver install script
-      ansible.builtin.get_url:
-        url: "{{ download_script_url }}"
-        dest: /root/downloadnfsdrsiver.sh
-        mode: '0755'
-
     - name: Log attempt to run build.sh
       ansible.builtin.shell: |
-        echo "Attempting to run build.sh in {{ nfs_dir }}" >> {{ output_log }}
-        ls -la "/root/{{ nfs_dir }}" >> {{ output_log }}
+        echo "Attempting to run build.sh in {{ nfs_version_dir }}" >> {{ output_log }}
+        ls -la "/root/{{ nfs_version_dir }}" >> {{ output_log }}
       args:
         executable: /bin/bash
+
+    - name: Check if RPM already exists
+      ansible.builtin.stat:
+        path: "/root/{{ nfs_version_dir }}/dist"
+      register: dist_check
 
     - name: Run build.sh with bin argument and log output
-      ansible.builtin.shell: "./build.sh bin >> {{ output_log }} 2>&1"
+      ansible.builtin.shell: |
+        ./build.sh bin >> {{ output_log }} 2>&1
+        echo "build.sh completed with exit code $?" >> {{ output_log }}
+        echo "script install_tools.sh ran" >> {{ output_log }}
       args:
-        chdir: "/root/{{ nfs_dir }}"
+        chdir: "/root/{{ nfs_version_dir }}"
         executable: /bin/bash
+      when: not dist_check.stat.exists
 
-    - name: Log completion status of build.sh
-      ansible.builtin.shell: echo "build.sh completed with exit code $?" >> {{ output_log }}
-      args:
-        executable: /bin/bash
+    - name: Find the generated VastNFS RPM in dist folder
+      ansible.builtin.find:
+        paths: "/root/{{ nfs_version_dir }}/dist"
+        patterns: "vastnfs-*.rpm"
+      register: found_rpms
 
-    - name: Log install_tools.sh run message
-      ansible.builtin.shell: echo "script install_tools.sh ran" >> {{ output_log }}
-      args:
-        executable: /bin/bash
+    - name: Show the found RPM (for debugging)
+      ansible.builtin.debug:
+        var: found_rpms.files[0].path
+
+    - name: Install the VastNFS RPM
+      ansible.builtin.yum:
+        name: "{{ found_rpms.files[0].path }}"
+        state: present
+        disable_gpg_check: true
+      when: found_rpms.files | length > 0
+
+    - name: Reboot the host
+      ansible.builtin.reboot:
+        reboot_timeout: 600
