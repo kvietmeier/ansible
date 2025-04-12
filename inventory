@@ -20,7 +20,7 @@ ansible_ssh_user=labuser
 
 # VAST Cluster
 [cnodes]
-10.100.2.100
+10.100.2.67
 10.100.2.105
 10.100.2.106
 

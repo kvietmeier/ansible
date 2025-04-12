@@ -1,0 +1,41 @@
+###======================================================================================###
+###  Purpose:  Create Views on a cluster
+###  
+###  Created By: Karl Vitemeier, Cloud Solutions Architect - VAST Data  
+###
+###  Bit of a hack using bash
+###
+###======================================================================================###
+---
+- name: Copy files and run script as target user
+  hosts: 10.100.2.67
+  become: true
+  vars:
+    target_user: centos
+    local_script_path: "../scripts/create_views.sh"
+    local_creds_path: "../vast_creds"
+    remote_home: "/home/{{ target_user }}"
+    remote_script_path: "{{ remote_home }}/create_views.sh"
+    remote_creds_path: "{{ remote_home }}/vast_creds"
+
+  tasks:
+
+    - name: Copy vast_creds file to target user's home
+      copy:
+        src: "{{ local_creds_path }}"
+        dest: "{{ remote_creds_path }}"
+        owner: "{{ target_user }}"
+        group: "{{ target_user }}"
+        mode: '0600'
+
+    - name: Copy create_views.sh script to target user's home
+      copy:
+        src: "{{ local_script_path }}"
+        dest: "{{ remote_script_path }}"
+        owner: "{{ target_user }}"
+        group: "{{ target_user }}"
+        mode: '0755'
+
+    - name: Run create_views.sh as target user
+      become_user: "{{ target_user }}"
+      shell: "{{ remote_script_path }} {{ remote_creds_path }}"
