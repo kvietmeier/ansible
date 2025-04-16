@@ -8,7 +8,7 @@
 ###======================================================================================###
 ---
 - name: Copy files and run script as target user
-  hosts: 10.100.2.67
+  hosts: cnode
   become: true
   vars:
     target_user: centos

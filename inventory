@@ -19,12 +19,12 @@ linux06
 ansible_ssh_user=labuser
 
 # VAST Cluster
-[cnodes]
-10.100.2.67
-10.100.2.105
-10.100.2.106
+[cnode]
+10.100.2.72
+#10.100.2.105
+#10.100.2.106
 
-[cnodes:vars]
+[cnode:vars]
 ansible_ssh_user=centos
 
 
