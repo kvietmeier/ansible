@@ -1,13 +1,30 @@
 ---
-# Playbook to download, build, and install the latest version of the VAST NFS driver
-# Supports both Ubuntu and CentOS-based distributions
+###=========================================================================================###
+#   Playbook to download, build, and install the latest version of the VAST NFS driver
+#   Supports both Ubuntu and CentOS-based distributions
+#
+#   This playbook assumes the VM was installed using cloud-init and has the required package 
+#   and libraries.
+#
+#   You will need to wait at least 7-10min for cloud-init to completly finish before running 
+#   this playbook or the required packages won't be there.
+#
+#   Possible improvements:
+#     * Add a tag system (e.g. tags: [install, verify, reboot]) for more targeted task runs.
+#     * Optional rollback logic if modinfo or rpm -qif fails.
+#     * Post-install marker file like /var/log/vastnfs_installed to skip redundant runs.
+#
+###=========================================================================================###
 - name: Install VAST NFS Driver (Supports Ubuntu & CentOS)
   hosts: clients
   become: yes
   gather_facts: yes  # This ensures Ansible gathers system facts like OS distribution
   vars:
     download_script_url: "https://vast-nfs.s3.amazonaws.com/download.sh"
-    output_log: "/tmp/cloud-init-out.txt"
+    output_log: "/tmp/ansible-out.txt"
+
+
+  ###==============================   Tasks  ==================================###
 
   tasks:
     ###==========================  Gather System Facts  ===========================###
@@ -17,23 +34,93 @@
       ansible.builtin.set_fact:
         is_redhat: "{{ ansible_facts['distribution'] in ['RedHat', 'CentOS', 'Rocky', 'AlmaLinux'] }}"
         is_ubuntu: "{{ ansible_facts['distribution'] == 'Ubuntu' }}"
+      tags: [facts]
 
     - name: Set package extension based on OS
       ansible.builtin.set_fact:
         package_ext: "{{ 'rpm' if is_redhat else 'deb' }}"
+      tags: [facts]
 
     # Debugging task to display detected OS
     - name: Debug OS detection
       debug:
         msg: "OS Detected: {{ ansible_facts['distribution'] }} | is_redhat: {{ is_redhat }} | is_ubuntu: {{ is_ubuntu }} | Package: {{ package_ext }}"
+      tags: [facts]
 
+    ###                                                                            ###
     ###==========================  Start main tasks  ==============================###
+    ###                                                                            ###
+
+    ###--- Wait for cloud-init to finish
+    #--- Might not be on cloud/hypervisor VM   
+    - name: Check if cloud-init service is present
+      ansible.builtin.systemd:
+        name: cloud-init
+      register: cloudinit_status
+      failed_when: false
+      changed_when: false
+      tags: [prereqs]
+
+    - name: Wait for cloud-init to finish (if running)
+      ansible.builtin.wait_for:
+        path: /var/lib/cloud/instance/boot-finished
+        state: present
+        timeout: 600
+      when: cloudinit_status.status is defined and cloudinit_status.status.ActiveState == 'active'
+      tags: [prereqs]
+
+    ### Prereqs for compiling software/building driver
     # Ensure /root directory exists
     - name: Ensure /root directory exists
       ansible.builtin.file:
         path: /root
         state: directory
+      tags: [prereqs]
 
+    # Needed to get the correct gcc versions
+    - name: Install GCC 12 and set as default (Ubuntu only)
+      block:
+        - name: Install GCC 12 packages
+          ansible.builtin.apt:
+            name:
+              - gcc-12
+              - g++-12
+            state: present
+            update_cache: yes
+
+        - name: Set GCC 12 as default using update-alternatives
+          ansible.builtin.shell: |
+            update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-12 100
+            update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-12 100
+          args:
+            executable: /bin/bash
+      when: is_ubuntu
+      tags: [prereqs]
+
+
+    ###--- Check for kernel installed vs running mistmatch issues
+    - name: Get the current kernel version
+      ansible.builtin.shell: |
+        rpm -q kernel | sort -V | tail -n 1
+      register: latest_kernel
+      changed_when: false
+      tags: [prereqs]
+
+    - name: Get the current kernel version
+      ansible.builtin.command: uname -r
+      register: current_kernel
+      changed_when: false
+      tags: [prereqs]
+
+    - name: Reboot if the running kernel is not the latest installed kernel
+      ansible.builtin.reboot:
+        reboot_timeout: 600
+      when: current_kernel.stdout != latest_kernel.stdout
+      tags: [prereqs]
+    ###---
+
+
+    ###--- Download the source code bundle
     # Run the official download script to download the tarball
     - name: Run the official download script (downloads tarball)
       ansible.builtin.shell: |
@@ -42,17 +129,20 @@
       args:
         chdir: /root
         executable: /bin/bash
+      tags: [download]
     
-    ###--- Debug - comment if not needed
+    ###--- Debug - uncomment if needed
     # Debug task to display raw download script output
-    - name: DEBUG - Dump raw download script output
-      debug:
-        var: download_output.stdout
+    #- name: DEBUG - Dump raw download script output
+    #  debug:
+    #    var: download_output.stdout
+    #  tags: [download]
 
     # Debug task to display any stderr from the download script
-    - name: DEBUG - Dump download script stderr (if any)
-      debug:
-        var: download_output.stderr
+    #- name: DEBUG - Dump download script stderr (if any)
+    #  debug:
+    #    var: download_output.stderr
+    #  tags: [download]
     ###--- End Debug
 
     # If script does not return the downloaded filename, fallback to finding the tarball directly
@@ -63,6 +153,7 @@
         recurse: no
       register: found_tarballs
       when: downloaded_filename is not defined or downloaded_filename == ''
+      tags: [download]
 
     # Set tarball and version directory names based on the found file
     - name: Set tarball and version directory names based on found file
@@ -70,18 +161,21 @@
         nfs_tarball: "{{ found_tarballs.files[0].path | basename }}"  # Tarball filename
         nfs_version_dir: "{{ found_tarballs.files[0].path | basename | regex_replace('\\.tar\\.xz$', '') }}"  # Version directory from tarball
       when: found_tarballs.files | length > 0
+      tags: [download]
 
     # If no tarball was found, notify and exit
     - name: Fail if no tarball is found
       ansible.builtin.fail:
         msg: "No VAST NFS tarball found in the expected location."
       when: found_tarballs.files | length == 0
+      tags: [download]
 
     # Remove existing extracted folder if present
     - name: Remove existing extracted folder if present
       ansible.builtin.file:
         path: "/root/{{ nfs_version_dir }}"
         state: absent
+      tags: [download]
 
     # Extract the downloaded tarball to the /root directory
     - name: Extract the tarball
@@ -90,14 +184,18 @@
         dest: /root
         remote_src: yes
       when: nfs_tarball is defined and found_tarballs.files | length > 0
+      tags: [download]
 
     # Remove the tarball after extraction to save space
-    - name: Remove existing tarball after extraction
-      ansible.builtin.file:
-        path: "/root/{{ nfs_tarball }}"
-        state: absent
-      when: nfs_tarball is defined
+    #- name: Remove existing tarball after extraction
+    #  ansible.builtin.file:
+    #    path: "/root/{{ nfs_tarball }}"
+    #    state: absent
+    #  when: nfs_tarball is defined
+    #  tags: [download]
 
+
+    ###=============================  Build  =================================###
     # Log preparation details for the build process
     - name: Log build.sh preparation
       ansible.builtin.shell: |
@@ -105,12 +203,14 @@
         ls -la "/root/{{ nfs_version_dir }}" >> {{ output_log }}
       args:
         executable: /bin/bash
+      tags: [build]
 
     # Check if the build output directory already exists
     - name: Check if build output already exists
       ansible.builtin.stat:
         path: "/root/{{ nfs_version_dir }}/dist"
       register: dist_check
+      tags: [build]
 
     # Run the build script only if the dist folder does not exist (build the driver)
     - name: Run build.sh with 'bin' argument and log output
@@ -121,6 +221,7 @@
         chdir: "/root/{{ nfs_version_dir }}"
         executable: /bin/bash
       when: not dist_check.stat.exists
+      tags: [build]
 
     - name: Find the generated VAST NFS package
       ansible.builtin.find:
@@ -129,12 +230,14 @@
         use_regex: false
         recurse: no
       register: found_pkgs
+      tags: [build]
 
     # Debug task to display the path of the found package
-    - name: Debug - Show found package path
-      ansible.builtin.debug:
-        var: found_pkgs.files[0].path
-      when: found_pkgs.files | length > 0
+    #- name: Debug - Show found package path
+    #  ansible.builtin.debug:
+    #    var: found_pkgs.files[0].path
+    #  when: found_pkgs.files | length > 0
+    #  tags: [build]
 
 
     ###============================  Install  =================================###
@@ -146,11 +249,13 @@
         state: present
         disable_gpg_check: true
       when: is_redhat and found_pkgs.files | length > 0
+      tags: [install]
 
     # Regenerate initramfs after successful RPM install (RedHat-based)
     - name: Run dracut -f to regenerate initramfs (RedHat-based)
       ansible.builtin.shell: dracut -f
       when: is_redhat and found_pkgs.files | length > 0
+      tags: [install]
 
     ###--- deb based install
     # Install the VAST NFS DEB package for Ubuntu-based distributions
@@ -159,11 +264,13 @@
         deb: "{{ found_pkgs.files[0].path }}"
         state: present
       when: is_ubuntu and found_pkgs.files | length > 0
+      tags: [install]
 
     # Regenerate initramfs after successful DEB install (Ubuntu-based)
     - name: Run update-initramfs to regenerate initramfs (Ubuntu-based)
       ansible.builtin.shell: update-initramfs -u -k $(uname -r)
       when: is_ubuntu and found_pkgs.files | length > 0
+      tags: [install]
 
 
     ###============================  Reboot  =================================###
@@ -171,15 +278,38 @@
     - name: Reboot the host to activate VAST NFS driver
       ansible.builtin.reboot:
         reboot_timeout: 600
+      tags: [reboot]
 
+
+    ###============================  Verify  =================================###
     # Verify that the kernel module rpcrdma.ko was installed by a valid RPM package
-    - name: Verify rpcrdma.ko was installed by a valid RPM
+    - name: Verify rpcrdma.ko was installed by a valid RPM (only on RedHat)
       ansible.builtin.shell: |
-        rpm -qif /lib/modules/$(uname -r)/extra/vastnfs/bundle/net/sunrpc/xprtrdma/rpcrdma.ko
+        rpm -qif "/lib/modules/$(uname -r)/extra/vastnfs/bundle/net/sunrpc/xprtrdma/rpcrdma.ko"
       register: rpm_verify
-      ignore_errors: true
-
+      failed_when: rpm_verify.rc != 0
+      changed_when: false
+      when: ansible_facts['os_family'] == "RedHat"
+      tags: [verify]
+    
     # Output the result of RPM verification
     - name: Output RPM verification result
-      ansible.builtin.debug:
+      debug:
         var: rpm_verify.stdout
+      tags: [verify]
+
+    # Verify on Ubuntu
+    - name: Verify rpcrdma module is available and check its path (Ubuntu)
+      ansible.builtin.shell: |
+        modinfo rpcrdma | grep '^filename:' 
+      register: modinfo_verify
+      failed_when: modinfo_verify.rc != 0
+      changed_when: false
+      when: ansible_facts['os_family'] == "Debian"
+      tags: [verify]
+
+    - name: Output modinfo result
+      debug:
+        msg: "{{ modinfo_verify.stdout }}"
+      when: ansible_facts['os_family'] == "Debian"
+      tags: [verify]
