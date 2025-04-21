@@ -10,7 +10,7 @@
 #   this playbook or the required packages won't be there.
 #
 #   Possible improvements:
-#     * (done) Add a tag system (e.g. tags: [install, verify, reboot]) for more targeted task runs.
+#     * Add a tag system (e.g. tags: [install, verify, reboot]) for more targeted task runs.
 #     * Optional rollback logic if modinfo or rpm -qif fails.
 #     * Post-install marker file like /var/log/vastnfs_installed to skip redundant runs.
 #
