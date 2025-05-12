@@ -35,6 +35,11 @@
 NUM_CLIENTS=${2:-8}
 NUM_SHARES=${3:-8}
 
+port_range="112.21.0.100-112.21.0.107"
+DNS_ALIAS="protovip"
+DNS="storagenet"
+view_path="nfs"
+
 function mkdirs () {
   for i in $(seq 1 $NUM_SHARES); do
     echo "Creating /mount/share${i} on all clients..."
@@ -42,23 +47,14 @@ function mkdirs () {
   done
 }
 
-function mountall_shares () {
+function mount_all () {
   for i in $(seq 1 $NUM_SHARES); do
     client_idx=$(( (i - 1) % NUM_CLIENTS + 1 ))
-    client=$(printf "linux%02d" "$client_idx")
-    share="/mount/share${i}"
-    echo "Creating $share on $client..."
-    ansible -i ./inventory "$client" -a "mkdir -p $share"
-  done
-}
-
-function mount_shares () {
-  for i in $(seq 1 $NUM_SHARES); do
-    client_idx=$(( (i - 1) % NUM_CLIENTS + 1 ))
-    client=$(printf "linux%02d" "$client_idx")
+    client=$(printf "client%02d" "$client_idx")
     echo "Mounting /share${i} on $client..."
     ansible -i ./inventory "$client" -a \
-      "mount -t nfs -o proto=tcp,vers=3,nconnect=8,remoteports=33.20.1.11-33.20.1.14 sharevip.arrakis.org:/share${i} /mount/share${i}"
+      "mount -t nfs -o proto=tcp,vers=3,nconnect=8,remoteports=${port_range} ${DNS_ALIAS}.${DNS}.org:/${view_path}${i} /mount/share${i}"
+    echo "mount -t nfs -o proto=tcp,vers=3,nconnect=8,remoteports=${port_range} ${DNS_ALIAS}.${DNS}.org:/${view_path}${i} /mount/share${i}"
   done
 }
 
@@ -114,11 +110,8 @@ case "$1" in
   mkdirs)
     mkdirs
     ;;
-  mountall)
-    mountall_shares
-    ;;
   mount)
-    mount_shares
+    mount_all
     ;;
   elbencho_mixed)
     run_elbencho_mixed
@@ -130,7 +123,7 @@ case "$1" in
     parse_elbencho_results
     ;;
   *)
-    echo "Usage: $0 {mkdirs|mountall|mount|elbencho_mixed|elbencho_seq|parse_results} [NUM_CLIENTS] [NUM_SHARES]"
+    echo "Usage: $0 {mkdirs|mount|elbencho_mixed|elbencho_seq|parse_results} [NUM_CLIENTS] [NUM_SHARES]"
     exit 1
     ;;
 esac
