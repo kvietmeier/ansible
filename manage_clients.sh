@@ -61,7 +61,8 @@ function mount_all () {
 function run_elbencho_mixed () {
   for i in $(seq 1 $NUM_SHARES); do
     client_idx=$(( (i - 1) % NUM_CLIENTS + 1 ))
-    client=$(printf "linux%02d" "$client_idx")
+    echo "client_idx=$(( (i - 1) % NUM_CLIENTS + 1 ))"
+    client=$(printf "client%02d" "$client_idx")
     echo "Starting elbencho (mixed) on $client (share${i})..."
     ansible -i ./inventory "$client" -m shell -a \
       "nohup elbencho -t 2 --iodepth 4 --timelimit 2400 -b 1M --direct -s 100G -N 1000 -n 10 -D -F -d -w --rand /mount/share${i} > /tmp/elbencho.log 2>&1 &" &
@@ -73,10 +74,11 @@ function run_elbencho_mixed () {
 function run_elbencho_seq () {
   for i in $(seq 1 $NUM_SHARES); do
     client_idx=$(( (i - 1) % NUM_CLIENTS + 1 ))
-    client=$(printf "linux%02d" "$client_idx")
+    echo "client_idx=$(( (i - 1) % NUM_CLIENTS + 1 ))"
+    client=$(printf "client%02d" "$client_idx")
     echo "Launching sequential write test on $client (share${i})..."
     ansible -i ./inventory "$client" -m shell -a \
-      "nohup elbencho -t 2 --iodepth 4 --timelimit 2400 -b 4M --direct -s 100G -N 4 -n 2 -w /mount/share${i} > /tmp/elbencho_write.log 2>&1 &" &
+      "nohup elbencho -t 2 --iodepth 4 --timelimit 2400 -b 4M --direct -s 100G -N 4 -n 2 -w /mount/share${i} > /home/labuser/output/elbencho_write.log 2>&1 &" -b --become-user=labuser &
   done
   wait
   echo "Sequential elbencho write test started on all clients."

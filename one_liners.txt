@@ -65,3 +65,6 @@ ansible -i ./inventory clients -b -m reboot
 udo mount -o vers=3,nconnect=8,remoteports=10.132.0.211-10.132.0.233 :/share1 /mnt/share1
 
 ansible -i ./inventory clients -m shell -a "elbencho -t 2 --iodepth 4 --timelimit 360 -b 1M --direct -s 1G -N 10 -n 1 -D -F -d -w --rand /mount/share1"
+
+
+nohup elbencho -t 2 --iodepth 4 --timelimit 2400 -b 4M --direct -s 100G -N 4 -n 2 -w /mount/share1 > /home/labuser/output/elbencho_write.log 2>&1 &
