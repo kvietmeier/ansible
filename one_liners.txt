@@ -62,9 +62,28 @@ ansible -i ./inventory clients -b -m yum -a "name=/root/vastnfs-4.0.32/dist/vast
 #
 ansible -i ./inventory clients -b -m reboot
 
-udo mount -o vers=3,nconnect=8,remoteports=10.132.0.211-10.132.0.233 :/share1 /mnt/share1
+# Mount and elbencho
+sudo mount -o vers=3,nconnect=8,remoteports=10.132.0.211-10.132.0.233 :/share1 /mnt/share1
 
 ansible -i ./inventory clients -m shell -a "elbencho -t 2 --iodepth 4 --timelimit 360 -b 1M --direct -s 1G -N 10 -n 1 -D -F -d -w --rand /mount/share1"
 
 
-nohup elbencho -t 2 --iodepth 4 --timelimit 2400 -b 4M --direct -s 100G -N 4 -n 2 -w /mount/share1 > /home/labuser/output/elbencho_write.log 2>&1 &
+nohup elbencho -t 2 --iodepth 4 --timelimit 2400 -b 4M --direct -s 100G -N 4 -n 2 -w /mount/share1 > /home/labuser/output/elbencho_write.log 2>&1 &ansible dbnodes -m lineinfile -a "dest=/etc/fstab line='### Mount VASTShare'"
+ansible dbnodes -m lineinfile -a "dest=/etc/fstab line='10.100.2.19:/nfs1 /mount/nfs1 nfs defaults 1 1'"
+
+# Run Playbook
+ansible-playbook -i ./inventory clients buildvastnfs-multiOS.yml
+ansible-playbook -i ./inventory clients buildvastnfs-multiOS.yml
+ansible-playbook -i ./inventory buildvastnfs-multiOS.yml
+ansible-playbook -i ./inventory buildvastnfs-multiOS.yml
+ansible-playbook -i ./inv
+
+# Check Clients
+ansible -i ./inventory clients -a "df -kh"
+ansible -i ./inventory clients -a "date"
+
+# Use VAST DNS
+mount -t nfs -o proto=tcp,vers=3,nconnect=11,remoteports=33.20.1.11-33.20.1.21 vastdns.${arrakis}.org:/nfs_share_1 /mount/share1
+
+# Use Cloud DNS
+mount -t nfs -o proto=tcp,vers=3,nconnect=11,remoteports=33.20.1.11-33.20.1.21 sharevip.arrakis.org:/nfs_share_1 /mount/share1

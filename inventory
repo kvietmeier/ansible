@@ -15,6 +15,9 @@ client05
 client06
 client07
 client08
+client09
+client10
+client11
 
 
 [clients:vars]

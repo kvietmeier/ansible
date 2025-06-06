@@ -1,2 +1,0 @@
-ansible dbnodes -m lineinfile -a "dest=/etc/fstab line='### Mount VASTShare'"
-ansible dbnodes -m lineinfile -a "dest=/etc/fstab line='10.100.2.19:/nfs1 /mount/nfs1 nfs defaults 1 1'"
