@@ -89,4 +89,20 @@ elbencho --netbench --serversfile ./cnodes.txt --clients ./clients.txt -b 1 --re
 mount -t nfs -o proto=tcp,vers=3,nconnect=11,remoteports=33.20.1.11-33.20.1.21 vastdns.${arrakis}.org:/nfs_share_1 /mount/share1
 
 # Use Cloud DNS
-mount -t nfs -o proto=tcp,vers=3,nconnect=11,remoteports=33.20.1.11-33.20.1.21 sharevip.arrakis.org:/nfs_share_1 /mount/share1
+sudo mount -t nfs -o proto=tcp,vers=3,nconnect=11,remoteports=33.20.1.11-33.20.1.21 sharevip.arrakis.org:/nfs_share_1 /mount/share1
+
+
+ansible -i ./inventory clients -m shell -a "chmod 777 /mount/"
+
+
+nohup elbencho -d -t 2 --iodepth 4 --timelimit 2400 -b 4M --direct -s 100G -N 4 -n 2 -w /mount/share1/elbencho-files &
+nohup elbencho -d -t 2 --iodepth 4 --timelimit 2400 -b 4M --direct -s 100G -N 4 -n 2 -w /mount/share2/elbencho-files &
+nohup elbencho -d -t 2 --iodepth 4 --timelimit 2400 -b 4M --direct -s 100G -N 4 -n 2 -w /mount/share3/elbencho-files &
+nohup elbencho -d -t 2 --iodepth 4 --timelimit 2400 -b 4M --direct -s 100G -N 4 -n 2 -w /mount/share4/elbencho-files &
+nohup elbencho -d -t 2 --iodepth 4 --timelimit 2400 -b 4M --direct -s 100G -N 4 -n 2 -w /mount/share5/elbencho-files &
+nohup elbencho -d -t 2 --iodepth 4 --timelimit 2400 -b 4M --direct -s 100G -N 4 -n 2 -w /mount/share6/elbencho-files &
+nohup elbencho -d -t 2 --iodepth 4 --timelimit 2400 -b 4M --direct -s 100G -N 4 -n 2 -w /mount/share7/elbencho-files &
+nohup elbencho -d -t 2 --iodepth 4 --timelimit 2400 -b 4M --direct -s 100G -N 4 -n 2 -w /mount/share8/elbencho-files &
+nohup elbencho -d -t 2 --iodepth 4 --timelimit 2400 -b 4M --direct -s 100G -N 4 -n 2 -w /mount/share9/elbencho-files &
+nohup elbencho -d -t 2 --iodepth 4 --timelimit 2400 -b 4M --direct -s 100G -N 4 -n 2 -w /mount/share10/elbencho-files &
+nohup elbencho -d -t 2 --iodepth 4 --timelimit 2400 -b 4M --direct -s 100G -N 4 -n 2 -w /mount/share11/elbencho-files &

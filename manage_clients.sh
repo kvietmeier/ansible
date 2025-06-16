@@ -18,9 +18,12 @@
 #   parse_results     - Parse /tmp/elbencho_write.log from each client
 #
 # Example:
-#   ./nfs_test.sh mkdirs 4 8
-#   ./nfs_test.sh mount 4 8
-#   ./nfs_test.sh elbencho_seq 4 8
+# ./your_script.sh mkdirs 11 11
+# ./your_script.sh mount 11 11
+# ./your_script.sh elbencho_mixed 11 11
+# or:
+# ./your_script.sh elbencho_seq 11 11
+#
 #
 # Defaults:
 #   NUM_CLIENTS = 8
@@ -32,53 +35,54 @@
 #   - Elbencho results stored in /tmp/elbencho*.log on each client
 # ====================================================================
 
+# Positional parameters
 NUM_CLIENTS=${2:-8}
 NUM_SHARES=${3:-8}
 
-port_range="112.21.0.100-112.21.0.107"
-DNS_ALIAS="protovip"
-DNS="storagenet"
-view_path="nfs"
+port_range="33.20.1.11-33.20.1.21"
+DNS_ALIAS="sharespool"
+DNS="busab"
+view_path="nfs_share_"
+conns="11"
+#mount -o 
 
 function mkdirs () {
-  for i in $(seq 1 $NUM_SHARES); do
-    echo "Creating /mount/share${i} on all clients..."
-    ansible -i ./inventory clients -a "mkdir -p /mount/share${i}"
+  for i in $(seq 1 $NUM_CLIENTS); do
+    client=$(printf "client%02d" "$i")
+    echo "Creating /mount/share${i} on $client..."
+    ansible -i ./inventory all -l "$client" -a "mkdir -p /mount/share${i}"
   done
 }
 
 function mount_all () {
-  for i in $(seq 1 $NUM_SHARES); do
-    client_idx=$(( (i - 1) % NUM_CLIENTS + 1 ))
-    client=$(printf "client%02d" "$client_idx")
-    echo "Mounting /share${i} on $client..."
-    ansible -i ./inventory "$client" -a \
-      "mount -t nfs -o proto=tcp,vers=3,nconnect=8,remoteports=${port_range} ${DNS_ALIAS}.${DNS}.org:/${view_path}${i} /mount/share${i}"
-    echo "mount -t nfs -o proto=tcp,vers=3,nconnect=8,remoteports=${port_range} ${DNS_ALIAS}.${DNS}.org:/${view_path}${i} /mount/share${i}"
+  for i in $(seq 1 $NUM_CLIENTS); do
+    client=$(printf "client%02d" "$i")
+    echo "Mounting /share${i} and creating elbencho-files directory on $client..."
+    echo  "mount -t nfs -o proto=tcp,vers=3,nconnect=${conns},remoteports=${port_range} ${DNS_ALIAS}.${DNS}.org:/${view_path}${i} /mount/share${i}"
+    #ansible -i ./inventory "$client" -a \
+    #  "mount -t nfs -o proto=tcp,vers=3,nconnect=${conns},remoteports=${port_range} ${DNS_ALIAS}.${DNS}.org:/${view_path}${i} /mount/share${i}"
+    #ansible -i ./inventory "$client" -m shell -a "mkdir -p /mount/share${i}/elbencho-files"
+    ansible -i ./inventory "$client" -m shell -a "chmod 777 /mount/share${i}/elbencho-files"
   done
 }
 
 function run_elbencho_mixed () {
-  for i in $(seq 1 $NUM_SHARES); do
-    client_idx=$(( (i - 1) % NUM_CLIENTS + 1 ))
-    echo "client_idx=$(( (i - 1) % NUM_CLIENTS + 1 ))"
-    client=$(printf "client%02d" "$client_idx")
+  for i in $(seq 1 $NUM_CLIENTS); do
+    client=$(printf "client%02d" "$i")
     echo "Starting elbencho (mixed) on $client (share${i})..."
     ansible -i ./inventory "$client" -m shell -a \
-      "nohup elbencho -t 2 --iodepth 4 --timelimit 2400 -b 1M --direct -s 100G -N 1000 -n 10 -D -F -d -w --rand /mount/share${i} > /tmp/elbencho.log 2>&1 &" &
+      "nohup elbencho -d -t 2 --iodepth 4 --timelimit 2400 -b 1M --direct -s 100G -N 1000 -n 10 -D -F -d -w --rand /mount/share${i}/elbencho-files > /tmp/elbencho.log 2>&1 &" &
   done
   wait
   echo "Mixed elbencho test started on all clients."
 }
 
 function run_elbencho_seq () {
-  for i in $(seq 1 $NUM_SHARES); do
-    client_idx=$(( (i - 1) % NUM_CLIENTS + 1 ))
-    echo "client_idx=$(( (i - 1) % NUM_CLIENTS + 1 ))"
-    client=$(printf "client%02d" "$client_idx")
+  for i in $(seq 1 $NUM_CLIENTS); do
+    client=$(printf "client%02d" "$i")
     echo "Launching sequential write test on $client (share${i})..."
     ansible -i ./inventory "$client" -m shell -a \
-      "nohup elbencho -t 2 --iodepth 4 --timelimit 2400 -b 4M --direct -s 100G -N 4 -n 2 -w /mount/share${i} > /home/labuser/output/elbencho_write.log 2>&1 &" -b --become-user=labuser &
+      "nohup elbencho -d -t 2 --iodepth 4 --timelimit 2400 -b 4M --direct -s 100G -N 4 -n 2 -w /mount/share${i} > /home/labuser/output/elbencho_write.log 2>&1 &" -b --become-user=labuser &
   done
   wait
   echo "Sequential elbencho write test started on all clients."
