@@ -1,5 +1,12 @@
 # VAST NFS Driver Installation & Mount Preparation Role
 
+This playbook configures Linux clients for VAST NFS driver installation and prepares them to run Elbencho performance testing scripts. It automates all prerequisites (packages, kernel headers, and mounts) so the Elbencho setup scripts (*elbencho_setup.sh*, *./files/elbencho_prep.sh*, and *./files/elbencho_testblk_sizes.sh*) can be run after the driver is installed.
+
+## Scope
+
+- Supports Debian/Ubuntu and RHEL/CentOS distributions.
+- Installs all required build tools and dependencies for the VAST NFS kernel driver.
+
 ## Overview
 
 This role automates:
@@ -125,6 +132,13 @@ Include the role in a top-level playbook (vast_site.yml):
 - *Cloud-init wait*: Ensure ~7–10 min after VM creation before running role.
 - *Idempotent*: Tasks will not rebuild or reinstall unnecessarily.
 - *Mount command saved*: Written to /usr/local/bin/nfs_mount_cmd.txt for later manual mounting.
+
+#### After running the playbook you can
+
+1.) Run elbencho_setup.sh to mount shares, start the Elbencho server, and copy the static test scripts to the primary client.
+2.) Execute the copied scripts (*elbencho_prep.sh*, *elbencho_testblk_sizes.sh*) on the primary client (default client01) with the correct NUM_CLIENTS.
+3.) Create your own elbencho commands/job files basesd on this pattern. 
+
 
 ---
 
