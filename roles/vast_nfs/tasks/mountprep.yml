@@ -23,8 +23,8 @@
     dest: /usr/local/bin/nfs_mount_cmd.txt
     mode: '0644'
 
-- name: Execute NFS mount command immediately (optional)
-  shell: |
-    mount -t nfs -o proto=tcp,vers=3,nconnect={{ conns }},remoteports={{ port_range }} \
-    {{ dns_alias }}.{{ dns_domain }}.org:/{{ view_path }} {{ mount_point }}
-  tags: [mount_now]
+#- name: Execute NFS mount command immediately (optional)
+#  shell: |
+#    mount -t nfs -o proto=tcp,vers=3,nconnect={{ conns }},remoteports={{ port_range }} \
+#    {{ dns_alias }}.{{ dns_domain }}.org:/{{ view_path }} {{ mount_point }}
+#  tags: [mount_now]

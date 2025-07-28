@@ -1,54 +1,59 @@
-Ansible Playbook Repo
+## Ansible Playbook Repository
 
-A set of roles/tasks to bootstrap some basic server parameters to prep for overlaying apps..
+This repository contains Ansible playbooks and roles to bootstrap and configure servers for various workloads. It is designed for flexible environments and supports both RHEL and Ubuntu-based systems.
 
-The scratch directory has some snippets of code and a playbook to prep a node for runninng CBT.
+### Overview
 
-RHEL related tasks/vars are in the archive folder, updating to work with Ubuntu
+- **Purpose**: Prepare base server configurations to support application overlays (e.g., storage testing, databases, Kubernetes).
+- **Use Cases**:
+  - Bootstrapping nodes for internal testing.
+  - Preparing infrastructure for VAST NFS deployments.
+  - Setting up database testing environments on Azure.
+- **Status**:
+  - VAST Data NFS driver - current.
+  - RHEL-specific code archived (archive/).
+  - Volt_db Azure setup (archive/).
 
-Updated to add a role to setup a Database testing platform on Azure
+### Repository Structure
 
-
-```
+```text
 .
-├── README.md
-├── ansible.cfg
-├── archive
-│   ├── ansible.cfg.allsettings.cfg
-│   ├── bootstrap
-│   ├── bootstrap.bak.yml
-│   ├── bootstrap.rhel
-│   ├── inventory.old
-│   └── roles
-├── filter_plugins
-│   └── default.yml
-├── group_vars
-│   ├── all.yml
-│   └── private_vars.yml
-├── host_vars
-│   └── default.yml
-├── inventory
-├── library
-│   └── default.yml
-├── db_ports.txt
-├── roles
-│   ├── bootstrap
-│   ├── ceph
-│   ├── common
-│   ├── kubernetes
-│   ├── rhelosp
-│   └── database
-├── scratch
-│   ├── bootstrap.yml
-│   ├── cbt.yml
-│   ├── hosts
-│   └── snippets.yml
-├── site.yml
-├── testing.sh
-├── db_init.sh
-├── db_kill.sh
-├── db_playbook.sh
-├── db_runall.sh
-├── db_setup_mgmt.sh
-└── db_start_all.sh
+├── archive/             # Legacy RHEL-specific code and scripts
+├── files/               # Static files used by roles/playbooks (e.g., elbencho binaries)
+├── filter_plugins/      # Custom Jinja2 filters for Ansible
+├── group_vars/          # Global variables (including private overrides)
+├── host_vars/           # Host-specific variables
+├── library/             # Custom Ansible modules
+├── playbooks/           # Collection of playbooks (multi-OS, VAST, etc.)
+├── roles/               # Reusable roles (bootstrap, database, kubernetes, vast_nfs, etc.)
+├── scratch/             # Experimental playbooks and code snippets
+├── ansible.cfg          # Default Ansible configuration
+├── inventory            # Current inventory of hosts
+├── site.yml             # Main entry-point playbook
+└── vast_site.yml        # VAST-specific orchestration playbook
+
 ```
+
+---
+
+### Key Roles
+
+- bootstrap
+  Sets up basic server parameters (packages, users, networking) for new nodes.
+- common
+  Shared configuration applied across all hosts (security, sysctl, etc.).
+- kubernetes
+  Installs and configures components for Kubernetes clusters.
+- vast_nfs
+  Builds and configures the VAST NFS driver on multi-OS environments.
+
+---
+
+### Development Notes
+
+- *Scratch Directory*:
+  Contains snippets, prototypes, and experimental playbooks. Not production-ready.
+- *Archive Directory*:
+  Legacy RHEL code (being phased out in favor of Ubuntu roles).
+
+

@@ -33,19 +33,30 @@ roles/
 
 ---
 
-## Default Variables (`vars/main.yml`)
+## Default Variables (`vars/main.yml`) - for VAST View mount command
 
 ```text
-| Variable         | Default Value           | Description                                 |
-|------------------|------------------------|---------------------------------------------|
-| `dns_alias`      | `sharespool`           | DNS alias of the VAST VIP pool              |
-| `dns_domain`     | `busab`                | DNS domain suffix                           |
-| `view_path`      | `nfs_share_1`          | NFS export path to mount (overrideable)     |
-| `mount_point`    | `/mount/share1`        | Local directory to mount share              |
-| `port_range`     | `33.20.1.11-33.20.1.13`| VAST NFS remote port range                  |
-| `conns`          | `11`                   | Number of parallel connections (nconnect)   |
-| `download_script_url` | `https://vast-nfs.s3.amazonaws.com/download.sh` | Script to fetch VAST NFS source |
-| `output_log`     | `/tmp/ansible-out.txt` | Log file for build and debug output         |
+|-----------------------|------------------------|----------------------------------------------------------|
+| Variable              | Default Value          | Description                                              |
+|-----------------------|------------------------|----------------------------------------------------------|
+| `dns_alias`           | `sharespool`           | DNS alias of the VAST VIP pool                           |
+| `dns_domain`          | `busab`                | DNS domain suffix                                        |
+| `view_path`           | `nfs_share_1`          | NFS export path to mount (overrideable)                  |
+| `mount_point`         | `/mount/share1`        | Local directory to mount share                           |
+| `port_range`          | `33.20.1.11-33.20.1.13`| VAST NFS remote port range                               |
+| `conns`               | `11`                   | Number of parallel connections (nconnect)                |
+|-----------------------|------------------------|----------------------------------------------------------|
+```
+
+## Default Variables (`vars/main.yml`) - For download/build of driver
+
+```text
+|-----------------------|-------------------------------------------------|----------------------------------------------------------|
+| Variable              | Default Value                                   | Description                                              |
+|-----------------------|-------------------------------------------------|----------------------------------------------------------|
+| `download_script_url` | `https://vast-nfs.s3.amazonaws.com/download.sh` | Script to fetch VAST NFS source                          |
+| `output_log`          | `/tmp/ansible-out.txt`                          | Log file for build and debug output                      |
+|-----------------------|-------------------------------------------------|----------------------------------------------------------|
 ```
 
 ---
