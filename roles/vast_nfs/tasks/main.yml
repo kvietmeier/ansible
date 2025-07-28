@@ -2,15 +2,26 @@
 # main.yml – Master task flow for VAST NFS driver role
 #
 # Description:
-#   Orchestrates all steps: prerequisites, download, build, install, verify,
-#   and final mount point preparation.
+#   Orchestrates all steps: prerequisites, download, build, install, and verify
+#   for the VAST NFS kernel driver. 
+#   Compatible with both Debian/Ubuntu and RHEL/CentOS systems; included 
+#   task files handle OS-specific package managers, kernel header paths, 
+#   and module installation differences.
+#
+# Usage:
+#   Run entire flow or target specific sections using tags:
+#     - prereqs
+#     - download
+#     - build
+#     - install
+#     - verify
 #
 # Notes:
-#   Use tags [prereqs, download, build, install, verify, mountprep] to run
-#   individual sections. Optional [mount_now] executes mount immediately.
+#   The mountprep task is excluded by default as it is recommended to run it
+#   manually after installation, outside Ansible. It is kept here for archival reasons.
 # =============================================================================
 ---
-# Orchestrates the full driver installation and mount prep
+# Orchestrates the full driver installation
 
 - include_tasks: prereqs.yml
   tags: [prereqs]
@@ -27,5 +38,7 @@
 - include_tasks: verify.yml
   tags: [verify]
 
-- include_tasks: mountprep.yml
-  tags: [mountprep]
+# Don't need this - better to run it manually after the install outside Ansible
+# Leaving here for archival reasons.
+#- include_tasks: mountprep.yml
+#  tags: [mountprep]
