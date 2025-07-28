@@ -1,0 +1,46 @@
+# =============================================================================
+# download.yml – Download and extract VAST NFS driver
+#
+# Description:
+#   Uses official download script to fetch driver tarball, locates tarball,
+#   and extracts to /root. Prepares for build phase.
+#
+# Tags:
+#   [download]
+# =============================================================================
+---
+- name: Run official download script
+  shell: |
+    curl -sSf {{ download_script_url }} | bash -s --
+  args:
+    chdir: /root
+    executable: /bin/bash
+
+- name: Find downloaded tarball
+  find:
+    paths: /root
+    patterns: "vastnfs-*.tar.xz"
+    recurse: no
+  register: found_tarballs
+
+- name: Set tarball and version directory
+  set_fact:
+    nfs_tarball: "{{ found_tarballs.files[0].path | basename }}"
+    nfs_version_dir: "{{ found_tarballs.files[0].path | basename | regex_replace('\\.tar\\.xz$', '') }}"
+  when: found_tarballs.files | length > 0
+
+- name: Fail if no tarball found
+  fail:
+    msg: "No VAST NFS tarball found"
+  when: found_tarballs.files | length == 0
+
+- name: Remove existing extracted folder
+  file:
+    path: "/root/{{ nfs_version_dir }}"
+    state: absent
+
+- name: Extract tarball
+  unarchive:
+    src: "/root/{{ nfs_tarball }}"
+    dest: /root
+    remote_src: yes

@@ -1,0 +1,34 @@
+# =============================================================================
+# verify.yml – Verify VAST NFS driver
+#
+# Description:
+#   Confirms rpcrdma.ko kernel module is installed and valid (RPM or modinfo).
+#
+# Tags:
+#   [verify]
+# =============================================================================
+---
+- name: Verify rpcrdma.ko on RedHat
+  shell: |
+    rpm -qif "/lib/modules/$(uname -r)/extra/vastnfs/bundle/net/sunrpc/xprtrdma/rpcrdma.ko"
+  register: rpm_verify
+  failed_when: rpm_verify.rc != 0
+  changed_when: false
+  when: is_redhat
+
+- name: Output RPM verification
+  debug:
+    var: rpm_verify.stdout
+  when: is_redhat
+
+- name: Verify rpcrdma module on Ubuntu
+  shell: modinfo rpcrdma | grep '^filename:'
+  register: modinfo_verify
+  failed_when: modinfo_verify.rc != 0
+  changed_when: false
+  when: is_ubuntu
+
+- name: Output modinfo result
+  debug:
+    msg: "{{ modinfo_verify.stdout }}"
+  when: is_ubuntu

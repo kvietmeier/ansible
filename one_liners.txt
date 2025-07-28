@@ -85,8 +85,8 @@ ansible -i ./inventory clients -m shell -a "elbencho -t 2 --iodepth 4 --timelimi
 nohup elbencho -t 2 --iodepth 4 --timelimit 2400 -b 4M --direct -s 100G -N 4 -n 2 -w /mount/share1 > /home/labuser/output/elbencho_write.log 2>&1 &ansible dbnodes -m lineinfile -a "dest=/etc/fstab line='### Mount VASTShare'"
 elbencho --netbench --serversfile ./cnodes.txt --clients ./clients.txt -b 1 --respsize 1m -s 1t -t 10 --timelimit 30
 
-# Use VAST DNS
-mount -t nfs -o proto=tcp,vers=3,nconnect=11,remoteports=33.20.1.11-33.20.1.21 vastdns.${arrakis}.org:/nfs_share_1 /mount/share1
+# Works using VAST DNS - 
+mount -t nfs -o proto=tcp,vers=3,nconnect=3,remoteports=33.20.1.11-33.20.1.13 sharespool.busab.org:/nfs_share_1 /mount/share1
 
 # Use Cloud DNS
 sudo mount -t nfs -o proto=tcp,vers=3,nconnect=11,remoteports=33.20.1.11-33.20.1.21 sharevip.arrakis.org:/nfs_share_1 /mount/share1

@@ -1,0 +1,31 @@
+# =============================================================================
+# main.yml – Master task flow for VAST NFS driver role
+#
+# Description:
+#   Orchestrates all steps: prerequisites, download, build, install, verify,
+#   and final mount point preparation.
+#
+# Notes:
+#   Use tags [prereqs, download, build, install, verify, mountprep] to run
+#   individual sections. Optional [mount_now] executes mount immediately.
+# =============================================================================
+---
+# Orchestrates the full driver installation and mount prep
+
+- include_tasks: prereqs.yml
+  tags: [prereqs]
+
+- include_tasks: download.yml
+  tags: [download]
+
+- include_tasks: build.yml
+  tags: [build]
+
+- include_tasks: install.yml
+  tags: [install]
+
+- include_tasks: verify.yml
+  tags: [verify]
+
+- include_tasks: mountprep.yml
+  tags: [mountprep]

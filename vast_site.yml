@@ -1,0 +1,11 @@
+---
+### File - site.yml
+#   Top level playbook
+#   
+#   Created By:   Karl Vietmeier
+#  
+- name: Install VAST NFS driver and prepare mount
+  hosts: clients
+  become: yes
+  roles:
+    - vast_nfs
