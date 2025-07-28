@@ -10,9 +10,7 @@
 #   ./nfs_test.sh <action> [NUM_CLIENTS] [NUM_SHARES]
 #
 # Actions:
-#   mkdirs            - Create /mount/shareX directories on all clients
 #   mountall          - Ensure mount points exist for all shares (round-robin per client)
-#   mount             - Mount NFS shares on each client (round-robin)
 #   elbencho_mixed    - Run elbencho with mixed random read/write workload
 #   elbencho_seq      - Run elbencho with sequential write workload
 #   parse_results     - Parse /tmp/elbencho_write.log from each client
@@ -46,16 +44,6 @@ DNS="busab"
 #view_path="nfs_share_"
 view_path="nfs_share_1"
 conns="11"
-#mount -o 
-
-function mkdirs () {
-  for i in $(seq 1 $NUM_CLIENTS); do
-    client=$(printf "client%02d" "$i")
-    #echo "Creating /mount/share${i} on $client..."
-    echo "Creating /mount/share1 on $client..."
-    ansible -i ./inventory all -l "$client" -a "mkdir -p /mount/share1"
-  done
-}
 
 function mount_all () {
   for i in $(seq 1 $NUM_CLIENTS); do
@@ -64,7 +52,6 @@ function mount_all () {
     echo "Mounting /share1 and creating elbencho-files directory on $client..."
     #echo  "mount -t nfs -o proto=tcp,vers=3,nconnect=${conns},remoteports=${port_range} ${DNS_ALIAS}.${DNS}.org:/${view_path}${i} /mount/share1"
     echo  "mount -t nfs -o proto=tcp,vers=3,nconnect=${conns},remoteports=${port_range} ${DNS_ALIAS}.${DNS}.org:/${view_path} /mount/share1"
-    ansible -i ./inventory "$client" -m shell -a "chmod 777 /mount/share1/"
     ansible -i ./inventory "$client" -a "mount -t nfs -o proto=tcp,vers=3,nconnect=${conns},remoteports=${port_range} ${DNS_ALIAS}.${DNS}.org:/${view_path} /mount/share1"
     ansible -i ./inventory "$client" -m shell -a "mkdir -p /mount/share1/elbencho-files"
     ansible -i ./inventory "$client" -m shell -a "chmod 777 /mount/share1/elbencho-files"

@@ -3,7 +3,7 @@
 #
 # Description:
 #   Creates NFS mount point directory and writes a ready-to-run mount command
-#   to /usr/local/bin/nfs_mount_cmd.txt for manual or automated use.
+#   to nfs_mount_cmd.txt for manual or automated use.
 #
 # Tags:
 #   [mountprep], optional [mount_now] executes the mount immediately
@@ -15,12 +15,15 @@
     state: directory
     mode: '0777'
 
+# Example - If SSH user is ubuntu, file saved as /home/ubuntu/nfs_mount_cmd.txt
 - name: Save NFS mount command to text file
   copy:
     content: |
-      mount -t nfs -o proto=tcp,vers=3,nconnect={{ conns }},remoteports={{ port_range }} \
+      sudo mount -t nfs -o proto=tcp,vers=3,nconnect={{ conns }},remoteports={{ port_range }} \
       {{ dns_alias }}.{{ dns_domain }}.org:/{{ view_path }} {{ mount_point }}
-    dest: /usr/local/bin/nfs_mount_cmd.txt
+    dest: "{{ ansible_env.HOME }}/nfs_mount_cmd.txt"
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
     mode: '0644'
 
 #- name: Execute NFS mount command immediately (optional)

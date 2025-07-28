@@ -5,17 +5,23 @@
 #   Defines NFS mount parameters (DNS alias, view, mount point) and build
 #   settings (download URL, port ranges, connection count).
 #
+#
 # Notes:
-#   Override with `-e` or inventory/group_vars as needed.
+#   * These variables are used throughout the role to configure NFS mounts - Adjust as needed for your environment.
+#   * The mount command is saved to nfs_mount_cmd.txt in the user's home directory.
+#   * Assumes DNS is setup on the VAST NFS server and clients can resolve VIP pool FQDN
+#   * Could also be a corporate DNS server.
+#   * Override with `-e` or inventory/group_vars as needed.
+#
 # =============================================================================
 ---
 # NFS mount configuration
 dns_alias: "sharespool"
 dns_domain: "busab"
 view_path: "nfs_share_1"      # overrideable
-mount_point: "/mount/share1"  # single share, variable
+mount_point: "/mount/view1"   # single share, variable
 
-# Connection tuning
+# Connection tuning - use port range for multiple connections
 port_range: "33.20.1.11-33.20.1.13"
 conns: 11
 
