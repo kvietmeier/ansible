@@ -35,10 +35,11 @@ MOUNTPOINT="/mount/share1"             # Mount point for tests
 EB_FILES="elbencho-files"              # Directory for test files
 THREADS=32                             # Threads per client
 IODEPTH=4                              # IO depth
-SIZE="10G"                             # Test file size
-TIMELIMIT=5                            # Seconds per test
+SIZE="100G"                            # Test file size
+TIMELIMIT=3600                         # Seconds per test
 RESFILE="/tmp/results.txt"             # Result text file
 CSVFILE="/tmp/results.csv"             # Result CSV file
+
 
 # --------------------------
 # Validate Input
@@ -97,3 +98,7 @@ for TESTCASE in "--read --rand" "--read" "--write --rand" "--write"; do
       "${MOUNTPOINT}/${EB_FILES}/file[1-10]"
   done
 done
+
+### ToDo
+# - Add more test cases or block sizes as needed
+# - Consider adding error handling for individual test failures
