@@ -120,16 +120,12 @@ function run_elbencho_server () {
   done
 }
 
-function copy_elbencho_prep_script () {
-  echo "Copying static elbencho prep script to $PRIMARY_CLIENT..."
-  ansible -i ./inventory "$PRIMARY_CLIENT" -m copy -a \
-    "src=./files/elbencho_prep.sh dest='{{ ansible_env.HOME }}/elbencho_prep.sh' mode=0755 owner=labuser group=labuser"
-}
+function copy_elbencho_scripts () {
+  echo "Copying built elbencho prep folder to $PRIMARY_CLIENT..."
 
-function copy_elbencho_block_test_script () {
-  echo "Copying static elbencho block size test script to $PRIMARY_CLIENT..."
-  ansible -i ./inventory "$PRIMARY_CLIENT" -m copy -a \
-    "src=./files/elbencho_testblk_sizes.sh dest='{{ ansible_env.HOME }}/elbencho_testblk_sizes.sh' mode=0755 owner=labuser group=labuser"
+  ansible -i ./inventory "$PRIMARY_CLIENT" -m synchronize -a \
+    "src=./files/elbencho_scripts/ dest='{{ ansible_env.HOME }}/elbencho/' recursive=yes" \
+    --become
 }
 
 function kill_elbencho_server () {
@@ -153,17 +149,14 @@ case "$1" in
   elbencho_serv)
     run_elbencho_server
     ;;
-  copy_prep)
-    copy_elbencho_prep_script
-    ;;
-  copy_blk)
-    copy_elbencho_block_test_script
+  copy_scripts)
+    copy_elbencho_scripts
     ;;
   kill_all)
     kill_elbencho_server
     ;;
   *)
-    echo "Usage: $0 {mkdirs|mount|elbencho_serv|copy_prep|copy_blk|kill_all} [NUM_CLIENTS] [NUM_SHARES]"
+    echo "Usage: $0 {mkdirs|mount|elbencho_serv|copy_scripts|kill_all} [NUM_CLIENTS] [NUM_SHARES]"
     exit 1
     ;;
 esac

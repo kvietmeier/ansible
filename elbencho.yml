@@ -1,0 +1,114 @@
+# =====================================================================
+# Playbook Name: Elbencho Orchestration
+#
+# Purpose:
+#   Automates setup and management of elbencho benchmarking across
+#   multiple NFS clients. Consolidates operations previously done via
+#   ad hoc scripts into a single, tag-driven playbook.
+#
+# Features:
+#   - Create required mount directories on all clients
+#   - Mount NFS shares with configurable parameters (proto, nconnect, ports)
+#   - Prepare elbencho-files subdirectory for benchmarks
+#   - Start and stop elbencho service across all clients
+#   - Copy built elbencho test scripts (NFS and S3) to a designated primary client
+#
+# Usage:
+#   ansible-playbook elbencho.yml --tags <tag>
+#
+# Tags:
+#   mkdirs        → Create /mount/share1 directory (0777)
+#   mount         → Mount NFS share and create elbencho-files directory
+#   elbencho_serv → Start elbencho server on all clients
+#   copy_scripts  → Copy elbencho scripts (NFS + S3 tests) to primary client
+#   kill_all      → Stop elbencho server on all clients
+#
+# Variables (override with --extra-vars or inventory):
+#   num_clients    (default: 11)
+#   num_shares     (default: 8)
+#   primary_client (default: client01)
+#   port_range     (default: 33.20.1.11-33.20.1.13)
+#   dns_alias      (default: sharespool)
+#   dns            (default: busab)
+#   view_path      (default: nfs_share_1)
+#   conns          (default: 11)
+#
+# Notes:
+#   - Run copied scripts manually on primary client (pass NUM_CLIENTS param)
+#   - PRIMARY_CLIENT can be overridden via environment variable
+#   - Ansible: Inventory file must define client01, client02, etc.
+#   - Ansible: Static scripts (NFS + S3 tests) live under ./files/
+# =====================================================================
+
+
+---
+- name: Elbencho Benchhmark Setup
+  hosts: all
+  become: yes
+  vars:
+    num_clients: 11
+    num_shares: 3
+    primary_client: client01
+    port_range: "33.20.1.11-33.20.1.13"
+    dns_alias: "sharespool"
+    dns: "busab"
+    view_path: "nfs_share_1"
+    conns: 11
+
+  tasks:
+    # ------------------------
+    # mkdirs
+    # ------------------------
+    - name: Ensure /mount/share1 exists
+      file:
+        path: /mount/share1
+        state: directory
+        mode: '0777'
+      tags: mkdirs
+
+    # ------------------------
+    # mount
+    # ------------------------
+    - name: Mount NFS share
+      mount:
+        path: /mount/share1
+        src: "{{ dns_alias }}.{{ dns }}.org:/{{ view_path }}"
+        fstype: nfs
+        opts: "proto=tcp,vers=3,nconnect={{ conns }},remoteports={{ port_range }}"
+        state: mounted
+      tags: mount
+
+    - name: Ensure elbencho-files directory exists on share
+      file:
+        path: /mount/share1/elbencho-files
+        state: directory
+        mode: '0777'
+      tags: mount
+
+    # ------------------------
+    # elbencho_serv
+    # ------------------------
+    - name: Start elbencho server on all clients
+      shell: "nohup elbencho --service &"
+      async: 0
+      poll: 0
+      tags: elbencho_serv
+
+    # ------------------------
+    # copy_scripts
+    # ------------------------
+    - name: Copy elbencho scripts to primary client
+      delegate_to: "{{ primary_client }}"
+      synchronize:
+        src: ./files/elbencho_scripts/
+        dest: "{{ ansible_env.HOME }}/elbencho/"
+        recursive: yes
+      tags: copy_scripts
+
+    # ------------------------
+    # kill_all
+    # ------------------------
+    - name: Kill elbencho server on all clients
+      shell: "elbencho --quit --hosts localhost"
+      ignore_errors: yes
+      tags: kill_all
