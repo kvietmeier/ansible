@@ -1,0 +1,17 @@
+---
+# roles/specsfs/vars/main.yml
+
+# Remote user to install SPEC SFS
+specsfs_user: labuser
+
+# Path to the ISO on the control node
+local_iso_path: files/SPECstorage2020.iso
+
+# Destination path on the remote host
+remote_iso_path: "/home/{{ specfs_user }}/SPECstorage2020.iso"
+
+# Mount point for the ISO
+mount_point: /mnt/cdrom
+
+# SPEC SFS installation directory
+install_dir: "/home/{{ specfs_user }}/specsfs2020"

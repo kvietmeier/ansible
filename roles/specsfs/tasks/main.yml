@@ -1,0 +1,119 @@
+---
+# Copy ISO to remote host
+- name: Copy SPECstorage ISO to remote host
+  copy:
+    src: "{{ local_iso_path }}"
+    dest: "{{ remote_iso_path }}"
+    mode: '0644'
+
+# Ensure pip is installed
+- name: Ensure pip3 is installed
+  apt:
+    name: python3-pip
+    state: present
+    update_cache: yes
+
+- name: Ensure pip (Python 2) is installed (legacy)
+  apt:
+    name: python-pip
+    state: present
+    update_cache: yes
+  ignore_errors: yes
+
+# Install Python packages as the user
+- name: Install Python 3 packages for SPECstorage user
+  pip:
+    name:
+      - matplotlib
+      - PyYAML
+    executable: pip3
+    extra_args: "--user"
+  become: yes
+  become_user: "{{ specsfs_user }}"
+
+- name: Upgrade PyYAML for Python 3 SPECstorage user
+  pip:
+    name: PyYAML
+    executable: pip3
+    extra_args: "--user -U"
+  become: yes
+  become_user: "{{ specsfs_user }}"
+
+- name: Install Python 2 packages for SPECstorage user (legacy)
+  pip:
+    name:
+      - matplotlib
+      - PyYAML
+    executable: pip
+    extra_args: "--user"
+  become: yes
+  become_user: "{{ specsfs_user }}"
+  ignore_errors: yes
+
+# Disable UFW if active
+- name: Check UFW status
+  command: ufw status
+  register: ufw_status
+  changed_when: false
+  failed_when: false
+
+- name: Disable UFW if active
+  ufw:
+    state: disabled
+  when: "'Status: active' in ufw_status.stdout"
+
+# Stop and disable AppArmor if running
+- name: Check AppArmor status
+  command: systemctl is-active apparmor
+  register: apparmor_status
+  changed_when: false
+  failed_when: false
+
+- name: Stop and disable AppArmor
+  service:
+    name: apparmor
+    state: stopped
+    enabled: no
+  when: apparmor_status.stdout == "active"
+
+# Create mount point
+- name: Create mount point
+  file:
+    path: "{{ mount_point }}"
+    state: directory
+
+# Mount ISO
+- name: Mount SPECstorage ISO
+  mount:
+    path: "{{ mount_point }}"
+    src: "{{ remote_iso_path }}"
+    fstype: iso9660
+    state: mounted
+
+# Run installer if not already installed
+- name: Run SPECstorage installer non-interactively if not already installed
+  shell: yes | python3 sm2020 --install-dir={{ install_dir }}
+  args:
+    chdir: "{{ mount_point }}/specstorage2020"
+  when: not ansible.builtin.stat(path="{{ install_dir }}").stat.exists
+
+# Set permissions
+- name: Set permissions on SPECstorage install directory
+  file:
+    path: "{{ install_dir }}"
+    mode: '0766'
+    recurse: yes
+
+# Copy default config
+- name: Copy default SPECstorage config to AI NFS config if missing
+  copy:
+    src: "{{ install_dir }}/sfs_rc"
+    dest: "{{ install_dir }}/sfs_rc_ai_image_nfs"
+    remote_src: yes
+    force: no
+
+# Unmount ISO
+- name: Unmount SPECstorage ISO
+  mount:
+    path: "{{ mount_point }}"
+    state: unmounted

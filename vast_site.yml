@@ -4,8 +4,9 @@
 #   
 #   Created By:   Karl Vietmeier
 #  
-- name: Install VAST NFS driver and prepare mount
+- name: Install VAST NFS driver and SpecFS Benchmark
   hosts: clients
   become: yes
   roles:
     - vast_nfs
+    - specsfs
