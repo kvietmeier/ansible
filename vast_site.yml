@@ -9,4 +9,4 @@
   become: yes
   roles:
     - vast_nfs
-    - specsfs
+    #- specsfs
