@@ -1,0 +1,35 @@
+# =============================================================================
+# mountprep.yml – Prepare mount point and save mount command
+#
+# Description:
+#   Creates NFS mount point directory and writes a ready-to-run mount command
+#   to nfs_mount_cmd.txt for manual or automated use.
+#
+# Tags:
+#   [mountprep], optional [mount_now] executes the mount immediately
+# =============================================================================
+---
+# Prepare NFS mount point
+
+- name: Ensure NFS mount point exists
+  file:
+    path: "{{ mount_point }}"
+    state: directory
+    mode: '0777'
+
+- name: Save NFS mount command to text file
+  copy:
+    content: |
+      sudo mount -t nfs -o proto=tcp,vers=3,nconnect={{ conns }},remoteports={{ port_range }} \
+      {{ dns_alias }}.{{ dns_domain }}.org:/{{ view_path }} {{ mount_point }}
+    dest: "{{ ansible_env.HOME }}/nfs_mount_cmd.txt"
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: '0644'
+
+# Optional: run mount immediately
+#- name: Execute NFS mount command immediately
+#  shell: |
+#    mount -t nfs -o proto=tcp,vers=3,nconnect={{ conns }},remoteports={{ port_range }} \
+#    {{ dns_alias }}.{{ dns_domain }}.org:/{{ view_path }} {{ mount_point }}
+#  tags: [mount_now]

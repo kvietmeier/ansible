@@ -1,0 +1,45 @@
+---
+# tasks/disable_upgrades.yml
+# =============================================================================
+# Disable unattended-upgrades and automatic APT timers
+#
+# Description:
+#   Stops, disables, and masks the unattended-upgrades service.
+#   Stops and disables apt daily timers.
+#   Disables periodic package updates via apt configuration.
+#
+# Tags:
+#   [prereqs]
+# =============================================================================
+---
+# Freeze package updates on Ubuntu/Debian
+
+- name: Stop and disable upgrade services
+  systemd:
+    name: "{{ item.name }}"
+    state: stopped
+    enabled: no
+    masked: "{{ item.masked | default(false) }}"
+  loop:
+    - { name: "unattended-upgrades", masked: true }
+    - { name: "apt-daily.service", masked: true }
+    - { name: "apt-daily-upgrade.service", masked: true }
+
+- name: Stop and disable timers
+  systemd:
+    name: "{{ item }}"
+    state: stopped
+    enabled: no
+  loop:
+    - apt-daily.timer
+    - apt-daily-upgrade.timer
+
+- name: Disable periodic apt updates
+  copy:
+    dest: /etc/apt/apt.conf.d/20auto-upgrades
+    content: |
+      APT::Periodic::Update-Package-Lists "0";
+      APT::Periodic::Unattended-Upgrade "0";
+    owner: root
+    group: root
+    mode: '0644'

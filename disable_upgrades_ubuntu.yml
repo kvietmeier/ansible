@@ -1,0 +1,46 @@
+---
+- name: Disable unattended-upgrades on Debian/Ubuntu
+  hosts: all
+  become: true
+  gather_facts: true
+
+  tasks:
+    - name: Ensure unattended-upgrades and related services are stopped, disabled, and masked
+      systemd:
+        name: "{{ item }}"
+        state: stopped
+        enabled: no
+        masked: yes
+      loop:
+        - unattended-upgrades
+        - apt-daily.service
+        - apt-daily-upgrade.service
+
+    - name: Stop and disable apt timers
+      systemd:
+        name: "{{ item }}"
+        state: stopped
+        enabled: no
+      loop:
+        - apt-daily.timer
+        - apt-daily-upgrade.timer
+
+    - name: Disable periodic apt updates
+      copy:
+        dest: /etc/apt/apt.conf.d/20auto-upgrades
+        content: |
+          APT::Periodic::Update-Package-Lists "0";
+          APT::Periodic::Unattended-Upgrade "0";
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Check unattended-upgrades status safely
+      command: systemctl status unattended-upgrades
+      register: ua_status
+      failed_when: false
+      ignore_errors: yes
+
+    - name: Display unattended-upgrades status
+      debug:
+        msg: "{{ ua_status.stdout_lines | default(['masked or inactive']) }}"

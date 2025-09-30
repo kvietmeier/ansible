@@ -1,0 +1,37 @@
+# =============================================================================
+# install.yml – Install VAST NFS driver
+#
+# Description:
+#   Installs built driver package (RPM or DEB) and regenerates initramfs.
+#   Reboots node to activate new driver.
+#
+# Tags:
+#   [install]
+# =============================================================================
+---
+# Install VAST NFS driver
+
+- name: Install RPM (RedHat)
+  yum:
+    name: "{{ found_pkgs.files[0].path }}"
+    state: present
+    disable_gpg_check: true
+  when: is_redhat and found_pkgs.files | length > 0
+
+- name: Regenerate initramfs (RedHat)
+  shell: dracut -f
+  when: is_redhat and found_pkgs.files | length > 0
+
+- name: Install DEB (Ubuntu)
+  apt:
+    deb: "{{ found_pkgs.files[0].path }}"
+    state: present
+  when: is_ubuntu and found_pkgs.files | length > 0
+
+- name: Regenerate initramfs (Ubuntu)
+  shell: update-initramfs -u -k $(uname -r)
+  when: is_ubuntu and found_pkgs.files | length > 0
+
+- name: Reboot host
+  reboot:
+    reboot_timeout: 600
