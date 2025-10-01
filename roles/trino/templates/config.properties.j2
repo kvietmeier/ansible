@@ -1,0 +1,7 @@
+coordinator={{ coordinator | bool }}
+node-scheduler.include-coordinator=true
+http-server.http.port=8080
+query.max-memory=50GB
+query.max-memory-per-node=1GB
+discovery-server.enabled={{ coordinator | bool }}
+discovery.uri=http://{{ groups['trino_coordinator'][0] }}:8080

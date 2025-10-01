@@ -1,0 +1,89 @@
+---
+- name: Ensure Java is installed (Debian/Ubuntu)
+  apt:
+    name: "{{ java_package }}"
+    state: present
+  when: ansible_os_family == "Debian"
+
+- name: Ensure Java is installed (RHEL/CentOS)
+  yum:
+    name: "{{ java_package }}"
+    state: present
+  when: ansible_os_family == "RedHat"
+
+- name: Verify Java version
+  command: java -version
+  register: java_version
+  changed_when: false
+  failed_when: "'17' not in java_version.stderr"
+  tags: verify
+
+- name: Create Trino install directory
+  file:
+    path: "{{ trino_install_dir }}"
+    state: directory
+    mode: '0755'
+
+- name: Create Trino data directory
+  file:
+    path: "{{ trino_data_dir }}"
+    state: directory
+    mode: '0755'
+
+- name: Download Trino
+  get_url:
+    url: "https://repo1.maven.org/maven2/io/trino/trino-server/{{ trino_version }}/trino-server-{{ trino_version }}.tar.gz"
+    dest: "/tmp/trino-server-{{ trino_version }}.tar.gz"
+
+- name: Extract Trino
+  unarchive:
+    src: "/tmp/trino-server-{{ trino_version }}.tar.gz"
+    dest: "{{ trino_install_dir }}"
+    remote_src: yes
+    creates: "{{ trino_install_dir }}/trino-server-{{ trino_version }}"
+
+- name: Create config directory
+  file:
+    path: "{{ trino_config_dir }}"
+    state: directory
+    mode: '0755'
+
+- name: Deploy config.properties
+  template:
+    src: config.properties.j2
+    dest: "{{ trino_config_dir }}/config.properties"
+
+- name: Deploy node.properties
+  template:
+    src: node.properties.j2
+    dest: "{{ trino_config_dir }}/node.properties"
+
+- name: Deploy jvm.config
+  template:
+    src: jvm.config.j2
+    dest: "{{ trino_config_dir }}/jvm.config"
+
+- name: Ensure Trino systemd service
+  copy:
+    dest: /etc/systemd/system/trino.service
+    content: |
+      [Unit]
+      Description=Trino
+      After=network.target
+
+      [Service]
+      Type=simple
+      ExecStart={{ trino_install_dir }}/trino-server-{{ trino_version }}/bin/launcher start
+      ExecStop={{ trino_install_dir }}/trino-server-{{ trino_version }}/bin/launcher stop
+      Restart=on-failure
+      User=root
+      Group=root
+
+      [Install]
+      WantedBy=multi-user.target
+
+- name: Enable and start Trino
+  systemd:
+    name: trino
+    enabled: yes
+    state: started

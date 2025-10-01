@@ -9,8 +9,6 @@
 #   [build]
 # =============================================================================
 ---
-# Build VAST NFS driver
-
 - name: Log build prep
   shell: |
     echo "Preparing to build in {{ nfs_version_dir }}" >> {{ output_log }}

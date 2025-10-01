@@ -11,19 +11,21 @@
 # Tags:
 #   [prereqs]
 # =============================================================================
+---
+# Freeze package updates on Ubuntu/Debian
 
-- name: Ensure unattended-upgrades services are stopped, disabled, and masked
+- name: Stop and disable upgrade services
   systemd:
-    name: "{{ item }}"
+    name: "{{ item.name }}"
     state: stopped
     enabled: no
-    masked: yes
+    masked: "{{ item.masked | default(false) }}"
   loop:
-    - unattended-upgrades
-    - apt-daily.service
-    - apt-daily-upgrade.service
+    - { name: "unattended-upgrades", masked: true }
+    - { name: "apt-daily.service", masked: true }
+    - { name: "apt-daily-upgrade.service", masked: true }
 
-- name: Stop and disable apt timers
+- name: Stop and disable timers
   systemd:
     name: "{{ item }}"
     state: stopped
@@ -32,7 +34,7 @@
     - apt-daily.timer
     - apt-daily-upgrade.timer
 
-- name: Disable periodic apt updates via config file
+- name: Disable periodic apt updates
   copy:
     dest: /etc/apt/apt.conf.d/20auto-upgrades
     content: |

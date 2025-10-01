@@ -9,13 +9,14 @@
 #   [mountprep], optional [mount_now] executes the mount immediately
 # =============================================================================
 ---
+# Prepare NFS mount point
+
 - name: Ensure NFS mount point exists
   file:
     path: "{{ mount_point }}"
     state: directory
     mode: '0777'
 
-# Example - If SSH user is ubuntu, file saved as /home/ubuntu/nfs_mount_cmd.txt
 - name: Save NFS mount command to text file
   copy:
     content: |
@@ -26,7 +27,8 @@
     group: "{{ ansible_user }}"
     mode: '0644'
 
-#- name: Execute NFS mount command immediately (optional)
+# Optional: run mount immediately
+#- name: Execute NFS mount command immediately
 #  shell: |
 #    mount -t nfs -o proto=tcp,vers=3,nconnect={{ conns }},remoteports={{ port_range }} \
 #    {{ dns_alias }}.{{ dns_domain }}.org:/{{ view_path }} {{ mount_point }}

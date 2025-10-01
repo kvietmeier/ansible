@@ -1,0 +1,10 @@
+
+---
+
+trino_version: "423"
+trino_install_dir: "/opt/trino"
+trino_data_dir: "/var/trino/data"
+trino_config_dir: "{{ trino_install_dir }}/etc"
+coordinator: false   # override per host
+java_package: "openjdk-17-jdk"   # Debian/Ubuntu
+# For RHEL/CentOS: "java-17-openjdk"

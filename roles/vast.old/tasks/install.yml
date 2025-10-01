@@ -9,8 +9,6 @@
 #   [install]
 # =============================================================================
 ---
-# Install VAST NFS driver
-
 - name: Install RPM (RedHat)
   yum:
     name: "{{ found_pkgs.files[0].path }}"

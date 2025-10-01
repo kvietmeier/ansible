@@ -32,21 +32,21 @@ ansible_ssh_user=labuser
 [cnode:vars]
 ansible_ssh_user=centos
 
+### For settingi up Trino
+[trino_coordinator]
+client11
 
-# Terraform created nodes - generic cluster
-#[leaders]
-#lead
+[trino_workers]
+client10
+client09
+client08
 
-#[leaders:vars]
-#ansible_ssh_user=ubuntu
+[trino:children]
+trino_coordinator
+trino_workers
 
-#[workers]
-#worker01
-#worker02
-#worker03
-
-#[workers:vars]
-#ansible_ssh_user=ubuntu
+[trino:vars]
+ansible_ssh_user=labuser
 
 
 #====================================================================#

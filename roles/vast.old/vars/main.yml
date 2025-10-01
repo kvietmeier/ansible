@@ -15,14 +15,16 @@
 #
 # =============================================================================
 ---
-# OS-independent variables
-download_script_url: "https://vast-nfs.s3.amazonaws.com/download.sh"
-output_log: "/tmp/vast_nfs_build.log"
-
-# NFS mount defaults (used by mountprep.yml)
-port_range: "33.20.1.11-33.20.1.13"
-conns: 11
-mount_point: "/mount/vast"
+# NFS mount configuration
 dns_alias: "sharespool"
 dns_domain: "busab"
-view_path: "nfs_01"
+view_path: "nfs_share_1"      # overrideable
+mount_point: "/mount/view1"   # single share, variable
+
+# Connection tuning - use port range for multiple connections
+port_range: "33.20.1.11-33.20.1.13"
+conns: 11
+
+# Driver download
+download_script_url: "https://vast-nfs.s3.amazonaws.com/download.sh"
+output_log: "/tmp/ansible-out.txt"

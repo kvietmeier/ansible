@@ -11,14 +11,15 @@
 # Tags:
 #   [prereqs]
 # =============================================================================
----
-# OS detection, cloud-init wait, GCC installation
 
 - name: Set OS family flags
   set_fact:
     is_redhat: "{{ ansible_facts['distribution'] in ['RedHat', 'CentOS', 'Rocky', 'AlmaLinux'] }}"
     is_ubuntu: "{{ ansible_facts['distribution'] == 'Ubuntu' }}"
 
+# -------------------------------------------------------------------
+# Cloud-init wait
+# -------------------------------------------------------------------
 - name: Check cloud-init service
   systemd:
     name: cloud-init
@@ -33,11 +34,24 @@
     timeout: 600
   when: cloudinit_status.status is defined and cloudinit_status.status.ActiveState == 'active'
 
+# -------------------------------------------------------------------
+# Root directory prep
+# -------------------------------------------------------------------
 - name: Ensure /root directory exists
   file:
     path: /root
     state: directory
 
+# -------------------------------------------------------------------
+# Disable unattended-upgrades on Debian/Ubuntu
+# -------------------------------------------------------------------
+- include_tasks: disable_upgrades.yml
+  when: is_ubuntu
+  tags: [prereqs]
+
+# -------------------------------------------------------------------
+# GCC installation on Ubuntu
+# -------------------------------------------------------------------
 - name: Install GCC 12 and set default (Ubuntu only)
   block:
     - name: Install GCC 12
@@ -47,6 +61,7 @@
           - g++-12
         state: present
         update_cache: yes
+
     - name: Set GCC 12 as default
       shell: |
         update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-12 100

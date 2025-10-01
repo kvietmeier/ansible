@@ -21,25 +21,24 @@
 #   manually after installation, outside Ansible. It is kept here for archival reasons.
 # =============================================================================
 ---
-- include_tasks: prereqs.yml
+# Orchestrates the full driver installation
+
+- import_tasks: prereqs.yml
   tags: [prereqs]
 
-- include_tasks: disable_upgrades.yml
-  tags: [prereqs,disable_upgrades]
-  when: is_ubuntu
-
-- include_tasks: download.yml
+- import_tasks: download.yml
   tags: [download]
 
-- include_tasks: build.yml
+- import_tasks: build.yml
   tags: [build]
 
-- include_tasks: install.yml
+- import_tasks: install.yml
   tags: [install]
 
-- include_tasks: verify.yml
+- import_tasks: verify.yml
   tags: [verify]
 
-# Optional mount preparation
+# Don't need this - better to run it manually after the install outside Ansible
+# Leaving here for archival reasons.
 #- include_tasks: mountprep.yml
 #  tags: [mountprep]

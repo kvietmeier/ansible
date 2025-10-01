@@ -9,6 +9,8 @@
 #   [download]
 # =============================================================================
 ---
+# Download and extract VAST NFS driver
+
 - name: Run VAST NFS download script and capture filename
   shell: |
     set -o pipefail
@@ -34,14 +36,3 @@
     src: "/root/{{ nfs_tarball }}"
     dest: /root
     remote_src: yes
-
-- name: Example - use the tarball in another task
-  debug:
-    msg: "The downloaded tarball is {{ nfs_tarball }} and will be extracted to {{ nfs_version_dir }}"
-
-- name: Example - compile or install using the extracted directory
-  shell: |
-    cd /root/{{ nfs_version_dir }}
-    ./configure && make && make install
-  args:
-    executable: /bin/bash

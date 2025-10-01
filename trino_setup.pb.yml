@@ -1,0 +1,18 @@
+---
+### File - site.yml
+#   Top level playbook
+#   
+#   Created By:   Karl Vietmeier
+- hosts: trino_coordinator
+  become: yes
+  roles:
+    - role: trino
+      vars:
+        coordinator: true
+
+- hosts: trino_workers
+  become: yes
+  roles:
+    - role: trino
+      vars:
+        coordinator: false

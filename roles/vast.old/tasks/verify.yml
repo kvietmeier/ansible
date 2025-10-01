@@ -8,8 +8,6 @@
 #   [verify]
 # =============================================================================
 ---
-# Verify driver installation
-
 - name: Verify rpcrdma.ko on RedHat
   shell: |
     rpm -qif "/lib/modules/$(uname -r)/extra/vastnfs/bundle/net/sunrpc/xprtrdma/rpcrdma.ko"
