@@ -114,3 +114,17 @@ Secret Key: I/Ssjv4TPsIH5mpXqrSkGdzIqUXbCLj6oLt57wVB
 karlv@devops01:~/Terraform/vastdata/cluster_config$
 
 
+### NFS mount commands for VAST.
+
+### 8 vCPUs
+# 3 Nodes
+sudo mount -t nfs -o vers=3,remoteports=33.20.1.11-33.20.1.13,nconnect=8 33.20.1.11:/nfs_1/ /mount/vast
+
+# 5 Nodes
+sudo mount -t nfs -o vers=3,remoteports=33.20.1.11-33.20.1.15,nconnect=8 33.20.1.11:/nfs_1/ /mount/vast
+
+# 8 Nodes
+sudo mount -t nfs -o vers=3,remoteports=33.20.1.11-33.20.1.18,nconnect=8 33.20.1.11:/nfs_1/ /mount/vast
+
+# 1 Nodes
+sudo mount -t nfs -o vers=3,remoteports=33.20.1.11-33.20.1.21,nconnect=8 33.20.1.11:/nfs_1/ /mount/vast
