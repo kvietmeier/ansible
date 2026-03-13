@@ -23,30 +23,37 @@ client11
 [clients:vars]
 ansible_ssh_user=labuser
 
+# Proxy Node
+[proxy]
+proxyvm01
+
+[proxy:vars]
+ansible_ssh_user=labuser
+
 # VAST Cluster
-[cnode]
-10.100.2.72
+#[cnode]
+#10.100.2.72
 #10.100.2.105
 #10.100.2.106
 
-[cnode:vars]
-ansible_ssh_user=centos
+#[cnode:vars]
+#ansible_ssh_user=centos
 
 ### For settingi up Trino
-[trino_coordinator]
-client11
+#[trino_coordinator]
+#client11
+#
+#[trino_workers]
+#client10
+#client09
+#client08
 
-[trino_workers]
-client10
-client09
-client08
+#[trino:children]
+#trino_coordinator
+#trino_workers
 
-[trino:children]
-trino_coordinator
-trino_workers
-
-[trino:vars]
-ansible_ssh_user=labuser
+#[trino:vars]
+#ansible_ssh_user=labuser
 
 
 #====================================================================#
