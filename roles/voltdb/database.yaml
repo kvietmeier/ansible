@@ -1,0 +1,673 @@
+---
+### File - voltdb.yaml
+#   Do some post install setup on Volt cluster nodes after an install with cloud-init
+#    * Recheck packages
+#    * Add a few we might have missed
+#    * Create some director
+#    * Fix the usetty issue
+#    * update the users .bashrc/.profile
+#    * copy over scripts we have customized
+#    * Run the Volt setup scripts
+#    * reboot if needed
+#
+#   Created By:   Karl Vietmeier
+#
+#   ToDo:
+#    * Can we run the init, setup, and start commands?
+###
+
+- hosts: all
+  remote_user: ubuntu
+  ###==========================================  VARS  =========================================###
+  vars:
+    # Various Directories
+    scripts_dir: ~/mybin
+    temp_dir: ~/temp
+    project_dir: ~/project
+    demo_dir: ~/voltdb-charglt
+
+    # Git setup
+    git_user: kvietmeier
+    git_email: karlv@storagenet.org
+    git_editor: vim
+    git_branch: main
+    git_cred: cache
+
+    # My scripts repo
+    scripts_repo: https://github.com/kvietmeier/scripts.git
+
+    # Need dool to replace dstat
+    dool_url: https://github.com/scottchiefbaker/dool/releases/download/v1.3.0/dool-1.3.0-1.noarch.rpm
+    dool_pkg: dool-1.3.0-1.noarch.rpm
+
+    # Java - 
+    jdk_8_path: /usr/lib/jvm/java-8-openjdk-amd64/bin/java 
+    jdk_11_path: /usr/lib/jvm/java-11-openjdk-amd64/bin/java 
+    jdk_17_path: /usr/lib/jvm/java-17-openjdk-amd64/bin/java 
+
+    # Modified files to copy over from $HOME/bin
+    # Will eventually bundle these up in the bin directory
+    MgmtSetupFiles:
+      - setup_graf-prom.sh
+      - voltwrangler.sh
+      - reload_dashboards.sh
+      - prometheusserver_configure.sh
+      - volt_start_all_bash.sh
+      - setup_graf-prom.sh
+    SetupFiles:
+      - setup_part_1.sh
+      - setup_part_2.sh
+      - setup_voltdb.sh
+      - filesystem.sh
+      - voltdbprometheusbl_start.sh
+      - voltdbprometheusbl_stop.sh
+      - voltdbprometheus_start.sh
+      - voltdbprometheus_stop.sh
+      - prometheusserver_configure.sh
+      - prometheus.service
+      - prometheus.yml
+      - prometheus_start.sh
+      - prometheus_stop.sh
+      - voltdb_start.sh
+      - voltdb_stop.sh
+      - reinit_voltdb.sh
+      - ntpfix.sh
+      - waituntilclustersizeisx.sh
+      - setup_runoncepercluster.sh
+    ConfigFiles:
+      - demo_cluster_config.xml
+      - deployment-default.xml
+      - license.xml
+    # Database Hosts - update as required for number of nodes (need to fix)
+    volt_hosts:
+      - vdb-02
+      - vdb-03
+      - vdb-04
+      - vdb-05
+      - vdb-06
+      - vdb-07
+      #- vdb-08
+      #- vdb-09
+      #- vdb-10
+    # Extra packages to install - just to be sure
+    volt_packages:
+      - prometheus-node-exporter
+      - ncat
+      - cpuid
+      - ifstat
+      - cloud-utils
+      - sysstat
+      - collectl
+      - slurm
+      - tcptrack
+      - bmon
+      - maven
+      - xterm
+      - alien
+      - default-jre
+      - openjdk-11-jre-headless
+      - openjdk-17-jre-headless
+
+
+  ###========================================= End VARS  =======================================###
+
+  ###=========================================== Tasks =========================================###
+  tasks:
+  
+  # Want to be able to skip parts if we've already done it
+  - name: Check if part 1 has already run
+    register: part1_has_run
+    stat: path=/home/ubuntu/.part1_ran get_md5=no
+    tags:
+      - voltdb_setup
+
+  - name: Check if part 2 has already run
+    register: part2_has_run
+    stat: path=/home/ubuntu/.part2_ran get_md5=no
+    tags:
+      - voltdb_setup
+
+  - name: Check if we setup custom node_exporter
+    register: custom_ne_started
+    stat: path=/home/ubuntu/.custom_ne_started get_md5=no
+    tags:
+      - voltdb_setup
+
+  - name: Check if we already setup Grafa and Prometheus on mgmt host
+    register: setupgfp_has_run
+    stat: path=/home/ubuntu/.setupgfp_ran get_md5=no
+    tags:
+      - mgmt_host
+
+  ###=========================== Pkg Mgmt with apt ============================###
+  ###                                                                          ###
+
+  - name: Update apt repo and cache on all Debian/Ubuntu boxes
+    become: true
+    apt: 
+      update_cache: yes
+      force_apt_get: yes
+      cache_valid_time: 3600
+    tags:
+      - apt
+
+  - name: Upgrade the Distro
+    become: true
+    apt: upgrade=dist force_apt_get=yes
+    tags:
+      - apt
+
+  - name: Check if a reboot is needed
+    ## In Ubuntu you have to check if a reboot is required
+    become: true
+    register: reboot_required_file
+    stat: path=/var/run/reboot-required get_md5=no
+    tags:
+      - apt
+  
+  - name: Reboot the box if kernel updated
+    become: true
+    reboot:
+      msg: "Reboot initiated by Ansible for kernel updates"
+      connect_timeout: 5
+      reboot_timeout: 300
+      pre_reboot_delay: 0
+      post_reboot_delay: 30
+      test_command: uptime
+    when: reboot_required_file.stat.exists
+    tags:
+      - apt
+
+  - name: Update apt repo and cache after updates/upgrade
+    become: true
+    apt: 
+      update_cache: yes
+      force_apt_get: yes
+    tags:
+      - apt
+       
+  - name: Install VoltDB requirements 
+    # Packages required by setup - we do it here instead
+    become: true
+    apt:
+      name: "{{ volt_packages }}" 
+      state: present
+    tags:
+      - apt
+
+  - name: "All: Update Man Page Database"
+    command: mandb
+    tags:
+     - apt
+
+  # Install dool - multi-step - replaces dstat
+  - name: Download dool dool-1.3.0-1.noarch.rpm
+    get_url: 
+      url: "{{ dool_url }}"
+      dest: /tmp
+    tags:
+      - apt
+
+  - name: Install dool with alien
+    command: alien -i "{{ dool_pkg }}"
+    args: 
+      chdir: /tmp
+    tags:
+      - apt
+
+
+  ###======================= System environment setup =========================###
+  ###                                                                          ###
+
+  # Not using Private DNS in Azure so there is no DNS resoltion between peered vnets.
+  # --- need static hosts file
+  - name: Copy /etc/hosts
+    become: true
+    copy:
+      src: files/hosts
+      dest: /etc/hosts
+      owner: root
+      group: root
+      mode: 0644
+      backup: yes
+    tags:
+      - system
+
+  # Needed for Kubernetes - don't really need anyway.
+  - name: Disable swap
+    shell: swapoff -a
+    tags:
+      - system
+
+  # Set JAVA_HOME Globally as insurance
+  - name: Set JAVA_HOME in /etc/environment
+    lineinfile:
+      dest: /etc/environment
+      state: present
+      regexp: '^JAVA_HOME'
+      line: 'JAVA_HOME={{ jdk_11_path }}'
+    tags:
+      - system
+
+
+  ###======================= User environment setup ===========================###
+  ###                                                                          ###
+
+  #--- Remove the requiretty directive from /etc/sudoers
+  #--- Needed by some software installers (Ceph for example)
+  - name: Remove requiretty
+    become: true
+    become_method: sudo
+    lineinfile: dest=/etc/sudoers regexp="^Defaults.*requiretty" line='Defaults !requiretty'  backup=yes state=present validate='visudo -cf %s'
+    tags:
+      - userenv
+
+  ###--- Setup some Project directories
+  - name: Create Project Directory
+    file: path={{ project_dir }} state=directory mode=755
+    tags:
+      - userenv
+ 
+  - name: Create Temp Directory
+    file: path={{ temp_dir }} state=directory mode=755
+    tags:
+      - userenv
+ 
+  - name: Clone my scripts from git
+    git: 
+      repo: "{{ scripts_repo }}"
+      dest: scripts 
+      clone: yes
+      force: yes
+    tags:
+      - userenv
+
+  - name: Change ownership of scripts
+    file:
+      path: /home/ubuntu/scripts
+      owner: ubuntu
+      group: ubuntu
+      state: directory
+      recurse: yes
+    tags:
+      - userenv
+
+  - name: Setup .bashrc for ubuntu user
+    lineinfile:
+      dest: .bashrc
+      line: |
+
+        # Customize ENV:
+        set -o vi
+        EDITOR=vi
+        PROMPT_COMMAND='history -w'
+      
+      state: present
+      create: yes 
+    tags:
+      - userenv
+
+  - name: Create SSH Key for ubuntu user
+    user:
+      name: ubuntu
+      generate_ssh_key: yes
+      ssh_key_bits: 4096
+      ssh_key_file: .ssh/id_rsa
+    tags:
+      - ssh_setup
+
+  - name: Setup .ssh/config for ubuntu user
+    blockinfile:
+      path: .ssh/config
+      owner: ubuntu
+      group: ubuntu
+      state: present
+      create: yes 
+      block: |
+
+        ### ================================================================================###
+        #                         Common Settings for all SSH targets                         #
+        ### ================================================================================###
+
+        Host *
+        # Effect is to not populate the known_hosts file every time you connect to a new server
+        UserKnownHostsFile /dev/null
+        # Don't verify that the the key matches a known_host - useful when you rebuild hosts frequently
+        StrictHostKeyChecking no
+      
+    tags:
+      - ssh_setup
+
+  - name: Copy a basic vimrc
+    copy:
+      src: files/vimrc
+      dest: /home/ubuntu/.vimrc
+      owner: ubuntu
+      group: ubuntu
+      mode: 0655
+      force: true
+    tags:
+      - userenv
+  
+  - name: Copy my bash aliases
+    copy:
+      src: files/aliases
+      dest: /home/ubuntu/.bash_aliases
+      owner: ubuntu
+      group: ubuntu
+      mode: 0655
+      force: true
+    tags:
+      - userenv
+  
+  - name: Get rid of ubuntu login splash
+    file:
+      path: /home/ubuntu/.hushlogin
+      state: touch
+      owner: ubuntu
+      group: ubuntu
+    tags:
+      - userenv
+
+  # Save as template for future use
+  #- name: Copy startvolt for VoltDB to mgmt host
+  #  copy:
+  #    when: ansible_hostname == 'vdb-01'
+  # Save as template for future use
+  #- name: Copy startvolt for VoltDB to mgmt host
+  #  copy:
+  #    when: ansible_hostname == 'vdb-01'
+  #    src: volt_start_all_bash.sh
+  #    dest: /home/ubuntu
+  #    owner: ubuntu
+  #    group: ubuntu
+  #    mode: 0655
+  #    force: true
+  #  tags:
+  #    - userenv
+  
+
+  ###--- Setup .gitconfig https://docs.ansible.com/ansible/latest/collections/community/general/git_config_module.html
+  - name: Add user.name to ~/.gitconfig
+    become_user: ubuntu
+    git_config:
+      name: user.name
+      scope: global
+      value: "{{ git_user }}"
+    tags:
+      - git
+  
+  - name: Add user.email to ~/.gitconfig
+    become_user: ubuntu
+    git_config:
+      name: user.email
+      scope: global
+      value: "{{ git_email }}"
+    tags:
+      - git
+  
+  - name: Add editor setting to ~/.gitconfig
+    become_user: ubuntu
+    git_config:
+      name: core.editor
+      scope: global
+      value: "{{ git_editor }}"
+    tags:
+      - git
+
+  - name: Add default branch setting to ~/.gitconfig
+    become_user: ubuntu
+    git_config:
+      name: init.defaultBranch
+      scope: global
+      value: "{{ git_branch }}"
+    tags:
+      - git
+
+  - name: Add credential store setting to ~/.gitconfig
+    become_user: ubuntu
+    git_config:
+      name: credential.credentialStore
+      scope: global
+      value: "{{ git_cred }}"
+    tags:
+      - git
+
+
+  ###============================ VoltDB Setup Section ==========================###
+  ###                                                                            ###
+
+  # Need to remove localhost from .vdbhostnames    
+  - name: Remove localhost from .vdbhostnames
+    lineinfile:
+    become_user: ubuntu
+    args: 
+      create: true
+      dest: .vdbhostnames
+      state: absent 
+      regexp: 'localhost'
+    tags:
+      - voltenv
+
+  # Populate .vdbhostnames
+  - name: Populate .vdbhostnames
+    lineinfile:
+    become_user: ubuntu
+    args: 
+      create: true
+      dest: .vdbhostnames
+      line: '{{ item }}'
+    with_items:
+      - "{{ volt_hosts }}"
+    tags:
+      - voltenv
+
+  - name: Copy modified Volt bin dir scripts
+    become_user: ubuntu
+    copy:
+      src: "{{ item }}"
+      dest: /home/ubuntu/bin
+      owner: ubuntu
+      group: ubuntu
+      mode: 0770
+      force: true
+    with_items: 
+      - "{{ SetupFiles }}"
+    tags:
+      - copy_files
+
+  - name: Copy license amd XML cluster config files
+    become_user: ubuntu
+    copy:
+      src: "{{ item }}"
+      dest: /home/ubuntu/
+      owner: ubuntu
+      group: ubuntu
+      mode: 0644
+      force: true
+    with_items: 
+      - "{{ ConfigFiles }}"
+    tags:
+      - copy_files
+
+  - name: Copy updated Charging demo scripts
+    become_user: ubuntu
+    copy:
+      src: "{{ item }}"
+      dest: /home/ubuntu/voltdb-charglt/scripts
+      owner: ubuntu
+      group: ubuntu
+      mode: 0770
+      force: true
+    with_fileglob:
+      - "demo/*"
+    tags:
+      - copy_files
+
+  ### Run volt setup_part_1.sh
+  - name: Run Part 1
+    command: /usr/bin/bash /home/ubuntu/bin/setup_part_1.sh 11.4
+    become_user: ubuntu
+    args: 
+      chdir: /home/ubuntu/bin
+    when: not part1_has_run.stat.exists
+    tags:
+      - voltdb_setup
+
+  - name: Reboot before running Part 2
+    become: true
+    reboot:
+      msg: "Reboot initiated by Ansible to prep for Part 2"
+      connect_timeout: 5
+      reboot_timeout: 300
+      pre_reboot_delay: 0
+      post_reboot_delay: 30
+      test_command: uptime
+    when: not part1_has_run.stat.exists
+    tags:
+      - voltdb_setup
+
+  ### Run volt setup_part_2.sh
+  - name: Run Part 2
+    command: /usr/bin/bash /home/ubuntu/bin/setup_part_2.sh
+    become_user: ubuntu
+    args: 
+      chdir: /home/ubuntu/bin
+    when: not part2_has_run.stat.exists
+    tags:
+      - voltdb_setup
+
+  # Get the custom Node exporter running
+  - name: Setup/Start Volt Prometheus Exporter
+    command: /usr/bin/bash /home/ubuntu/bin/voltdbprometheus_start.sh
+    become_user: ubuntu
+    args: 
+      chdir: /home/ubuntu/bin
+    when: not custom_ne_started.stat.exists
+    tags:
+      - voltdb_setup
+
+  ###
+  ### mgmt host tasks - 
+  ###
+  - name: Run Grafana and Promtheus setup script on mgmt host
+    command: /usr/bin/bash /home/ubuntu/bin/setup_graf-prom.sh
+    become_user: ubuntu
+    args: 
+      chdir: /home/ubuntu/bin
+    when: not setupgfp_has_run.stat.exists
+    tags:
+      - mgmt_host
+  
+  - name: Copy private key for VoltDB
+    copy:
+      src: files/keys/vdb-mgmt_priv
+      dest: /home/ubuntu/.ssh/vdb-mgmt_priv
+      owner: ubuntu
+      group: ubuntu
+      mode: 0600
+      force: true
+    tags:
+      - mgmt_host
+
+  - name: Create symbolic link to benchmark scripts
+    file:
+      dest: /home/ubuntu/bmark
+      src: voltdb-charglt/scripts
+      owner: ubuntu
+      group: ubuntu
+      state: link
+    tags:
+      - mgmt_host
+
+  - name:  Set ownership of link to benchmark scripts
+    file:
+      path: /home/ubuntu/bmark
+      state: directory
+      recurse: yes
+      owner: ubuntu
+      group: ubuntu
+    tags:
+      - mgmt_host
+
+  - name: Copy modified Volt bin dir scripts to Mgmt Server
+    become_user: ubuntu
+    copy:
+      src: "{{ item }}"
+      dest: /home/ubuntu/bin
+      owner: ubuntu
+      group: ubuntu
+      mode: 0770
+      force: true
+    with_items: 
+      - "{{ MgmtSetupFiles }}"
+    tags:
+      - mgmt_host
+
+  - name: Setup .profile for ubuntu user on mgmt host
+    # Gets setup in setup_part1 which doesn't run on this system
+    blockinfile:
+      path: .profile
+      owner: ubuntu
+      group: ubuntu
+      state: present
+      create: yes 
+      block: |
+
+        VOLT_VERSION="11.4"
+        JAVA_VERSION="jdk-11.0.4"
+
+        PATH="${PATH}:${HOME}/voltdb-ent-${VOLT_VERSION}/bin:${HOME}/bin:${HOME}/bin/${JAVA_VERSION}/bin"
+
+        JAVA_HOME=${HOME}/bin/${JAVA_VERSION}
+
+        export VOLT_VERSION PATH JAVA_HOME
+
+        # Set Java Params
+        JAVA_MAJOR_VERSION=11
+        export JAVA_MAJOR_VERSION
+
+        if [ "$JAVA_MAJOR_VERSION" -ge 11 ] ; then
+          JVMOPTS="--add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/sun.nio.ch=ALL-UNNAMED --add-opens java.base/java.net=ALL-UNNAMED --add-opens java.base/java.nio=ALL-UNNAMED"
+        fi
+
+        set -o vi
+    tags:
+      - mgmt_host
+
+  ###======================== End VoltDB Setup Section ==========================###
+
+
+
+###========================================= End Tasks =======================================###
+
+
+
+###========================= Stuff not Needed ============================###
+###--- Applications
+  
+ # - name: Clone Charging Demo
+ #   git: 
+ #     repo: "{{ charging_repo }}"
+ #     dest: "{{ demo_dir }}"
+ #     clone: yes
+ #     force: yes
+ #   #when: charging.stat.exists == false
+ #   tags:
+ #     - voltdb
+
+  # Not Building volt anymore
+  #- name: Build Voltdb
+  #  command: "{{ item }} chdir={{ voltdb_dir }}"
+  #  with_items:
+  #   - ant
+  #  tags:
+  #    - voltdb
+
+  #- name: Install Prometheus Server on mgmt host
+  # become: true
+  #  apt:
+  #    name: prometheus
+  #    state: present
+  #  tags:
+  #    - mgmt_host

@@ -1,9 +1,0 @@
-[infra:children]
-qa
-test
-
-[qa]
-clr-physqa.jf.foo.com
-
-[test]
-bphipps-clr.jf.foo.com

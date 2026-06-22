@@ -1,0 +1,38 @@
+###=====================================================================### 
+###   Ansible Inventory
+###   Updated with Azure hosts
+###
+###   6 node DB cluster
+###
+###=====================================================================### 
+
+
+### PowerShell Nodes - Created with PowerShell
+# Volt Testing
+[voltnodes]
+vdb-02
+vdb-03
+vdb-04
+vdb-05
+vdb-06
+vdb-07
+
+[voltnodes:vars]
+ansible_ssh_user=ubuntu
+ansible_python_interpreter="/usr/bin/python3"
+
+[voltmgmt]
+vdb-01
+
+[voltmgmt:vars]
+ansible_ssh_user=ubuntu
+ansible_python_interpreter="/usr/bin/python3"
+
+
+###=====================================================================### 
+### For all hosts - per group overrides this
+###=====================================================================### 
+
+[all:vars]
+ansible_ssh_user=root
+ansible_python_interpreter="/usr/bin/python3"
