@@ -1,0 +1,84 @@
+---
+# =============================================================================
+# playbooks/lab_finishing_touches.yml – Lab Tuning & Mount Configurations
+# =============================================================================
+
+- name: Apply Post-Image Finishing Touches to Lab Systems
+  hosts: clients
+  become: yes
+  vars:
+    # Quick definitions if not already in group_vars
+    scripts_repo_url: "https://github.com/kvietmeier/scripts.git"
+    lab_sequence: "01,02,03,04,05"
+    #vast_mgmt_ip: "10.0.0.10"  # 💡 Swap with your actual VAST Cluster VIP
+
+  tasks:
+
+    # -------------------------------------------------------------------------
+    # 1. Directory Permissions & Environment Configurations (.dircolors)
+    # -------------------------------------------------------------------------
+    - name: Ensure VAST labuser shared directories exist
+      ansible.builtin.file:
+        path: "/mount/vast/labuser{{ item }}"
+        state: directory
+        mode: '0777'
+      loop: "{{ lab_sequence.split(',') }}"
+
+    - name: Copy .dircolors to baseline labuser home directory
+      ansible.builtin.copy:
+        src: ../roles/setup_users/files/dircolors # Path relative to playbooks/ folder
+        dest: /home/labuser/.dircolors
+        owner: labuser
+        group: labuser
+        mode: '0644'
+
+    - name: Copy .dircolors to labuser01 through labuser05 home directories
+      ansible.builtin.copy:
+        src: ../roles/setup_users/files/dircolors
+        dest: "/home/labuser{{ item }}/.dircolors"
+        owner: "labuser{{ item }}"
+        group: "labuser{{ item }}"
+        mode: '0644'
+      loop: "{{ lab_sequence.split(',') }}"
+
+    # -------------------------------------------------------------------------
+    # 2. Git Repository Tracking
+    # -------------------------------------------------------------------------
+    - name: Clone scripts repository to baseline labuser
+      ansible.builtin.git:
+        repo: "{{ scripts_repo_url }}"
+        dest: "/home/labuser/scripts"
+        version: main
+        clone: yes
+        update: yes
+      become_user: labuser
+      ignore_errors: yes
+
+    - name: Clone scripts repository to labuser01 through labuser05
+      ansible.builtin.git:
+        repo: "{{ scripts_repo_url }}"
+        dest: "/home/labuser{{ item }}/scripts"
+        version: main
+        clone: yes
+        update: yes
+      loop: "{{ lab_sequence.split(',') }}"
+      become_user: "labuser{{ item }}"
+      ignore_errors: yes
+
+    # -------------------------------------------------------------------------
+    # 3. Storage Mount Configurations (NFS-over-RDMA)
+    # -------------------------------------------------------------------------
+    #- name: Ensure target mount destination folder exists
+    #  ansible.builtin.file:
+    #    path: /mount/vast/data
+    #    state: directory
+    #    mode: '0755'
+
+    #- name: Configure persistent VAST NFS mount in /etc/fstab
+    #  ansible.posix.mount:
+    #    path: /mount/vast/data
+    #    src: "{{ vast_mgmt_ip }}:/data"
+    #    fstype: nfs
+    #    # 💡 Force RDMA transport options for high-performance VAST throughput
+    #    opts: "rw,relatime,vers=3,proto=rdma,port=20049,namlen=255,hard,proto=rdma"
+    #    state: mounted # 'mounted' ensures it writes to fstab AND executes mount -a immediately
