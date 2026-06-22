@@ -1,4 +1,5 @@
 # =============================================================================
+---
 # main.yml – Master task flow for VAST NFS driver role
 #
 # Description:
@@ -20,7 +21,6 @@
 #   The mountprep task is excluded by default as it is recommended to run it
 #   manually after installation, outside Ansible. It is kept here for archival reasons.
 # =============================================================================
----
 - include_tasks: prereqs.yml
   tags: [prereqs]
 

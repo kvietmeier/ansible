@@ -1,3 +1,4 @@
+---
 # =============================================================================
 # mountprep.yml – Prepare mount point and save mount command
 #
@@ -8,7 +9,6 @@
 # Tags:
 #   [mountprep], optional [mount_now] executes the mount immediately
 # =============================================================================
----
 # Prepare NFS mount point
 
 - name: Ensure NFS mount point exists

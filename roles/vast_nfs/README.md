@@ -10,6 +10,7 @@ This playbook configures Linux clients for VAST NFS driver installation and prep
 ## Overview
 
 This role automates:
+
 1. **Prerequisite setup** (cloud-init check, GCC installation, kernel validation).
 2. **Download and build** of the latest VAST NFS driver (supports Ubuntu & RedHat families).
 3. **Installation** of the driver, regeneration of initramfs, and reboot.
@@ -61,7 +62,7 @@ roles/
 |-----------------------|-------------------------------------------------|----------------------------------------------------------|
 | Variable              | Default Value                                   | Description                                              |
 |-----------------------|-------------------------------------------------|----------------------------------------------------------|
-| `download_script_url` | `https://vast-nfs.s3.amazonaws.com/download.sh` | Script to fetch VAST NFS source                          |
+| `download_script_url` | `https://vastnfs.vastdata.com/download.sh` | Script to fetch VAST NFS source                          |
 | `output_log`          | `/tmp/ansible-out.txt`                          | Log file for build and debug output                      |
 |-----------------------|-------------------------------------------------|----------------------------------------------------------|
 ```

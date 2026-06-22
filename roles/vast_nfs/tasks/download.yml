@@ -1,3 +1,4 @@
+---
 # =============================================================================
 # download.yml – Download and extract VAST NFS driver
 #
@@ -7,32 +8,48 @@
 #
 # Tags:
 #   [download]
+#---
 # =============================================================================
----
-# Download and extract VAST NFS driver
+# Download and extract VAST NFS driver safely inside /tmp
+# =============================================================================
 
 - name: Run VAST NFS download script and capture filename
   shell: |
     set -o pipefail
-    filename=$(curl -sSf {{ download_script_url }} | bash -s -- --print-url | xargs basename)
+    full_url=$(curl -sSf {{ download_script_url }} | bash -s -- --print-url | grep 'https://')
+    filename=$(basename "$full_url")
     echo "$filename"
   args:
-    chdir: /root
+    chdir: /tmp
     executable: /bin/bash
   register: download_result
+  failed_when: download_result.stdout == "" or download_result.rc != 0
 
 - name: Set tarball and version directory facts
   set_fact:
-    nfs_tarball: "{{ download_result.stdout }}"
-    nfs_version_dir: "{{ download_result.stdout | regex_replace('\\.tar\\.xz$', '') }}"
+    nfs_tarball: "{{ download_result.stdout | trim }}"
+    nfs_version_dir: "{{ download_result.stdout | trim | regex_replace('\\.tar\\.xz$', '') }}"
+
+- name: Execute VAST download script to fetch the tarball
+  shell: |
+    set -o pipefail
+    curl -sSf {{ download_script_url }} | bash -s --
+  args:
+    chdir: /tmp
+    executable: /bin/bash
 
 - name: Remove existing extracted folder if it exists
   file:
-    path: "/root/{{ nfs_version_dir }}"
+    path: "/tmp/{{ nfs_version_dir }}"
     state: absent
+  when: 
+    - nfs_version_dir is defined
+    - nfs_version_dir != ""
+    - nfs_version_dir != "/"
 
 - name: Extract the downloaded tarball
   unarchive:
-    src: "/root/{{ nfs_tarball }}"
-    dest: /root
+    src: "/tmp/{{ nfs_tarball }}"
+    dest: /tmp
     remote_src: yes
+  when: nfs_tarball != ""

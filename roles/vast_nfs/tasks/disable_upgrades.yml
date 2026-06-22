@@ -11,7 +11,6 @@
 # Tags:
 #   [prereqs]
 # =============================================================================
----
 # Freeze package updates on Ubuntu/Debian
 
 - name: Stop and disable upgrade services

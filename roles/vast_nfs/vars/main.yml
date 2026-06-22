@@ -16,7 +16,7 @@
 # =============================================================================
 ---
 # OS-independent variables
-download_script_url: "https://vast-nfs.s3.amazonaws.com/download.sh"
+download_script_url: "https://vastnfs.vastdata.com/download.sh"
 output_log: "/tmp/vast_nfs_build.log"
 
 # NFS mount defaults (used by mountprep.yml)

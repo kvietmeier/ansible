@@ -1,0 +1,13 @@
+---
+- name: Create NFS Mount Directories on Clients
+  hosts: your_ansible_group_here
+  become: true  # Required to create directories and modify permissions
+  
+  tasks:
+    - name: Ensure VAST labuser directories exist with 777 permissions
+      ansible.builtin.file:
+        path: "/mount/vast/labuser{{ item }}"
+        state: directory
+        mode: '0777'
+      # Generates a sequence from 01 to 05 with a 2-digit format
+      with_sequence: start=1 end=5 format=%02d

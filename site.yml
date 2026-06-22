@@ -1,0 +1,39 @@
+---
+### File - site.yml
+#   Top level playbook for VAST NFS Client Installation
+#   
+#   Created By:   Karl Vietmeier
+#  
+- name: Install VAST NFS driver and SpecFS Benchmark
+  hosts: clients
+  become: yes
+
+  pre_tasks:
+    - name: Ensure VAST labuser directories exist with 777 permissions
+      ansible.builtin.file:
+        path: "/mount/vast/labuser{{ item }}"
+        state: directory
+        mode: '0777'
+      with_sequence: start=1 end=5 format=%02d
+
+    - name: Copy .dircolors to base labuser home directory
+      ansible.builtin.copy:
+        src: files/env/dircolors
+        dest: /home/labuser/.dircolors
+        owner: labuser
+        group: labuser
+        mode: '0644'
+
+    - name: Copy .dircolors to labuser01 through labuser05 home directories
+      ansible.builtin.copy:
+        src: files/env/dircolors
+        dest: "/home/labuser{{ item }}/.dircolors"
+        owner: "labuser{{ item }}"
+        group: "labuser{{ item }}"
+        mode: '0644'
+      with_sequence: start=1 end=5 format=%02d
+
+  roles:
+    - vast_nfs
+    # - vast
+    # - specsfs
