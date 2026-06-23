@@ -7,7 +7,7 @@
   hosts: clients
   become: yes
   vars:
-    # Quick definitions if not already in group_vars
+    # Local vars - Quick definitions if not already in group_vars
     scripts_repo_url: "https://github.com/kvietmeier/scripts.git"
     lab_sequence: "01,02,03,04,05"
     #vast_mgmt_ip: "10.0.0.10"  # 💡 Swap with your actual VAST Cluster VIP
@@ -17,6 +17,7 @@
     # -------------------------------------------------------------------------
     # 1. Directory Permissions & Environment Configurations (.dircolors)
     # -------------------------------------------------------------------------
+    # Labuser mountpoints
     - name: Ensure VAST labuser shared directories exist
       ansible.builtin.file:
         path: "/mount/vast/labuser{{ item }}"
@@ -24,6 +25,7 @@
         mode: '0777'
       loop: "{{ lab_sequence.split(',') }}"
 
+    # dircolors because the default ubuntu is off
     - name: Copy .dircolors to baseline labuser home directory
       ansible.builtin.copy:
         src: ../roles/setup_users/files/dircolors # Path relative to playbooks/ folder
@@ -32,6 +34,7 @@
         group: labuser
         mode: '0644'
 
+    # dircolors because the default ubuntu is off
     - name: Copy .dircolors to labuser01 through labuser05 home directories
       ansible.builtin.copy:
         src: ../roles/setup_users/files/dircolors
@@ -42,7 +45,7 @@
       loop: "{{ lab_sequence.split(',') }}"
 
     # -------------------------------------------------------------------------
-    # 2. Git Repository Tracking
+    # 2. Clone utility scripts repo
     # -------------------------------------------------------------------------
     - name: Clone scripts repository to baseline labuser
       ansible.builtin.git:
@@ -68,11 +71,11 @@
     # -------------------------------------------------------------------------
     # 3. Storage Mount Configurations (NFS-over-RDMA)
     # -------------------------------------------------------------------------
-    #- name: Ensure target mount destination folder exists
-    #  ansible.builtin.file:
-    #    path: /mount/vast/data
-    #    state: directory
-    #    mode: '0755'
+    - name: Ensure target mount destination folder exists
+      ansible.builtin.file:
+        path: /mount/vast/
+        state: directory
+        mode: '0777'
 
     #- name: Configure persistent VAST NFS mount in /etc/fstab
     #  ansible.posix.mount:

@@ -1,0 +1,19 @@
+---
+### File - site.yml
+#   Top level playbook
+#   
+#   Created By:   Karl Vietmeier
+#  
+#   Old, needs updating.  Here as placeholder
+#
+
+- hosts: all
+  roles:
+     - bootstrap
+     - kubernetes
+  remote_user: root
+  vars_files:
+     # Any confidential info like certs, keys, etc.
+     - group_vars/private_vars.yml
+
+...

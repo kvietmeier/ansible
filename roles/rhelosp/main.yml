@@ -1,8 +1,0 @@
----
-# File roles/rhelosp/main.yml
-# Placeholder for OpenStack roles
-
-# Register Nodes and add OpenStack channels
-- include: rhn_reg_rhelosp.yml
-
-...
