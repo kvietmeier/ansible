@@ -1,21 +1,52 @@
----
-### File - site.yml
-#   Top level playbook for VAST NFS Client Installation
+###===================================================================================###
+# Top-Level Playbook for VAST NFS Client Installation & Identity Scaling (10 Users)
 #   
-#   Created By:   Karl Vietmeier
-#  
+# Features: Dynamic User Provisioning, Passwordless Sudo, Environment Configurations
+# Created By: Karl Vietmeier
+###===================================================================================###
 - name: Install VAST NFS driver and SpecFS Benchmark
   hosts: clients
   become: yes
 
   pre_tasks:
-    - name: Ensure VAST labuser directories exist with 777 permissions
+    #---------------------------------------------------------------------------------
+    # 1. NEW USER CREATION VECTOR (Creates the missing 06 through 10 accounts)
+    #---------------------------------------------------------------------------------
+    - name: Ensure new clone users 06 through 10 exist on the client systems
+      ansible.builtin.user:
+        name: "labuser{{ item }}"
+        state: present
+        shell: /bin/bash
+        create_home: yes
+      with_sequence: start=6 end=10 format=%02d
+
+    #---------------------------------------------------------------------------------
+    # 2. DIRECTORY PROVISIONING VECTOR (All 10 Mount Points)
+    #---------------------------------------------------------------------------------
+    - name: Ensure VAST labuser mount directories exist with 777 permissions
       ansible.builtin.file:
         path: "/mount/vast/labuser{{ item }}"
         state: directory
         mode: '0777'
-      with_sequence: start=1 end=5 format=%02d
+      with_sequence: start=1 end=10 format=%02d
 
+    #---------------------------------------------------------------------------------
+    # 3. USER PRIVILEGE ESCALATION BLOCK (Passwordless Sudo for All 10)
+    #---------------------------------------------------------------------------------
+    - name: Configure passwordless sudo entry for labuser01 through labuser10
+      ansible.builtin.lineinfile:
+        path: "/etc/sudoers.d/labusers"
+        create: yes
+        owner: root
+        group: root
+        mode: '0440'
+        line: "labuser{{ item }} ALL=(ALL) NOPASSWD:ALL"
+        validate: '/usr/sbin/visudo -cf %s'
+      with_sequence: start=1 end=10 format=%02d
+
+    #---------------------------------------------------------------------------------
+    # 4. USER RUNTIME ENVIRONMENT STACK (.dircolors distribution)
+    #---------------------------------------------------------------------------------
     - name: Copy .dircolors to base labuser home directory
       ansible.builtin.copy:
         src: files/env/dircolors
@@ -24,14 +55,59 @@
         group: labuser
         mode: '0644'
 
-    - name: Copy .dircolors to labuser01 through labuser05 home directories
+    - name: Copy .dircolors to labuser01 through labuser10 home directories
       ansible.builtin.copy:
         src: files/env/dircolors
         dest: "/home/labuser{{ item }}/.dircolors"
         owner: "labuser{{ item }}"
         group: "labuser{{ item }}"
         mode: '0644'
-      with_sequence: start=1 end=5 format=%02d
+      with_sequence: start=1 end=10 format=%02d
+
+    #---------------------------------------------------------------------------------
+    # 5. CORE BASH RESILIENCY STACK (Safe Backup and Drop-In Custom .bashrc)
+    #---------------------------------------------------------------------------------
+    - name: Copy bashrc template to base labuser profile backing up original
+      ansible.builtin.copy:
+        src: files/bashrc_ubuntu_cloud.sh
+        dest: /home/labuser/.bashrc
+        backup: yes
+        owner: labuser
+        group: labuser
+        mode: '0644'
+
+    - name: Copy bashrc template to labuser01 through labuser10 profiles backing up originals
+      ansible.builtin.copy:
+        src: files/bashrc_ubuntu_cloud.sh
+        dest: "/home/labuser{{ item }}/.bashrc"
+        backup: yes
+        owner: "labuser{{ item }}"
+        group: "labuser{{ item }}"
+        mode: '0644'
+      with_sequence: start=1 end=10 format=%02d
+
+    #---------------------------------------------------------------------------------
+    # 6. SSH SECURITY KEY ALIGNMENT (Copy authorized_keys to all profiles)
+    #---------------------------------------------------------------------------------
+    - name: Ensure .ssh directory exists for all 10 labusers
+      ansible.builtin.file:
+        path: "/home/labuser{{ item }}/.ssh"
+        state: directory
+        owner: "labuser{{ item }}"
+        group: "labuser{{ item }}"
+        mode: '0700'
+      with_sequence: start=1 end=10 format=%02d
+
+    - name: Copy authorized_keys from base labuser to all 10 labuser profiles
+      ansible.builtin.copy:
+        src: /home/labuser/.ssh/authorized_keys
+        dest: "/home/labuser{{ item }}/.ssh/authorized_keys"
+        remote_src: yes # Tells Ansible to copy from the client machine itself, not your mac
+        owner: "labuser{{ item }}"
+        group: "labuser{{ item }}"
+        mode: '0600'
+      with_sequence: start=1 end=10 format=%02d
+
 
   roles:
     # - vast_nfs
