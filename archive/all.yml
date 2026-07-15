@@ -1,0 +1,199 @@
+---
+# File: - group_vars/all.yml
+# Global variables for all playbooks
+
+### Repos 
+rhel7_optional: rhel-7-server-optional-rpms
+ceph_repo: rhel-7-server-rhceph-1.2-installer-rpms
+cephmon_repo: rhel-7-server-rhceph-1.2-mon-rpms
+fedora_mirror: http://mirror.hmc.edu/fedora/linux/releases/22/Everything/x86_64/os/Packages
+
+# collectd vars
+cllctd_git: https://github.com/httpdss/collectd-web.git
+cllctd_install_dir: /usr/local
+cllctd_config_dir: /etc/collectd
+cllctd_conf: https://raw.githubusercontent.com/JoshHilliker/Telemetry-Infra/master/collectd.conf
+
+# Various Directories
+bin_dir: ~/bin
+root_dir: /root
+temp_dir: ~/temp
+pkg_dir: ~/temp
+project_dir: ~/testing_output
+git_dir: ~/git
+fio_dir: ~/git/fio
+iperf3_dir: ~/git/iperf3
+sockperf_dir: ~/git/sockperf
+
+# Files
+files_dir: /root/projects/ansible/roles/bootstrap/files
+cpu_gov: cpu_gov.sh
+irq_bal: irq_balance.sh
+
+# binaries - so we can skip the compile if they are already there
+fio_binary: /usr/local/bin/fio
+iperf3_binary: /usr/local/bin/iperf3
+sperf_binary: /usr/bin/sockperf
+
+# Versions
+ceph_ver: 3
+
+# Source Code github
+fio_repo: https://github.com/axboe/fio.git
+iperf3_repo: https://github.com/esnet/iperf.git
+sockperf_repo: https://github.com/mellanox/sockperf
+
+### User Information (password n0mad1c)
+users:
+  - username: kube
+  - username: azureuser
+  - username: labuser01
+
+userpass: $1$z.0hhKJ0$CIfrsuyuTDcoEo4s4jnXF. 
+usershell: /bin/bash
+groups: sudo
+generate_ssh_key: yes
+ssh_key_bits: 2048 
+ssh_key_comment: yes
+ssh_key_type: rsa
+
+### Basic system info
+timezone: America/Los_Angeles
+
+### Package Information
+xtra_pkgs:
+  - psmisc
+  - util-linux
+  - coreutils
+  - xfsprogs
+  - e2fsprogs
+  - findutils
+  - sysfsutils
+  - hwloc
+  - hwloc-gui
+  - git
+  - wget
+  - bzip2
+  - kernel-devel
+  - perf
+  - blktrace
+  - lsof
+  - sysstat
+  - python-yaml
+  - ipmitool
+  - dstat
+  - zlib-devel
+  - collectl
+  - tree
+  - screen
+  - tmux
+  - nvme-cli
+  - numactl
+  - hdparm
+  - sdparm
+  - vim
+
+### RHEL/Centos Packages
+rhel_pkgs:
+  - epel-release
+  - redhat-lsb
+  - sdparm
+  - smartmontools
+  - rpcbind
+  - ftp
+  - python
+  - openssh-clients
+  - yum-utils
+  - yum-plugin-priorities.noarch
+  - sg3_utils
+  - perf
+  - bind-utils
+  - nfs-utils
+  - openldap
+  - openldap-clients
+  - nss_ldap
+  
+### Ubuntu Packages
+ubuntu_pkgs:
+  - sg3-utils
+  - ssh
+  - nfs-common
+  - nfs-kernel-server
+  - dnsutils
+  - ldap-utils
+  - libpam-ldap
+  - libnss-ldap
+  - nslcd        
+  - build-essential 
+  - git
+  - vim
+  - tree
+  - numactl 
+  - psmisc
+  - dstat 
+  - nmon
+  - ncdu
+  - slurm
+  - saidar
+  - ccze
+  - net-tools
+  - nfs-common
+  - sysstat
+
+ubuntu_kernel_pkgs:
+  # These are kernels - don't need them in Azure
+  - linux-tools-lowlatency
+  - linux-tools-virtual
+  - linux-tools-common
+  - linux-tools-generic
+
+ubuntu_dpdk_pkgs:
+  - librdmacm-dev
+  - librdmacm1
+  - libnuma-dev
+  - libmnl-dev
+  - libpcap-dev
+  - autoconf
+  - lib32z1
+  - meson
+  - pkg-config
+  - cmake
+  - python3-pyelftools
+  - python-pyelftools
+  - python3-pip
+
+# Need these to support apt over http
+apt_html_pkgs:
+  - apt-transport-https
+  - ca-certificates
+  - curl
+  - gnupg-agent
+  - software-properties-common
+
+###--- Not needed on Azure
+###--- NTP Dictionaries
+centos_ntp_dict:
+  server0: 0.centos.pool.ntp.org
+  server1: 1.centos.pool.ntp.org
+  server2: 2.centos.pool.ntp.org
+  server3: 3.centos.pool.ntp.org
+
+rhel_ntp_dict:
+  server0: 0.rhel.pool.ntp.org
+  server1: 1.rhel.pool.ntp.org
+  server2: 2.rhel.pool.ntp.org
+  server3: 3.rhel.pool.ntp.org
+
+centos_ntp:
+  - 0.centos.pool.ntp.org
+  - 1.centos.pool.ntp.org
+  - 2.centos.pool.ntp.org
+  - 3.centos.pool.ntp.org
+
+rhel_ntp:
+  - 0.rhel.pool.ntp.org
+  - 1.rhel.pool.ntp.org
+  - 2.rhel.pool.ntp.org
+  - 3.rhel.pool.ntp.org
+
+...

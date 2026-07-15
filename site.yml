@@ -4,12 +4,15 @@
 #   
 #   Created By:   Karl Vietmeier
 #  
-- name: Install VAST NFS driver and SpecFS Benchmark
+- name: Setup VAST NFS Client Environment
   hosts: clients
-  become: yes
+  become: true
 
-  
   roles:
-    - vast_nfs
-    #- vast
-    #- specsfs
+    - role: vast_client
+      tags: ['never', 'base', 'client']
+    
+    - role: vast_nfs
+      tags: ['never', 'install_driver']
+    
+    #- role: specsfs

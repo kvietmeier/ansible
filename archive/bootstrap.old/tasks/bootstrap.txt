@@ -1,0 +1,552 @@
+---
+# Check to make sure we are running against supported systems
+- name: Fail on unsupported system
+  fail: 
+    msg: "System not supported {{ ansible_system }}"
+  when: "ansible_system not in ['Linux']"
+
+- name: Fail on unsupported architecture
+  fail: 
+    msg: "Architecture not supported {{ ansible_architecture }}"
+  when: "ansible_architecture not in ['x86_64']"
+
+- name: Fail on unsupported distribution
+  fail:
+    msg: "Distribution not supported {{ ansible_os_family }}"
+  when: "ansible_os_family not in ['Debian', 'RedHat']"
+...
+---
+###==========================================================================###
+#     Copy over utility scripts and other files we might need
+#
+#
+###==========================================================================###
+
+###---- Make sure the files don't exist - copy if they don't.
+- name: Is the cpu_gov script present?
+  stat:
+    path: "{{ bin_dir }}/{{ cpu_gov }}"
+  register: cpugov
+  tags:
+    - files
+
+- name: is irq_balance present?
+  stat:
+    path: "{{ bin_dir }}/{{ irq_bal }}"
+  register: irqbal
+  tags:
+     - files
+
+###---- Copy scripts
+- name:  Copy cpu_gov.sh
+  copy:
+    remote_src: no
+    src: "{{ cpu_gov }}"
+    dest: "{{ bin_dir }}"
+    mode: 0744
+  when: cpugov.stat.exists == false
+  tags:
+    - files
+
+- name:  Copy irq_balance.sh
+  copy:
+    remote_src: no
+    src: "{{ irq_bal }}"
+    dest: "{{ bin_dir }}"
+    mode: 0744
+  when: irqbal.stat.exists == false
+  tags:
+    - files
+
+  
+
+  ###--- Using Debug statements
+  #
+  #- name: Test5
+  #  debug:
+  #    msg: "Ansible When File Not Present Example."
+  #  when: not isdctrpm.stat.exists
+
+  #- name: Test6
+  #  debug:
+  #    msg: "Ansible When File Not Present Example."
+  #  when: not cpugov.stat.exists
+
+  #- name: Test7
+  #  debug:
+  #    msg: "Ansible When File Not Present Example."
+  #  when: not irqbal.stat.exists
+
+  # 
+  ###--- Copy the scripts over if needed
+  #---
+# File: roles/common/tasks/install_pkgs.yml
+#   Update the system and install extra packages
+#   Uses conditionals to check for OS version and state files
+#   Created by: Karl Vietmeier
+#
+
+
+###======== Upgrade RHEL/Centos Based Systems =========###
+- name: Install the RHEL/Centos Development Tools package group
+  yum: 
+    name: "@Development tools"
+    state: present
+  when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
+  tags:
+     - pkgs
+
+- name: Install a Bunch of Useful Packages you will need eventually
+  when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
+  yum: 
+    name: '{{ xtra_pkgs }}'
+    state: present
+  tags:
+    - pkgs
+
+- name: RHEL - Install RHEL Specific Useful Packages
+  when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
+  yum:
+    name: '{{ rhel_pkgs }}'
+    state: present
+  tags:
+     - pkgs
+
+- name: "Disable epel until you really need it"
+  when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
+  command: sed -i -e "s/^enabled=1/enabled=0/" /etc/yum.repos.d/epel.repo
+  tags:
+     - pkgs
+
+- name: "RHEL: Upgrade all packages"
+  when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
+  yum:
+    name: "*" 
+    state: latest
+  tags:
+     - pkgs
+
+
+###======== Upgrade Debian/Ubuntu based systems and reboot if necessary ========###
+- name: "Ubuntu: Check if there are packages available to be installed/upgraded"
+  when: ansible_distribution == 'Ubuntu'
+  command: /usr/lib/update-notifier/apt-check --package-names
+  register: packages
+  tags:
+     - pkgs
+
+- name: "Update apt cache if it is old"
+  when: (ansible_distribution == 'Ubuntu')
+  apt:
+    update_cache: yes
+    force_apt_get: yes
+    cache_valid_time: 3600
+  tags:
+     - pkgs
+
+- name: "Ubuntu: Upgrade all packages to the latest version"
+  when: (ansible_distribution == 'Ubuntu') and (packages.stderr != "")
+  apt: 
+    name: "*"
+    state: latest
+  tags:
+    - pkgs
+
+- name: "Ubuntu: Install Ubuntu Development Tools"
+  when: ansible_distribution == 'Ubuntu'
+  apt:
+    name: build-essential
+    state: present
+  tags: 
+    - pkgs
+
+# some bad packages in the list
+#- name: "Ubuntu: Install a Bunch of Useful Packages you will need eventually"
+#  when: ansible_distribution == 'Ubuntu'
+#  apt:
+#    name: '{{ xtra_pkgs }}'
+#    state: present
+#  tags:
+#     - pkgs
+
+- name: "Ubuntu: Install Core Utilities that might not be there"
+  when: ansible_distribution == 'Ubuntu'
+  apt:
+    name: "{{ ubuntu_pkgs }}"
+    state: present
+    update_cache: yes
+  tags: 
+    - pkgs
+  
+- name: "Ubuntu: Install libraries needded for dpdk"
+  when: ansible_distribution == 'Ubuntu'
+  apt:
+    name: "{{ ubuntu_dpdk_pkgs }}"
+    state: present
+    update_cache: yes
+  tags: 
+    - pkgs
+
+- name: Upgrade pip if required
+  when: ansible_distribution == 'Ubuntu'
+  pip:
+    name: pip
+    executable: pip3
+    state: latest
+  tags:
+    - pkgs
+
+
+# In Ubuntu you have to check if a reboot is required
+- name: Check if a reboot is needed
+  when: (ansible_distribution == 'Ubuntu')
+  register: reboot_required_file
+  stat: 
+    path: /var/run/reboot-required
+    get_md5: no
+  tags:
+     - pkgs
+  
+- name: Reboot the box if kernel updated
+  reboot:
+    msg: "Reboot initiated by Ansible for kernel updates"
+    connect_timeout: 5
+    reboot_timeout: 300
+    pre_reboot_delay: 0
+    post_reboot_delay: 30
+    test_command: uptime
+  when: (reboot_required_file.stat.exists) and (ansible_distribution == 'Ubuntu')
+  tags:
+     - pkgs
+
+
+### All Distros
+- name: "All: Update Man Page Database"
+  command: mandb
+  tags:
+     - pkgs
+
+
+### Ubuntu Again - this is cleaner now
+# Reboot Ubuntu server if required (because Ubuntu is lame)
+#- name: "Ubuntu: Check if a reboot is required"
+#  when: ansible_distribution == 'Ubuntu'
+#  register: file
+#  stat: path=/var/run/reboot-required get_md5=no
+#  tags:
+#    - pkgs
+#
+#- name: "Ubuntu: Reboot the server"
+#  # need the sleep statement as shell - https://github.com/ansible/ansible/issues/10616
+#  when: (ansible_distribution == 'Ubuntu') and (file.stat.exists == true)
+#  #when: ansible_distribution == 'Ubuntu'
+#  shell: sleep 2 && shutdown -r now "Reboot triggered by Ansible"
+#  async: 1
+#  poll: 0
+#  ignore_errors: true
+#  notify: 
+#    - Wait for restart
+#  tags:
+#     - pkgs
+#
+
+#--- End File
+...
+---
+### Clone amd compile common testing tools
+### 
+
+# Check for the binaries. We only want to compile if the 
+# binaries don't already exist - this isn't an "idempotent"
+# process so if we don't check these tasks execute every time.
+- name: iperf3 present?
+  stat:
+    path: "{{ iperf3_binary }}"
+  register: iperf3
+
+- name: FIO present?
+  stat:
+    path: "{{ fio_binary }}"
+  register: fio
+
+- name: Sockperf present?
+  stat:
+    path: "{{ sperf_binary }}"
+  register: sockperf
+
+###==============================  Compile Tools  ==============================###
+###---- Compile FIO
+- name: Clone FIO from git
+  git: 
+    repo: "{{ fio_repo }}"
+    dest: "{{ git_dir }}/fio" 
+    clone: yes
+    force: yes
+  when: fio.stat.exists == false
+  tags:
+    - fio
+
+- name: Compile FIO
+  command: "{{ item }} chdir={{ fio_dir }}"
+  with_items:
+   - ./configure
+   - /usr/bin/make
+   - /usr/bin/make install
+  when: fio.stat.exists == false
+  tags:
+    - fio  
+
+###---- Compile iperf3
+- name: Clone iperf3 from git
+  git: 
+    repo: "{{ iperf3_repo }}"
+    dest: "{{ git_dir }}/iperf3" 
+    clone: yes
+    force: yes
+  when: iperf3.stat.exists == false
+  tags:
+    - iperf3
+
+- name: Compile iperf3
+  command: "{{ item }} chdir={{ iperf3_dir }}"
+  with_items:
+   - ./configure
+   - /usr/bin/make
+   - /usr/bin/make install
+   - /usr/sbin/ldconfig
+  when: iperf3.stat.exists == false
+  tags:
+    - iperf3  
+ 
+###---- Compile sockperf
+- name: Clone sockperf from git
+  git: 
+    repo: "{{ sockperf_repo }}"
+    dest: "{{ git_dir }}/sockperf" 
+    clone: yes
+    force: yes
+  when: sockperf.stat.exists == false
+  tags:
+    - sockperf
+
+- name: Compile sockperf Step 1
+  command: ./autogen.sh
+  args:
+    chdir: "{{ sockperf_dir }}"
+  when: sockperf.stat.exists == false
+  tags:
+    - sockperf  
+
+- name: Compile sockperf Step 2
+  command: ./configure --prefix= --enable-test
+  args:
+    chdir: "{{ sockperf_dir }}"
+  when: sockperf.stat.exists == false
+  tags:
+    - sockperf  
+
+- name: Compile sockperf Step 3
+  command: make
+  args:
+    chdir: "{{ sockperf_dir }}"
+  when: sockperf.stat.exists == false
+  tags:
+    - sockperf  
+
+- name: Compile sockperf Step 4
+  command: make install
+  args:
+    chdir: "{{ sockperf_dir }}"
+  when: sockperf.stat.exists == false
+  tags:
+    - sockperf  
+
+
+---
+###====================================================================================###
+#     File roles/bootstrap/tasks/main.yml
+#     Basic tasks to get the core OS settings taken care of
+###====================================================================================###
+
+# Check some basic parameters to see if we should even proceed.
+- include: check_os.yml
+
+# Setup Users Environment
+- include: user_config.yml 
+
+# Run apt, update packages
+- include: install_pkgs.yml
+
+# Misc System settings
+- include: systemsetup.yml
+
+# Copy over config files/scripts
+- include: copyfiles.yml
+
+# Install testing tools - iperf3, fio, sockperf
+- include: InstallTestingTools.yml
+
+...
+---
+###  Misc System level configuration tasks
+###
+
+# Needed for Kubernetes - don't really need it anyway.
+- name: Disable swap
+  shell: swapoff -a
+  tags:
+    - baseline
+
+# Always a good idea
+- name: Update PCI IDs
+  command: update-pciids
+  tags:
+     - baseline
+
+  ###--- We need a hosts file
+- name: Copy over /etc/hosts
+  copy:
+    src: files/hosts
+    dest: /etc/hosts
+    owner: root
+    group: root
+    mode: 0644
+    backup: yes
+  tags:
+     - baseline
+
+###---- Time related - Ansible uses chrony, not ntpd.
+
+# Set the timezone
+- name: Set timezone to America/Pacific
+  timezone:
+    name: "{{ timezone }}"
+  tags:
+     - baseline---
+# File roles/common/tasks/user_config.yml
+# Setup some basic functionality for users and sudo
+
+#--- Remove the requiretty directive from /etc/sudoers
+- name: Remove requiretty
+  lineinfile:
+    dest: /etc/sudoers
+    regexp: "^Defaults.*requiretty"
+    line: 'Defaults !requiretty'
+    backup: yes
+    state: present
+    validate: 'visudo -cf %s'
+  become: yes
+  become_method: sudo
+  tags:
+     - usercfg
+
+- name: Enable wheel group in Centos/RHEL to issue all commands with NOPASSWD
+  when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
+  lineinfile:
+    dest: /etc/sudoers
+    state: present
+    backup: yes
+    regexp: '^%wheel.*NOPASSWD'
+    line: '%wheel ALL=(ALL) NOPASSWD: ALL'
+    validate: 'visudo -cf %s'
+  become: yes
+  become_method: sudo
+  tags:
+     - usercfg
+
+#- name:  Remove wheel lines in Ubuntu sudoers - remove when done testing
+#  when: ansible_distribution == 'Ubuntu'
+#  lineinfile: "dest=/etc/sudoers state=absent backup=yes regexp='^%wheel.*NOPASSWD' line='%wheel ALL=(ALL) NOPASSWD: ALL' validate='visudo -cf %s'"
+#  become: yes
+#  become_method: sudo
+#  tags:
+#     - usercfg
+#
+
+###=================  Create and modify Users =================###
+
+#--- Add some users
+- name: Add a non-root user and put them in sudo (no wheel in Ubuntu) - password=n0mad1c
+  user:
+    name: "{{ item.username }}"
+    shell: /bin/bash
+    groups: 
+      - sudo
+    append: yes
+    generate_ssh_key: yes
+    ssh_key_bits: 2048
+    ssh_key_file: .ssh/id_rsa
+    password: $1$z.0hhKJ0$CIfrsuyuTDcoEo4s4jnXF.
+    update_password: on_create
+    state: present
+  with_items: "{{ users }}"
+  tags: 
+    - usercfg
+
+### For root (need to do this for all users)
+# Setup some Project directories for root user
+
+- name: Add 'set -o vi' to bashrc
+  lineinfile:
+    path: ~/.bashrc
+    line: set -o vi
+  tags: 
+    - usercfg
+
+- name: Create Project Directory
+  file: 
+    path: "{{ project_dir }}"
+    state: directory
+    mode: 755
+  tags:
+    - usercfg
+
+- name: Create Temp Directory
+  file:
+    path: "{{ temp_dir }}"
+    state: directory
+    mode: 755
+  tags:
+    - usercfg
+
+- name: Create bin Directory
+  file:
+    path: "{{ bin_dir }}"
+    state: directory
+    mode: 755
+  tags:
+    - users
+
+
+
+##--- SSH Keys
+#- name: Copy rsa keys to user root
+#  authorized_key: 
+#    - user: root
+#    - key: "{{ item }}"
+#  become: yes
+#  become_method: sudo
+#  with_file:
+#    - roles/common/files/auth/skarn.id_rsa.pub
+#    - roles/common/files/auth/foobar.id_rsa.pub
+#  tags:
+#     - usercfg
+#
+
+# Validate the sudoers file before saving
+#- lineinfile: dest=/etc/sudoers 
+#      state=present 
+#      regexp='^%ADMIN ALL\=' 
+#      line='%ADMIN ALL=(ALL) NOPASSWD:ALL' 
+####--->      validate='visudo -cf %s'
+
+
+
+
+
+
+
+
+
+
+...

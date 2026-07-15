@@ -1,0 +1,245 @@
+#SPDX-License-Identifier: MIT-0
+# tasks file for roles/vast_client_setup
+---
+# -------------------------------------------------------------------------
+# 0. BASE OS PACKAGE 
+# -------------------------------------------------------------------------
+- name: Ensure baseline system utilities and client binaries are installed
+  ansible.builtin.apt:
+    name:
+      - nfs-common     
+      - rpcbind        
+    state: present
+    update_cache: yes   
+  tags: ['packages', 'setup_env']
+
+
+# -------------------------------------------------------------------------
+# 1. USER CREATION
+# -------------------------------------------------------------------------
+- name: Ensure numbered lab users exist with default password
+  ansible.builtin.user:
+    name: "{{ user_prefix }}{{ item }}"
+    state: present
+    shell: /bin/bash
+    create_home: yes
+    password: "{{ default_lab_password | password_hash('sha512') }}"
+  with_sequence: start=1 end="{{ num_user }}" format=%02d
+  tags: ['provision_users', 'setup_env']
+
+
+# -------------------------------------------------------------------------
+# 2. DIRECTORY PROVISIONING VECTOR
+# -------------------------------------------------------------------------
+- name: Ensure single VAST shared data directories exist (Always created)
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0777'
+  loop: "{{ vast_shared_directories }}"
+  tags: ['mounts', 'setup_env']
+
+- name: OPTION A - Ensure individual VAST user directories exist
+  ansible.builtin.file:
+    path: "/mount/vast/{{ user_prefix }}{{ item }}"
+    state: directory
+    mode: '0777'
+  with_sequence: start=1 end="{{ num_user }}" format=%02d
+  when: create_individual_user_mounts | bool
+  tags: ['mounts', 'setup_env']
+
+- name: OPTION B - Remove individual VAST user directories (if toggled off)
+  ansible.builtin.file:
+    path: "/mount/vast/{{ user_prefix }}{{ item }}"
+    state: absent
+  with_sequence: start=1 end="{{ num_user }}" format=%02d
+  when: not (create_individual_user_mounts | bool)
+  tags: ['mounts', 'setup_env', 'cleanup']
+
+
+# -------------------------------------------------------------------------
+# 3. USER PRIVILEGE ESCALATION BLOCK
+# -------------------------------------------------------------------------
+- name: Configure passwordless sudo entry for all numbered users
+  ansible.builtin.lineinfile:
+    path: "/etc/sudoers.d/{{ user_prefix }}s"
+    create: yes
+    owner: root
+    group: root
+    mode: '0440'
+    line: "{{ user_prefix }}{{ item }} ALL=(ALL) NOPASSWD:ALL"
+    validate: '/usr/sbin/visudo -cf %s'
+  with_sequence: start=1 end="{{ num_user }}" format=%02d
+  tags: ['sudo', 'setup_env']
+
+
+# -------------------------------------------------------------------------
+# 4. USER RUNTIME ENVIRONMENT STACK (.dircolors distribution)
+# -------------------------------------------------------------------------
+- name: Copy .dircolors to base user home directory
+  ansible.builtin.copy:
+    src: dircolors
+    dest: "/home/{{ base_user }}/.dircolors"
+    owner: "{{ base_user }}"
+    group: "{{ base_user }}"
+    mode: '0644'
+  tags: ['env_files', 'setup_env']
+
+- name: Copy .dircolors to all numbered user home directories
+  ansible.builtin.copy:
+    src: dircolors
+    dest: "/home/{{ user_prefix }}{{ item }}/.dircolors"
+    owner: "{{ user_prefix }}{{ item }}"
+    group: "{{ user_prefix }}{{ item }}"
+    mode: '0644'
+  with_sequence: start=1 end="{{ num_user }}" format=%02d
+  tags: ['env_files', 'setup_env']
+
+
+# -------------------------------------------------------------------------
+# 5. CORE BASH STARTUP CONFIGURATION (.bashrc distribution)
+# -------------------------------------------------------------------------
+- name: Copy bashrc template to base user profile backing up original
+  ansible.builtin.copy:
+    src: bashrc_ubuntu_cloud.sh
+    dest: "/home/{{ base_user }}/.bashrc"
+    backup: yes
+    owner: "{{ base_user }}"
+    group: "{{ base_user }}"
+    mode: '0644'
+  tags: ['bashrc', 'setup_env']
+
+- name: Copy bashrc template to all numbered user profiles backing up originals
+  ansible.builtin.copy:
+    src: bashrc_ubuntu_cloud.sh
+    dest: "/home/{{ user_prefix }}{{ item }}/.bashrc"
+    backup: yes
+    owner: "{{ user_prefix }}{{ item }}"
+    group: "{{ user_prefix }}{{ item }}"
+    mode: '0644'
+  with_sequence: start=1 end="{{ num_user }}" format=%02d
+  tags: ['bashrc', 'setup_env']
+
+
+# -------------------------------------------------------------------------
+# 6. SSH SECURITY KEY DISTRIBUTION
+# -------------------------------------------------------------------------
+- name: Ensure secure .ssh directory exists for all numbered users
+  ansible.builtin.file:
+    path: "/home/{{ user_prefix }}{{ item }}/.ssh"
+    state: directory
+    owner: "{{ user_prefix }}{{ item }}"
+    group: "{{ user_prefix }}{{ item }}"
+    mode: '0700'
+  with_sequence: start=1 end="{{ num_user }}" format=%02d
+  tags: ['ssh_keys', 'setup_env']
+
+- name: Copy authorized_keys from base user to all numbered user profiles
+  ansible.builtin.copy:
+    src: "/home/{{ base_user }}/.ssh/authorized_keys"
+    dest: "/home/{{ user_prefix }}{{ item }}/.ssh/authorized_keys"
+    remote_src: yes
+    owner: "{{ user_prefix }}{{ item }}"
+    group: "{{ user_prefix }}{{ item }}"
+    mode: '0600'
+  with_sequence: start=1 end="{{ num_user }}" format=%02d
+  tags: ['ssh_keys', 'setup_env']
+
+
+# -------------------------------------------------------------------------
+# 7. SSH DAEMON CONFIGURATION - Allow Password and SSH 
+# -------------------------------------------------------------------------
+- name: Override cloud-init SSH restrictions with high-priority drop-in file
+  ansible.builtin.copy:
+    dest: /etc/ssh/sshd_config.d/01-allow-passwords.conf
+    content: |
+      # Ansible managed: Override cloud-init default to allow student passwords
+      PasswordAuthentication yes
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart SSH service
+  tags: ['sshd_config', 'setup_env']
+
+
+# -------------------------------------------------------------------------
+# 8. UTILITY SCRIPTS (Git Clone)
+# -------------------------------------------------------------------------
+- name: Clone scripts repository to base user
+  ansible.builtin.git:
+    repo: "{{ scripts_repo_url }}"
+    dest: "/home/{{ base_user }}/scripts"
+    version: main
+    clone: yes
+    update: yes
+  become_user: "{{ base_user }}"
+  ignore_errors: yes
+  tags: ['git_scripts', 'setup_env']
+
+- name: Clone scripts repository to all numbered user profiles
+  ansible.builtin.git:
+    repo: "{{ scripts_repo_url }}"
+    dest: "/home/{{ user_prefix }}{{ item }}/scripts"
+    version: main
+    clone: yes
+    update: yes
+  with_sequence: start=1 end="{{ num_user }}" format=%02d
+  become_user: "{{ user_prefix }}{{ item }}"
+  ignore_errors: yes
+  tags: ['git_scripts', 'setup_env']
+
+
+# -------------------------------------------------------------------------
+# 9. VAST STORAGE NFS-OVER-RDMA MOUNT
+# -------------------------------------------------------------------------
+#- name: Configure persistent VAST NFS mount in /etc/fstab
+#  ansible.posix.mount:
+#    path: /mount/vast/data
+#    src: "{{ vast_mgmt_ip }}:/data"
+#    fstype: nfs
+#    opts: "rw,relatime,vers=3,proto=rdma,port=20049,namlen=255,hard"
+#    state: mounted 
+#  tags: ['mounts', 'setup_env']
+
+
+# -------------------------------------------------------------------------
+# 10. S3 CLIENT CONFIGURATION
+# -------------------------------------------------------------------------
+- name: Copy basic S3 configuration to base user profile (.s3cfg)
+  ansible.builtin.copy:
+    src: s3cfg-basic
+    dest: "/home/{{ base_user }}/.s3cfg"
+    owner: "{{ base_user }}"
+    group: "{{ base_user }}"
+    mode: '0600'
+  tags: ['s3_config', 'setup_env']
+
+- name: Copy basic S3 configuration to all numbered user profiles
+  ansible.builtin.copy:
+    src: s3cfg-basic
+    dest: "/home/{{ user_prefix }}{{ item }}/.s3cfg"
+    owner: "{{ user_prefix }}{{ item }}"
+    group: "{{ user_prefix }}{{ item }}"
+    mode: '0600'
+  with_sequence: start=1 end="{{ num_user }}" format=%02d
+  tags: ['s3_config', 'setup_env']
+
+- name: Provide S3 example config file as reference for base user
+  ansible.builtin.copy:
+    src: s3cfg-example
+    dest: "/home/{{ base_user }}/s3cfg-example"
+    owner: "{{ base_user }}"
+    group: "{{ base_user }}"
+    mode: '0644'
+  tags: ['s3_config', 'setup_env']
+
+- name: Provide S3 example config file as reference for numbered users
+  ansible.builtin.copy:
+    src: s3cfg-example
+    dest: "/home/{{ user_prefix }}{{ item }}/s3cfg-example"
+    owner: "{{ user_prefix }}{{ item }}"
+    group: "{{ user_prefix }}{{ item }}"
+    mode: '0644'
+  with_sequence: start=1 end="{{ num_user }}" format=%02d
+  tags: ['s3_config', 'setup_env']
+

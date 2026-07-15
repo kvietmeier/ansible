@@ -41,7 +41,7 @@
 - name: Install extra kernel modules and RDMA core packages (Ubuntu)
   apt:
     name:
-      - linux-modules-extra-gcp
+      - "linux-modules-extra-{{ ansible_kernel }}"
       - rdma-core
     state: present
     update_cache: yes
