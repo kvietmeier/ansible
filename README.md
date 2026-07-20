@@ -6,9 +6,9 @@ This repository contains Ansible playbooks and roles to bootstrap and configure 
 
 - **Purpose**: Prepare base server configurations to support application overlays (e.g., storage testing, databases, Kubernetes).
 - **Use Cases**:
-  - Bootstrapping nodes for internal testing.
+  - Bootstrapping nodes for internal testing (moved to cloud-init).
   - Preparing infrastructure for VAST NFS deployments.
-  - Setting up database testing environments on Azure.
+  - Setting up database testing environments on Azure (Archive).
 - **Status**:
   - VAST Data NFS driver - current.
   - RHEL-specific code archived (archive/).
@@ -17,33 +17,32 @@ This repository contains Ansible playbooks and roles to bootstrap and configure 
 ### Repository Structure
 
 ```text
-.
-├── archive/             # Legacy RHEL-specific code and scripts
-├── files/               # Static files used by roles/playbooks (e.g., elbencho binaries)
-├── filter_plugins/      # Custom Jinja2 filters for Ansible
-├── group_vars/          # Global variables (including private overrides)
-├── host_vars/           # Host-specific variables
-├── library/             # Custom Ansible modules
-├── playbooks/           # Collection of playbooks (multi-OS, VAST, etc.)
-├── roles/               # Reusable roles (bootstrap, database, kubernetes, vast_nfs, etc.)
-├── scratch/             # Experimental playbooks and code snippets
-├── ansible.cfg          # Default Ansible configuration
-├── inventory            # Current inventory of hosts
-├── site.yml             # Main entry-point playbook
-└── vast_site.yml        # VAST-specific orchestration playbook
-
+├── archive/            # Legacy RHEL-specific code and scripts
+├── files/              # Static files used by roles/playbooks (e.g., elbencho binaries)
+├── filter_plugins/     # Custom Jinja2 filters for Ansible
+├── group_vars/         # Global variables (including private overrides)
+├── host_vars/          # Host-specific variables
+├── library/            # Custom Ansible modules
+├── library             # Custom Ansible modules
+├── playbooks           # Collection of single use playbooks 
+├── roles               # Reusable roles
+├── README.md           # This file
+├── inventory.ini       # Current inventory of hosts
+├── one_liners.txt      # Misc notes amd examples for running Playbooks/Ad Hoc commands
+├── ansible.cfg         # Ansible configuration
+└── site.yml            # Main entry-point playbook
 ```
+
+---
+
+### TBD
 
 ---
 
 ### Key Roles
 
-- bootstrap
-  Sets up basic server parameters (packages, users, networking) for new nodes.
-- common
-  Shared configuration applied across all hosts (security, sysctl, etc.).
-- kubernetes
-  Installs and configures components for Kubernetes clusters.
+- vast_client
+  Sets up clients for a lab environment - users, mount points, etc.
 - vast_nfs
   Builds and configures the VAST NFS driver on multi-OS environments.
 
@@ -51,9 +50,5 @@ This repository contains Ansible playbooks and roles to bootstrap and configure 
 
 ### Development Notes
 
-- *Scratch Directory*:
-  Contains snippets, prototypes, and experimental playbooks. Not production-ready.
 - *Archive Directory*:
-  Legacy RHEL code (being phased out in favor of Ubuntu roles).
-
-
+  Legacy code
