@@ -6,11 +6,13 @@ This repository contains Ansible playbooks and roles to bootstrap and configure 
 
 - **Purpose**: Prepare base server configurations to support application overlays (e.g., storage testing, databases, Kubernetes).
 - **Use Cases**:
-  - Bootstrapping nodes for internal testing (moved to cloud-init).
-  - Preparing infrastructure for VAST NFS deployments.
+  - Bootstrapping nodes for internal testing (moved to cloud-init/Terraform).
+  - Polishing up/final configuration for clients used in labs/training (vast_clients)
+  - Preparing infrastructure for VAST NFS deployments (vast_nfs).
   - Setting up database testing environments on Azure (Archive).
 - **Status**:
   - VAST Data NFS driver - current.
+  - Client Setup - current
   - RHEL-specific code archived (archive/).
   - Volt_db Azure setup (archive/).
 
