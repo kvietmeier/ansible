@@ -1,12 +1,15 @@
 ---
 # tasks/disable_upgrades.yml
 # =============================================================================
-# Disable unattended-upgrades and automatic APT timers
+# Disable unattended-upgrades and automatic apt timers
 #
 # Description:
 #   Stops, disables, and masks the unattended-upgrades service.
 #   Stops and disables apt daily timers.
 #   Disables periodic package updates via apt configuration.
+# 
+#   If you don't do this the suystem can update itself, boot from a new 
+#   kernel and break the VAST NFS driver.
 #
 # Tags:
 #   [prereqs]

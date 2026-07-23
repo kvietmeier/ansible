@@ -132,11 +132,6 @@ sudo mount -t nfs -o vers=3,remoteports=33.20.1.11-33.20.1.18,nconnect=8 33.20.1
 
 # 1 Nodes
 sudo mount -t nfs -o vers=3,remoteports=33.20.1.11-33.20.1.21,nconnect=8 33.20.1.11:/nfs_1/ /mount/vast
-
-
-dool -p -c --disk --mem --top-cpu --top-bio --top-latency
-dool --time --load --proc --cpu --sys --vm --disk  --net -N ens4
-
 sudo mount -t nfs -o vers=3,remoteports=33.20.1.11-33.20.1.21,nconnect=8 33.20.1.11:/nfs_1/ /mount/vast
 sudo mount -t nfs -o vers=3,remoteports=33.20.1.11-33.20.1.21,nconnect=8 33.20.1.12:/nfs_1/ /mount/vast
 sudo mount -t nfs -o vers=3,remoteports=33.20.1.11-33.20.1.21,nconnect=8 33.20.1.13:/nfs_1/ /mount/vast
@@ -161,3 +156,8 @@ ansible proxy -i ./inventory -m pip -a "name=mitmproxy state=present" --become
 ansible proxy -i ./inventory -m sysctl -a "name=net.ipv4.ip_forward value=1 state=present reload=yes" --become
 ansible proxy -i ./inventory -m lineinfile -a "path=/etc/environment line='GODEBUG=x509negativeserial=1'" --become
 ansible proxy -i ./inventory -m copy -a "src=files/neg_serialnum.py dest=/home/labuser/neg_serialnum.py mode=0655"
+
+
+### Run Playbooks/Roles using tags.
+ansible-playbook -i ./inventory.ini site.yml --tags=install_driver
+

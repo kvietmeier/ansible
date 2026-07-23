@@ -37,28 +37,43 @@
     path: /root
     state: directory
 
-# Install extra cloud kernel modules & RDMA packages before building
-- name: Install extra kernel modules and RDMA core packages (Ubuntu)
+# Install extra cloud kernel modules, RDMA core, and build toolchains
+- name: Install extra kernel modules, RDMA core, and build toolchains (Ubuntu)
   apt:
     name:
       - "linux-modules-extra-{{ ansible_kernel }}"
+      - "linux-headers-{{ ansible_kernel }}"
       - rdma-core
+      - build-essential
+      - make
+      - debhelper
+      - devscripts
+      - pkg-config
+      - dkms
     state: present
     update_cache: yes
   when: is_ubuntu
   register: ubuntu_kernel_ext
 
-- name: Install extra kernel modules and RDMA core packages (RedHat)
+- name: Install extra kernel modules, RDMA core, and build toolchains (RedHat)
   dnf:
     name:
       - kernel-modules-extra
+      - "kernel-devel-{{ ansible_kernel }}"
       - rdma-core
+      - gcc
+      - gcc-c++
+      - make
+      - elfutils-libelf-devel
+      - rpm-build
+      - dkms
     state: present
   when: is_redhat
   register: redhat_kernel_ext
 
 - name: Reboot immediately if extra kernel modules were installed
   reboot:
+    pre_reboot_delay: 5
     reboot_timeout: 600
   when: (ubuntu_kernel_ext.changed if is_ubuntu else false) or (redhat_kernel_ext.changed if is_redhat else false)
 

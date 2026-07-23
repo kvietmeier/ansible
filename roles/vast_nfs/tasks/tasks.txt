@@ -1,0 +1,368 @@
+---
+# =============================================================================
+# build.yml – Build VAST NFS driver
+#
+# Description:
+#   Runs build.sh to compile driver into binary packages. Skips rebuild if
+#   dist folder already exists.
+#
+# Tags:
+#   [build]
+# =============================================================================
+
+- name: Log build prep
+  shell: |
+    echo "Preparing to build in {{ nfs_version_dir }}" >> {{ output_log }}
+    ls -la "/tmp/{{ nfs_version_dir }}" >> {{ output_log }}
+  args:
+    executable: /bin/bash
+
+- name: Check if build output exists
+  stat:
+    path: "/tmp/{{ nfs_version_dir }}/dist"
+  register: dist_check
+
+- name: Run build.sh (bin) if needed
+  shell: |
+    ./build.sh bin >> {{ output_log }} 2>&1
+    echo "build.sh completed with exit code $?" >> {{ output_log }}
+  args:
+    chdir: "/tmp/{{ nfs_version_dir }}"
+    executable: /bin/bash
+  when: not dist_check.stat.exists
+
+- name: Find built package
+  find:
+    paths: "/tmp/{{ nfs_version_dir }}/dist"
+    patterns: "vastnfs-*"
+    recurse: no
+  register: found_pkgs---
+# tasks/disable_upgrades.yml
+# =============================================================================
+# Disable unattended-upgrades and automatic APT timers
+#
+# Description:
+#   Stops, disables, and masks the unattended-upgrades service.
+#   Stops and disables apt daily timers.
+#   Disables periodic package updates via apt configuration.
+#
+# Tags:
+#   [prereqs]
+# =============================================================================
+# Freeze package updates on Ubuntu/Debian
+
+- name: Stop and disable upgrade services
+  systemd:
+    name: "{{ item.name }}"
+    state: stopped
+    enabled: no
+    masked: "{{ item.masked | default(false) }}"
+  loop:
+    - { name: "unattended-upgrades", masked: true }
+    - { name: "apt-daily.service", masked: true }
+    - { name: "apt-daily-upgrade.service", masked: true }
+
+- name: Stop and disable timers
+  systemd:
+    name: "{{ item }}"
+    state: stopped
+    enabled: no
+  loop:
+    - apt-daily.timer
+    - apt-daily-upgrade.timer
+
+- name: Disable periodic apt updates
+  copy:
+    dest: /etc/apt/apt.conf.d/20auto-upgrades
+    content: |
+      APT::Periodic::Update-Package-Lists "0";
+      APT::Periodic::Unattended-Upgrade "0";
+    owner: root
+    group: root
+    mode: '0644'
+---
+# =============================================================================
+# download.yml – Download and extract VAST NFS driver
+#
+# Description:
+#   Uses official download script to fetch driver tarball, locates tarball,
+#   and extracts to /root. Prepares for build phase.
+#
+# Tags:
+#   [download]
+#---
+# =============================================================================
+# Download and extract VAST NFS driver safely inside /tmp
+# =============================================================================
+
+- name: Run VAST NFS download script and capture filename
+  shell: |
+    set -o pipefail
+    full_url=$(curl -sSf {{ download_script_url }} | bash -s -- --print-url | grep 'https://')
+    filename=$(basename "$full_url")
+    echo "$filename"
+  args:
+    chdir: /tmp
+    executable: /bin/bash
+  register: download_result
+  failed_when: download_result.stdout == "" or download_result.rc != 0
+
+- name: Set tarball and version directory facts
+  set_fact:
+    nfs_tarball: "{{ download_result.stdout | trim }}"
+    nfs_version_dir: "{{ download_result.stdout | trim | regex_replace('\\.tar\\.xz$', '') }}"
+
+- name: Execute VAST download script to fetch the tarball
+  shell: |
+    set -o pipefail
+    curl -sSf {{ download_script_url }} | bash -s --
+  args:
+    chdir: /tmp
+    executable: /bin/bash
+
+- name: Remove existing extracted folder if it exists
+  file:
+    path: "/tmp/{{ nfs_version_dir }}"
+    state: absent
+  when: 
+    - nfs_version_dir is defined
+    - nfs_version_dir != ""
+    - nfs_version_dir != "/"
+
+- name: Extract the downloaded tarball
+  unarchive:
+    src: "/tmp/{{ nfs_tarball }}"
+    dest: /tmp
+    remote_src: yes
+  when: nfs_tarball != ""---
+# =============================================================================
+# install.yml – Install VAST NFS driver
+# =============================================================================
+
+- name: Install RPM (RedHat)
+  yum:
+    name: "{{ found_pkgs.files[0].path }}"
+    state: present
+    disable_gpg_check: true
+  when: is_redhat and found_pkgs.files | length > 0
+
+- name: Regenerate initramfs (RedHat)
+  shell: dracut -f --regenerate-all  # Regenerates for all installed kernels, not just active one
+  when: is_redhat and found_pkgs.files | length > 0
+
+- name: Install DEB (Ubuntu)
+  apt:
+    deb: "{{ found_pkgs.files[0].path }}"
+    state: present
+  when: is_ubuntu and found_pkgs.files | length > 0
+
+- name: Regenerate initramfs (Ubuntu)
+  shell: update-initramfs -u -k all  # Rebuilds initramfs for ALL installed kernels
+  when: is_ubuntu and found_pkgs.files | length > 0
+
+- name: Reboot host
+  reboot:
+    reboot_timeout: 600# =============================================================================
+---
+# main.yml – Master task flow for VAST NFS driver role
+#
+# Description:
+#   Orchestrates all steps: prerequisites, download, build, install, and verify
+#   for the VAST NFS kernel driver. 
+#   Compatible with both Debian/Ubuntu and RHEL/CentOS systems; included 
+#   task files handle OS-specific package managers, kernel header paths, 
+#   and module installation differences.
+#
+# Usage:
+#   Run entire flow or target specific sections using tags:
+#     - prereqs
+#     - download
+#     - build
+#     - install
+#     - verify
+#
+# Notes:
+#   The mountprep task is excluded by default as it is recommended to run it
+#   manually after installation, outside Ansible. It is kept here for archival reasons.
+# =============================================================================
+- include_tasks: prereqs.yml
+  tags: [prereqs]
+
+- include_tasks: disable_upgrades.yml
+  tags: [prereqs,disable_upgrades]
+  when: is_ubuntu
+
+- include_tasks: download.yml
+  tags: [download]
+
+- include_tasks: build.yml
+  tags: [build]
+
+- include_tasks: install.yml
+  tags: [install]
+
+- include_tasks: verify.yml
+  tags: [verify]
+
+# Optional mount preparation
+#- include_tasks: mountprep.yml
+#  tags: [mountprep]
+---
+# =============================================================================
+# mountprep.yml – Prepare mount point and save mount command
+#
+# Description:
+#   Creates NFS mount point directory and writes a ready-to-run mount command
+#   to nfs_mount_cmd.txt for manual or automated use.
+#
+# Tags:
+#   [mountprep], optional [mount_now] executes the mount immediately
+# =============================================================================
+# Prepare NFS mount point
+
+- name: Ensure NFS mount point exists
+  file:
+    path: "{{ mount_point }}"
+    state: directory
+    mode: '0777'
+
+- name: Save NFS mount command to text file
+  copy:
+    content: |
+      sudo mount -t nfs -o proto=tcp,vers=3,nconnect={{ conns }},remoteports={{ port_range }} \
+      {{ dns_alias }}.{{ dns_domain }}.org:/{{ view_path }} {{ mount_point }}
+    dest: "{{ ansible_env.HOME }}/nfs_mount_cmd.txt"
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: '0644'
+
+# Optional: run mount immediately
+#- name: Execute NFS mount command immediately
+#  shell: |
+#    mount -t nfs -o proto=tcp,vers=3,nconnect={{ conns }},remoteports={{ port_range }} \
+#    {{ dns_alias }}.{{ dns_domain }}.org:/{{ view_path }} {{ mount_point }}
+#  tags: [mount_now]
+---
+# =============================================================================
+# tasks/prereqs.yml
+# =============================================================================
+# Prerequisite checks and environment prep
+#
+# Description:
+#   Waits for cloud-init completion, sets OS family facts, installs GCC for
+#   Ubuntu, disables unattended-upgrades, ensures /root exists, and installs
+#   missing cloud kernel modules for RDMA transport.
+#
+# Tags:
+#   [prereqs]
+# =============================================================================
+
+- name: Set OS family flags
+  set_fact:
+    is_redhat: "{{ ansible_facts['distribution'] in ['RedHat', 'CentOS', 'Rocky', 'AlmaLinux'] }}"
+    is_ubuntu: "{{ ansible_facts['distribution'] == 'Ubuntu' }}"
+
+- name: Check cloud-init service
+  systemd:
+    name: cloud-init
+  register: cloudinit_status
+  failed_when: false
+  changed_when: false
+
+- name: Wait for cloud-init to finish
+  wait_for:
+    path: /var/lib/cloud/instance/boot-finished
+    state: present
+    timeout: 600
+  when: cloudinit_status.status is defined and cloudinit_status.status.ActiveState == 'active'
+
+- name: Ensure /root directory exists
+  file:
+    path: /root
+    state: directory
+
+# Install extra cloud kernel modules & RDMA packages before building
+- name: Install extra kernel modules and RDMA core packages (Ubuntu)
+  apt:
+    name:
+      - "linux-modules-extra-{{ ansible_kernel }}"
+      - rdma-core
+    state: present
+    update_cache: yes
+  when: is_ubuntu
+  register: ubuntu_kernel_ext
+
+- name: Install extra kernel modules and RDMA core packages (RedHat)
+  dnf:
+    name:
+      - kernel-modules-extra
+      - rdma-core
+    state: present
+  when: is_redhat
+  register: redhat_kernel_ext
+
+- name: Reboot immediately if extra kernel modules were installed
+  reboot:
+    reboot_timeout: 600
+  when: (ubuntu_kernel_ext.changed if is_ubuntu else false) or (redhat_kernel_ext.changed if is_redhat else false)
+
+# SAFETY STEP: Wait for SSH to cleanly handle requests again
+- name: Wait for host to fully finish SSH initialization
+  wait_for_connection:
+    delay: 10
+    timeout: 300
+  when: (ubuntu_kernel_ext.changed if is_ubuntu else false) or (redhat_kernel_ext.changed if is_redhat else false)
+
+- name: Force load rpcrdma module
+  community.general.modprobe:
+    name: rpcrdma
+    state: present
+
+# Original GCC 12 Setup Block
+- name: Install GCC 12 and set default (Ubuntu only)
+  block:
+    - name: Install GCC 12
+      apt:
+        name:
+          - gcc-12
+          - g++-12
+        state: present
+    - name: Set GCC 12 as default
+      shell: |
+        update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-12 100
+        update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-12 100
+  when: is_ubuntu---
+# =============================================================================
+# verify.yml – Verify VAST NFS driver
+#
+# Description:
+#   Confirms rpcrdma.ko kernel module is installed and valid (RPM or modinfo).
+#
+# Tags:
+#   [verify]
+# =============================================================================
+
+- name: Verify rpcrdma.ko on RedHat
+  shell: |
+    rpm -qif "/lib/modules/$(uname -r)/extra/vastnfs/bundle/net/sunrpc/xprtrdma/rpcrdma.ko"
+  register: rpm_verify
+  failed_when: rpm_verify.rc != 0
+  changed_when: false
+  when: is_redhat
+
+- name: Output RPM verification
+  debug:
+    var: rpm_verify.stdout
+  when: is_redhat
+
+- name: Verify rpcrdma module on Ubuntu
+  shell: modinfo rpcrdma | grep '^filename:'
+  register: modinfo_verify
+  failed_when: modinfo_verify.rc != 0
+  changed_when: false
+  when: is_ubuntu
+
+- name: Output modinfo result
+  debug:
+    msg: "{{ modinfo_verify.stdout }}"
+  when: is_ubuntu

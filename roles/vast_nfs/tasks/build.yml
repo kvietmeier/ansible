@@ -24,12 +24,13 @@
 
 - name: Run build.sh (bin) if needed
   shell: |
+    set -e
     ./build.sh bin >> {{ output_log }} 2>&1
-    echo "build.sh completed with exit code $?" >> {{ output_log }}
   args:
     chdir: "/tmp/{{ nfs_version_dir }}"
     executable: /bin/bash
   when: not dist_check.stat.exists
+  register: build_bin
 
 - name: Find built package
   find:

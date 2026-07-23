@@ -1,0 +1,78 @@
+---
+# ansible-playbook -i hosts.ini setup_clickhouse.yml --ask-become-pass
+- name: Automate ClickHouse and ClickBench Installation
+  hosts: clickhouse_servers
+  become: true
+  vars:
+    keyring_path: "/etc/apt/keyrings/clickhouse-keyring.gpg"
+    clickbench_dir: "/opt/clickbench-vast"
+
+  tasks:
+    - name: 1. Ensure /etc/apt/keyrings directory exists
+      ansible.builtin.file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: '0755'
+
+    - name: 2. Install prerequisite system packages
+      ansible.builtin.apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - gnupg
+          - git
+          - python3
+          - python3-pip
+          - jq
+          - sysstat
+          - time
+          - unzip
+        state: present
+        update_cache: true
+
+    - name: 3. Download and dearmor ClickHouse GPG Key
+      ansible.builtin.shell: |
+        curl -fsSL "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x3E4AD4719DDE9A38" | gpg --dearmor --yes -o {{ keyring_path }}
+      args:
+        creates: "{{ keyring_path }}"
+
+    - name: 4. Set permissions on GPG Keyring
+      ansible.builtin.file:
+        path: "{{ keyring_path }}"
+        mode: '0644'
+
+    - name: 5. Add ClickHouse APT Repository
+      ansible.builtin.apt_repository:
+        repo: "deb [signed-by={{ keyring_path }}] https://packages.clickhouse.com/deb stable main"
+        filename: clickhouse
+        state: present
+        update_cache: true
+
+    - name: 6. Install ClickHouse Server and Client packages
+      ansible.builtin.apt:
+        name:
+          - clickhouse-common-static
+          - clickhouse-client
+          - clickhouse-server
+        state: present
+
+    - name: 7. Enable and Start ClickHouse Server Service
+      ansible.builtin.systemd:
+        name: clickhouse-server
+        state: started
+        enabled: true
+
+    - name: 8. Create ClickBench working directory
+      ansible.builtin.file:
+        path: "{{ clickbench_dir }}"
+        state: directory
+        owner: "{{ ansible_user_id }}"
+        mode: '0755'
+
+    - name: 9. Clone ClickBench Repository
+      ansible.builtin.git:
+        repo: 'https://github.com/ClickHouse/ClickBench.git'
+        dest: "{{ clickbench_dir }}/ClickBench"
+        single_branch: yes
+        version: main
