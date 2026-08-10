@@ -3,7 +3,13 @@
 ###====================================================================================###
 
 # exclude the ignore file
-#.gitignore
+.gitignore
+
+# =======================
+# OS artifacts
+# =======================
+.DS_Store
+Thumbs.db
 
 ###==========================  Terraform Specific
 # Local .terraform directories
