@@ -1,8 +1,0 @@
-# - Master 
-# ifcfg-bond0
-DEVICE=bond0
-NAME=bond0
-TYPE=bond
-BONDING_MASTER=yes
-BONDING_OPTS="mode=802.3ad miimon=10 lacp_rate=1 xmit_hash_policy=layer3+4"
-USERCTL=no

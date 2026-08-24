@@ -1,9 +1,0 @@
-# ifcfg-enp94s0f0
-DEVICE=enp94s0f0
-NAME=bond0-slave
-MASTER=bond0
-TYPE=Ethernet
-BOOTPROTO=none
-ONBOOT=yes
-NM_CONTROLLED=no
-SLAVE=yes
