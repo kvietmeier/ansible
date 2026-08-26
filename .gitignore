@@ -4,6 +4,7 @@
 
 # exclude the ignore file
 .gitignore
+.gitattributes
 
 # =======================
 # OS artifacts
