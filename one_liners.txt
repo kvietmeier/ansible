@@ -1,41 +1,71 @@
 ################################################################################
-# one_liners.txt — useful ansible / mount / fio cheat sheet
+# one_liners.txt — learn Ansible by doing (ad-hoc + lab cheat sheet)
 #
-# Current procedure lives in README.md. This file is a quick reference.
-# Prefer:
+# Ad-hoc commands are the fastest way to learn Ansible: same inventory,
+# modules, become, and limits as playbooks — without writing YAML first.
+# Use this file to poke the fleet, then graduate patterns into roles.
+#
+# Deeper ad-hoc reference (gist):
+#   https://gist.github.com/kvietmeier/d497360a0e304286285220066ff0b53c
+#   (ansibleadhoc.md — "Ansible AdHoc Commands")
+#   Profile: https://gist.github.com/kvietmeier
+#
+# Lab context (VAST benchmark platform examples):
 #   site.yml --tags client|install_driver
 #   playbooks/elbencho.yml
 #   ~/tools/sys-perf-tools/fio-file/   (mount under /mount/vast)
+#
+# Inventory default: ./inventory.ini   group: clients   user: labuser
 ################################################################################
 
 # =============================================================================
-# 1. CURRENT — inventory / ad-hoc
+# 1. LEARN — Ansible ad-hoc patterns
+#    Form:  ansible -i INVENTORY HOSTS [-b] [-m MODULE] [-a ARGS]
+#    -a alone uses the "command" module (no shell metacharacters).
 # =============================================================================
 
-# Date / connectivity
+# --- connectivity / facts ---
+ansible -i ./inventory.ini clients -m ping
 ansible -i ./inventory.ini clients -a date
 ansible -i ./inventory.ini clients -a "df -kh"
+ansible -i ./inventory.ini clients -m setup -a "filter=ansible_distribution*"
+ansible -i ./inventory.ini clients -m shell -a "uname -r; free -h | head -2"
+
+# --- limit / parallelism ---
+ansible -i ./inventory.ini clients -l client01 -a hostname
+ansible -i ./inventory.ini clients -f 10 -a uptime
+
+# --- packages (become) ---
+ansible -i ./inventory.ini clients -b -m apt -a "name=nfs-common state=present update_cache=yes"
+# RHEL-family example:
+# ansible -i ./inventory.ini clients -b -m dnf -a "name=nfs-utils state=present"
+
+# --- files / copy ---
+ansible -i ./inventory.ini clients -b -m file -a "path=/mount/vast/fio state=directory mode=0777"
+ansible -i ./inventory.ini clients -m copy -a "src=./README.md dest=/tmp/README.md mode=0644"
+
+# --- shell vs command ---
+# command (-a): no pipes/redirects; shell: full shell
+ansible -i ./inventory.ini clients -a "ls /mount/vast"
+ansible -i ./inventory.ini clients -m shell -a "ls -la /mount/vast | head"
+
+# --- services / checks ---
+ansible -i ./inventory.ini clients -b -m service -a "name=rpcbind state=started enabled=yes"
+ansible -i ./inventory.ini clients -a "command -v fio; command -v elbencho; fio --version 2>/dev/null | head -1"
 
 # =============================================================================
-# 2. CURRENT — playbooks (client polish / platform wiring)
+# 2. LAB — playbooks (client polish / platform wiring)
 # =============================================================================
 
-# Day-2 client polish (users, /mount/vast dirs, ~/tools clones)
 ansible-playbook -i ./inventory.ini site.yml --tags client
-
-# Tools clone only
 ansible-playbook -i ./inventory.ini site.yml --tags git_tools
-
-# VAST NFS driver
 ansible-playbook -i ./inventory.ini site.yml --tags install_driver
-
-# Mount prep / mount now (override VIP/view as needed)
 ansible-playbook -i ./inventory.ini site.yml --tags mountprep
 ansible-playbook -i ./inventory.ini site.yml --tags mount_now \
   -e "mount_point=/mount/vast view_path=nfs_01 dns_alias=sharespool dns_domain=busab"
 
 # =============================================================================
-# 3. CURRENT — elbencho multi-client benchmark examples
+# 3. LAB — elbencho multi-client benchmark examples
 # =============================================================================
 
 ansible-playbook -i ./inventory.ini playbooks/elbencho.yml --tags mkdirs
@@ -44,12 +74,17 @@ ansible-playbook -i ./inventory.ini playbooks/elbencho.yml --tags elbencho_serv
 ansible-playbook -i ./inventory.ini playbooks/elbencho.yml --tags copy_scripts
 ansible-playbook -i ./inventory.ini playbooks/elbencho.yml --tags kill_all
 
-# Manual on primary after copy_scripts:
+# After copy_scripts, on primary:
 #   ~/elbencho/elbencho_nfs_prep.sh <NUM_CLIENTS>
 #   ~/elbencho/elbencho_nfs_testblk_sizes.sh <NUM_CLIENTS>
 
+# Ad-hoc equivalents (same idea, no playbook):
+# ansible -i ./inventory.ini clients -b -m file -a "path=/mount/vast state=directory mode=0777"
+# ansible -i ./inventory.ini clients -m shell -a "nohup elbencho --service &"
+# ansible -i ./inventory.ini clients -m shell -a "elbencho --quit --hosts localhost"
+
 # =============================================================================
-# 4. CURRENT — fio demos / baselines (on the client, after mount)
+# 4. LAB — fio demos / baselines (on the client, after mount)
 # =============================================================================
 # Default work dir: /mount/vast/fio
 #
@@ -57,13 +92,16 @@ ansible-playbook -i ./inventory.ini playbooks/elbencho.yml --tags kill_all
 #   ./quick-smoke.sh /mount/vast/fio
 #   ./runfio.sh -j ./vast-p01-p06-p09-baseline.ini -d /mount/vast/fio
 #   python3 parse_fio.py ./fio_runs/fio_vast-p01-p06-p09-baseline_1
+#
+# Ad-hoc: confirm mount + fio before a demo
+# ansible -i ./inventory.ini clients -a "mountpoint -q /mount/vast && df -h /mount/vast"
+# ansible -i ./inventory.ini clients -a "test -d /mount/vast/fio && echo ok"
 
 # =============================================================================
-# 5. CURRENT — NFS mount under /mount/vast
+# 5. LAB — NFS mount under /mount/vast
 # =============================================================================
 # Adjust remoteports / VIP / export for the cluster size.
 
-# Example (3-node VIP range)
 # sudo mkdir -p /mount/vast /mount/vast/fio
 # sudo mount -t nfs -o vers=3,nconnect=8,remoteports=33.20.1.11-33.20.1.13 \
 #   33.20.1.11:/nfs_1/ /mount/vast
@@ -72,39 +110,29 @@ ansible-playbook -i ./inventory.ini playbooks/elbencho.yml --tags kill_all
 # sudo mount -t nfs -o proto=tcp,vers=3,nconnect=8,remoteports=33.20.1.11-33.20.1.21 \
 #   sharespool.busab.org:/nfs_share_1 /mount/vast
 
-# =============================================================================
-# 6. HISTORICAL — do not treat as current procedure
-#    Old centos/cnodes/dnf paths, root playbooks, /mount/shareN layouts.
-# =============================================================================
-
-# --- old package / binary ad-hoc (RHEL/cnodes) ---
-# ansible -i ./inventory cnodes -m dnf -a "name=wget state=installed"
-# ansible -i ./inventory cnodes -a "wget https://github.com/breuner/elbencho/releases/latest/download/elbencho-static-x86_64.tar.gz"
-# ansible -i inventory cnodes -m copy -a "src=files/elbencho dest=~ owner=centos group=centos mode=0755" --become-user=centos
-
-# --- old root playbook names (now roles/vast_nfs via site.yml) ---
-# ansible-playbook -i ./inventory buildvastnfs-multiOS.yml
-
-# --- old multi-share elbencho layout (/mount/share1..N) ---
-# sudo mount -o vers=3,nconnect=8,remoteports=33.20.1.11-33.20.1.21 \
-#   sharespool.busab.org:/nfs_share_1 /mount/share1
-# nohup elbencho -d -t 2 --iodepth 4 --timelimit 2400 -b 4M --direct \
-#   -s 100G -N 4 -n 2 -w /mount/share1/elbencho-files &
-
-# --- old elbencho service ports on cnodes ---
-# ansible -i ./inventory clients -a "elbencho --service"
-# ansible -i ./inventory cnodes -a "elbencho --service --port 1611"
-
-# --- proxy lab (still useful pattern; verify paths) ---
-# ansible proxy -i ./inventory.ini -m apt -a "update_cache=yes name=python3-pip,python3-dev,libffi-dev,libssl-dev,gnutls-bin,nginx state=present" --become
-# ansible proxy -i ./inventory.ini -m pip -a "name=mitmproxy state=present" --become
-# ansible proxy -i ./inventory.ini -m sysctl -a "name=net.ipv4.ip_forward value=1 state=present reload=yes" --become
-# ansible proxy -i ./inventory.ini -m lineinfile -a "path=/etc/environment line='GODEBUG=x509negativeserial=1'" --become
-# ansible proxy -i ./inventory.ini -m copy -a "src=files/neg_serialnum.py dest=/home/labuser/neg_serialnum.py mode=0655"
-
-# --- VIP-range mount cookbook (kept; prefer /mount/vast) ---
+# VIP-range cookbook (prefer /mount/vast):
 # 3 nodes:  remoteports=33.20.1.11-33.20.1.13
 # 5 nodes:  remoteports=33.20.1.11-33.20.1.15
 # 8 nodes:  remoteports=33.20.1.11-33.20.1.18
 # 11 nodes: remoteports=33.20.1.11-33.20.1.21
 # sudo mount -t nfs -o vers=3,nconnect=8,remoteports=<RANGE> <VIP>:/nfs_1/ /mount/vast
+
+# =============================================================================
+# 6. ARCHIVE — older lab patterns (still useful as ad-hoc examples)
+#    Paths/groups may differ (cnodes, centos, /mount/shareN). Learn the form;
+#    prefer sections 1–5 for current VAST labs.
+# =============================================================================
+
+# ansible -i ./inventory cnodes -m dnf -a "name=wget state=present"
+# ansible -i ./inventory cnodes -a "wget https://github.com/breuner/elbencho/releases/latest/download/elbencho-static-x86_64.tar.gz"
+# ansible -i inventory cnodes -m copy -a "src=files/elbencho_scripts/elbencho.binary dest=~/elbencho mode=0755" --become-user=centos
+
+# ansible -i ./inventory clients -a "elbencho --service"
+# ansible -i ./inventory cnodes -a "elbencho --service --port 1611"
+
+# Proxy lab pattern:
+# ansible proxy -i ./inventory.ini -b -m apt -a "update_cache=yes name=python3-pip,python3-dev,libffi-dev,libssl-dev,gnutls-bin,nginx state=present"
+# ansible proxy -i ./inventory.ini -b -m pip -a "name=mitmproxy state=present"
+# ansible proxy -i ./inventory.ini -b -m sysctl -a "name=net.ipv4.ip_forward value=1 state=present reload=yes"
+# ansible proxy -i ./inventory.ini -b -m lineinfile -a "path=/etc/environment line='GODEBUG=x509negativeserial=1'"
+# ansible proxy -i ./inventory.ini -m copy -a "src=files/neg_serialnum.py dest=/home/labuser/neg_serialnum.py mode=0655"

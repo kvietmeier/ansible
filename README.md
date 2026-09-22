@@ -51,8 +51,18 @@ Bootstrapping nodes for internal testing lives in **Terraform cloud-init**, not 
 │   └── elbencho/             # Docs + script mirror (orchestration → playbooks/)
 ├── inventory.ini
 ├── site.yml                  # Main entry (vast_client + vast_nfs, tagged never)
-└── one_liners.txt            # Quick reference (current + historical)
+└── one_liners.txt            # Learn Ansible via ad-hoc + lab cheat sheet
 ```
+
+### Learn by doing (`one_liners.txt`)
+
+Ad-hoc commands are the fastest path into Ansible: same inventory, modules,
+`become`, and limits as playbooks — without writing YAML first. Start in
+section 1 of `one_liners.txt`, then use lab sections for VAST client / fio /
+elbencho examples.
+
+Deeper ad-hoc walkthrough: [Ansible AdHoc Commands gist](https://gist.github.com/kvietmeier/d497360a0e304286285220066ff0b53c)
+([all gists](https://gist.github.com/kvietmeier)).
 
 ### Mount convention
 
