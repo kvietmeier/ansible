@@ -1,38 +1,62 @@
-Role Name
-=========
+# vast_client
 
-A brief description of the role goes here.
+Day-2 polish for VAST lab / cloud test clients. Makes an already-bootstrapped
+VM into a usable lab client: users, mount dirs, shell/S3 config, tool repos.
 
-Requirements
-------------
+**Does not** build fio/elbencho (cloud-init / `lab_bootstrap.sh` does that).
+**Does not** generate I/O.
 
-Any pre-requisites that may not be covered by Ansible itself or the role should be mentioned here. For instance, if the role uses the EC2 module, it may be a good idea to mention in this section that the boto package is required.
+## Boundary
 
-Role Variables
---------------
+| Layer | Owns |
+|-------|------|
+| Terraform + cloud-init | VM birth, packages, fio/elbencho binaries, initial `~/tools` clone |
+| **vast_client** (this role) | Lab users, `/mount/vast/*` dirs, bashrc, S3 cfg, refresh tool clones |
+| vast_nfs | VAST NFS kernel driver |
+| elbencho playbook | Multi-client campaign orchestration |
+| sys-perf-tools `fio-file/` | Quick smash / smoke / baseline jobfiles |
 
-A description of the settable variables for this role should go here, including any variables that are in defaults/main.yml, vars/main.yml, and any variables that can/should be set via parameters to the role. Any variables that are read from other roles and/or the global scope (ie. hostvars, group vars, etc.) should be mentioned here as well.
+## Mount convention
 
-Dependencies
-------------
+All VAST mounts use **`/mount/vast`** (never `/mnt/vast`).
 
-A list of other roles hosted on Galaxy should go here, plus any details in regards to parameters that may need to be set for other roles, or variables that are used from other roles.
+| Path | Role |
+|------|------|
+| `/mount/vast` | NFS/SMB mount root |
+| `/mount/vast/fio` | Default FIO work dir (`sys-perf-tools/fio-file`) |
+| `/mount/vast/data`, `gns-*` | Shared lab dirs |
 
-Example Playbook
-----------------
+## What it does
 
-Including an example of how to use your role (for instance, with variables passed in as parameters) is always nice for users too:
+1. Install `nfs-common` / `rpcbind`
+2. Create numbered lab users (`labuser01`…) with passwordless sudo (optional)
+3. Ensure `/mount/vast/...` directories exist
+4. Distribute bashrc, dircolors, SSH keys, `.s3cfg`
+5. Clone **`sys-perf-tools`** + **`system-tools`** → `/home/labuser/tools/`
 
-    - hosts: servers
-      roles:
-         - { role: username.rolename, x: 42 }
+## Usage
 
-License
--------
+```bash
+# From ansible repo root
+ansible-playbook -i inventory.ini site.yml --tags client
 
-BSD
+# Tools clone only
+ansible-playbook -i inventory.ini site.yml --tags git_tools
+```
 
-Author Information
-------------------
+Quick FIO after mount (manual):
 
-An optional section for the role authors to include contact information, or a website (HTML is not allowed).
+```bash
+cd ~/tools/sys-perf-tools/fio-file
+./quick-smoke.sh /mount/vast/fio
+./runfio.sh -j ./vast-p01-p06-p09-baseline.ini -d /mount/vast/fio
+```
+
+## Variables
+
+See `group_vars/all.yml` and `defaults/main.yml` (`base_user`, `tools_repos`,
+`vast_shared_directories`, `create_individual_user_mounts`, …).
+
+## Author
+
+Karl Vietmeier — Apache 2.0

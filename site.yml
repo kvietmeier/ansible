@@ -1,9 +1,16 @@
 ---
 ### File - site.yml
-#   Top level playbook for VAST NFS Client Installation
-#   
+#   Top-level playbook for VAST lab clients
+#
+#   Boundaries:
+#     cloud-init / Terraform  → binaries + initial ~/tools clone (no I/O)
+#     vast_client             → users, /mount/vast dirs, S3 cfg, refresh tools
+#     vast_nfs                → VAST NFS kernel driver
+#     playbooks/elbencho.yml  → multi-client elbencho campaigns (manual)
+#     sys-perf-tools/fio-file → quick fio smoke/baseline (manual on host)
+#
 #   Created By:   Karl Vietmeier
-#  
+#
 - name: Setup VAST NFS Client Environment
   hosts: clients
   become: true
@@ -11,8 +18,8 @@
   roles:
     - role: vast_client
       tags: ['never', 'base', 'client']
-    
+
     - role: vast_nfs
       tags: ['never', 'install_driver']
-    
+
     #- role: specsfs

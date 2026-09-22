@@ -1,2 +1,22 @@
 #SPDX-License-Identifier: MIT-0
 # defaults file for roles/vast_client
+---
+# Overridden by group_vars/all.yml in this repo; kept here for standalone use.
+base_user: labuser
+user_prefix: labuser
+num_user: '10'
+create_individual_user_mounts: false
+
+tools_repos:
+  - name: sys-perf-tools
+    url: "https://github.com/kvietmeier/sys-perf-tools.git"
+    version: main
+  - name: system-tools
+    url: "https://github.com/kvietmeier/system-tools.git"
+    version: main
+
+vast_shared_directories:
+  - /mount/vast/gns-dst
+  - /mount/vast/gns-src
+  - /mount/vast/data
+  - /mount/vast/fio

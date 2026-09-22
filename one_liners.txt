@@ -1,163 +1,110 @@
-# Example calling a playbook
-ansible-playbook --limit voltmgmt roles/voltdb/voltdb.yaml --tags=foo
-
-# Get java versions - 
-ansible -i ./inventory -a "java --version"
-
-# Check the date
-ansible -i ./inventory clients -a date
-
-# Install packages
-ansible -i ./inventory cnodes -m dnf -a "name=wget state=installed"
-ansible -i ./inventory cnodes -m dnf -a "name=curl state=installed"
-ansible -i ./inventory cnodes -m dnf -a "name=jq state=installed"
-ansible -i ./inventory cnodes -m dnf -a "name=kernel-devel-5.14.0-503.23.1.el9_5.x86_64 state=installed"
-
-# Grab static elbencho binary
-ansible -i ./inventory cnodes -a "wget https://github.com/breuner/elbencho/releases/latest/download/elbencho-static-x86_64.tar.gz"
-
-# Remove file
-ansible -i ./inventory clients -a "rm elbencho-static-x86_64.tar.gz"
-
-ansible -i inventory cnodes -m copy -a "src=files/elbencho dest=~ owner=centos group=centos mode=0755" --become-user=centos
-
-
-ansible -i ./inventory 
-
-
-# Update grub after kernel upgrade
-ansible -i ./inventory linux01 -m shell -a "grubby --set-default /boot/vmlinuz-5.14.0-503.35.1.el9_5.x86_64"
-ansible -i ./inventory linux03,linux04,linux05,linux06 -m shell -a "grubby --set-default /boot/vmlinuz-5.14.0-503.35.1.el9_5.x86_64"
-ansible -i ./inventory linux03,linux04,linux05,linux06 -m shell -a "reboot"
-
-
-[root@linux01 vastnfs-4.0.32]# ls -l dist
-total 21M
--rw-r--r--. 1 root root 1.5M Apr  7 16:35 vastnfs-4.0.32-kernel_5.14.0_503.35.1.el9_5.x86_64.rpm
--rw-r--r--. 1 root root  19M Apr  7 16:37 vastnfs-debuginfo-4.0.32-kernel_5.14.0_503.35.1.el9_5.x86_64.rpm
--rw-r--r--. 1 root root 920K Apr  7 16:35 vastnfs-debugsource-4.0.32-kernel_5.14.0_503.35.1.el9_5.x86_64.rpm
-
-
-ansible -i ./inventory clients -a "elbencho --service"
-ansible -i ./inventory cnodes -a "elbencho --service --port 1611"
-ansible -i ./inventory cnodes -a "elbencho --service --port 1612"
-
-ansible -i ./inventory cnodes -a "ip -4 a show dev eth0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}' | head -n1" | awk '{ print $2":1611"; }"
-
-
-ip -4 a show dev eth0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}' | head -n1" | awk '{ print $2":1612"; }
-
-
-10.100.2.106:1611
-10.100.2.105:1611
-10.100.2.100:1611
-10.100.2.106:1612
-10.100.2.100:1612
-10.100.2.105:1612
-
-# Install NFS Driver
-ansible -i ./inventory clients -b -m yum -a "name=/root/vastnfs-4.0.32/dist/vastnfs-4.0.32-kernel_5.14.0_503.35.1.el9_5.x86_64.rpm state=present disable_gpg_check=yes"
+################################################################################
+# one_liners.txt — useful ansible / mount / fio cheat sheet
 #
-ansible -i ./inventory clients -b -m reboot
+# Current procedure lives in README.md. This file is a quick reference.
+# Prefer:
+#   site.yml --tags client|install_driver
+#   playbooks/elbencho.yml
+#   ~/tools/sys-perf-tools/fio-file/   (mount under /mount/vast)
+################################################################################
 
-ansible dbnodes -m lineinfile -a "dest=/etc/fstab line='10.100.2.19:/nfs1 /mount/nfs1 nfs defaults 1 1'"
+# =============================================================================
+# 1. CURRENT — inventory / ad-hoc
+# =============================================================================
 
-# Run Playbook
-ansible-playbook -i ./inventory clients buildvastnfs-multiOS.yml
-ansible-playbook -i ./inventory clients buildvastnfs-multiOS.yml
-ansible-playbook -i ./inventory buildvastnfs-multiOS.yml
-ansible-playbook -i ./inventory buildvastnfs-multiOS.yml
-ansible-playbook -i ./inv
+# Date / connectivity
+ansible -i ./inventory.ini clients -a date
+ansible -i ./inventory.ini clients -a "df -kh"
 
-# Check Clients
-ansible -i ./inventory clients -a "df -kh"
-ansible -i ./inventory clients -a "date"
+# =============================================================================
+# 2. CURRENT — playbooks (swiss-army client polish)
+# =============================================================================
 
+# Day-2 client polish (users, /mount/vast dirs, ~/tools clones)
+ansible-playbook -i ./inventory.ini site.yml --tags client
 
-#### Mount and elbencho
-sudo mount -o vers=3,nconnect=8,remoteports=33.20.1.11-33.20.1.21 sharespool.busab.org:/nfs_share_1 /mount/share1
+# Tools clone only
+ansible-playbook -i ./inventory.ini site.yml --tags git_tools
 
-fstab entry - 
-sharespool.busab.org:/nfs_share_1 /mount/share1 nfs vers=3,nconnect=8,remoteports=33.20.1.11-33.20.1.21 0 0
+# VAST NFS driver
+ansible-playbook -i ./inventory.ini site.yml --tags install_driver
 
-Ebencho -  
-ansible -i ./inventory clients -m shell -a "elbencho -t 2 --iodepth 4 --timelimit 360 -b 1M --direct -s 1G -N 10 -n 1 -D -F -d -w --rand /mount/share1"
-nohup elbencho -t 2 --iodepth 4 --timelimit 2400 -b 4M --direct -s 100G -N 4 -n 2 -w /mount/share1 > /home/labuser/output/elbencho_write.log 2>&1 &ansible dbnodes -m lineinfile -a "dest=/etc/fstab line='### Mount VASTShare'"
-elbencho --netbench --serversfile ./cnodes.txt --clients ./clients.txt -b 1 --respsize 1m -s 1t -t 10 --timelimit 30
+# Mount prep / mount now (override VIP/view as needed)
+ansible-playbook -i ./inventory.ini site.yml --tags mountprep
+ansible-playbook -i ./inventory.ini site.yml --tags mount_now \
+  -e "mount_point=/mount/vast view_path=nfs_01 dns_alias=sharespool dns_domain=busab"
 
-# Works using VAST DNS - 
-mount -t nfs -o proto=tcp,vers=3,nconnect=3,remoteports=33.20.1.11-33.20.1.13 sharespool.busab.org:/nfs_share_1 /mount/share1
+# =============================================================================
+# 3. CURRENT — elbencho campaigns (project / multi-client)
+# =============================================================================
 
-# Use Cloud DNS
-sudo mount -t nfs -o proto=tcp,vers=3,nconnect=11,remoteports=33.20.1.11-33.20.1.21 sharevip.arrakis.org:/nfs_share_1 /mount/share1
+ansible-playbook -i ./inventory.ini playbooks/elbencho.yml --tags mkdirs
+ansible-playbook -i ./inventory.ini playbooks/elbencho.yml --tags mount
+ansible-playbook -i ./inventory.ini playbooks/elbencho.yml --tags elbencho_serv
+ansible-playbook -i ./inventory.ini playbooks/elbencho.yml --tags copy_scripts
+ansible-playbook -i ./inventory.ini playbooks/elbencho.yml --tags kill_all
 
+# Manual on primary after copy_scripts:
+#   ~/elbencho/elbencho_nfs_prep.sh <NUM_CLIENTS>
+#   ~/elbencho/elbencho_nfs_testblk_sizes.sh <NUM_CLIENTS>
 
-ansible -i ./inventory clients -m shell -a "chmod 777 /mount/"
+# =============================================================================
+# 4. CURRENT — fio quick smash (on the client, after mount)
+# =============================================================================
+# Default work dir: /mount/vast/fio
+#
+#   cd ~/tools/sys-perf-tools/fio-file
+#   ./quick-smoke.sh /mount/vast/fio
+#   ./runfio.sh -j ./vast-p01-p06-p09-baseline.ini -d /mount/vast/fio
+#   python3 parse_fio.py ./fio_runs/fio_vast-p01-p06-p09-baseline_1
 
+# =============================================================================
+# 5. CURRENT — NFS mount under /mount/vast
+# =============================================================================
+# Adjust remoteports / VIP / export for the cluster size.
 
-nohup elbencho -d -t 2 --iodepth 4 --timelimit 2400 -b 4M --direct -s 100G -N 4 -n 2 -w /mount/share1/elbencho-files &
-nohup elbencho -d -t 2 --iodepth 4 --timelimit 2400 -b 4M --direct -s 100G -N 4 -n 2 -w /mount/share2/elbencho-files &
-nohup elbencho -d -t 2 --iodepth 4 --timelimit 2400 -b 4M --direct -s 100G -N 4 -n 2 -w /mount/share3/elbencho-files &
-nohup elbencho -d -t 2 --iodepth 4 --timelimit 2400 -b 4M --direct -s 100G -N 4 -n 2 -w /mount/share4/elbencho-files &
-nohup elbencho -d -t 2 --iodepth 4 --timelimit 2400 -b 4M --direct -s 100G -N 4 -n 2 -w /mount/share5/elbencho-files &
-nohup elbencho -d -t 2 --iodepth 4 --timelimit 2400 -b 4M --direct -s 100G -N 4 -n 2 -w /mount/share6/elbencho-files &
-nohup elbencho -d -t 2 --iodepth 4 --timelimit 2400 -b 4M --direct -s 100G -N 4 -n 2 -w /mount/share7/elbencho-files &
-nohup elbencho -d -t 2 --iodepth 4 --timelimit 2400 -b 4M --direct -s 100G -N 4 -n 2 -w /mount/share8/elbencho-files &
-nohup elbencho -d -t 2 --iodepth 4 --timelimit 2400 -b 4M --direct -s 100G -N 4 -n 2 -w /mount/share9/elbencho-files &
-nohup elbencho -d -t 2 --iodepth 4 --timelimit 2400 -b 4M --direct -s 100G -N 4 -n 2 -w /mount/share10/elbencho-files &
-nohup elbencho -d -t 2 --iodepth 4 --timelimit 2400 -b 4M --direct -s 100G -N 4 -n 2 -w /mount/share11/elbencho-files &
+# Example (3-node VIP range)
+# sudo mkdir -p /mount/vast /mount/vast/fio
+# sudo mount -t nfs -o vers=3,nconnect=8,remoteports=33.20.1.11-33.20.1.13 \
+#   33.20.1.11:/nfs_1/ /mount/vast
 
+# DNS alias form
+# sudo mount -t nfs -o proto=tcp,vers=3,nconnect=8,remoteports=33.20.1.11-33.20.1.21 \
+#   sharespool.busab.org:/nfs_share_1 /mount/vast
 
-karlv@devops01:~/Terraform/vastdata/cluster_config$ cat /home/karlv/Terraform/vastdata/secrets/s3user1.txt
-Access Key: VAQ5CM54T0P47MRLP0NQ
-Secret Key: I/Ssjv4TPsIH5mpXqrSkGdzIqUXbCLj6oLt57wVB
-karlv@devops01:~/Terraform/vastdata/cluster_config$
+# =============================================================================
+# 6. HISTORICAL — do not treat as current procedure
+#    Old centos/cnodes/dnf paths, root playbooks, /mount/shareN layouts.
+# =============================================================================
 
+# --- old package / binary ad-hoc (RHEL/cnodes) ---
+# ansible -i ./inventory cnodes -m dnf -a "name=wget state=installed"
+# ansible -i ./inventory cnodes -a "wget https://github.com/breuner/elbencho/releases/latest/download/elbencho-static-x86_64.tar.gz"
+# ansible -i inventory cnodes -m copy -a "src=files/elbencho dest=~ owner=centos group=centos mode=0755" --become-user=centos
 
-### NFS mount commands for VAST.
+# --- old root playbook names (now roles/vast_nfs via site.yml) ---
+# ansible-playbook -i ./inventory buildvastnfs-multiOS.yml
 
-### 8 vCPUs
-# 3 Nodes
-sudo mount -t nfs -o vers=3,remoteports=33.20.1.11-33.20.1.13,nconnect=8 33.20.1.11:/nfs_1/ /mount/vast
+# --- old multi-share elbencho layout (/mount/share1..N) ---
+# sudo mount -o vers=3,nconnect=8,remoteports=33.20.1.11-33.20.1.21 \
+#   sharespool.busab.org:/nfs_share_1 /mount/share1
+# nohup elbencho -d -t 2 --iodepth 4 --timelimit 2400 -b 4M --direct \
+#   -s 100G -N 4 -n 2 -w /mount/share1/elbencho-files &
 
-# 5 Nodes
-sudo mount -t nfs -o vers=3,remoteports=33.20.1.11-33.20.1.15,nconnect=8 33.20.1.11:/nfs_1/ /mount/vast
-sudo mount -t nfs -o vers=3,remoteports=33.20.1.11-33.20.1.15,nconnect=8 33.20.1.12:/nfs_1/ /mount/vast
-sudo mount -t nfs -o vers=3,remoteports=33.20.1.11-33.20.1.15,nconnect=8 33.20.1.13:/nfs_1/ /mount/vast
-sudo mount -t nfs -o vers=3,remoteports=33.20.1.11-33.20.1.15,nconnect=8 33.20.1.14:/nfs_1/ /mount/vast
-sudo mount -t nfs -o vers=3,remoteports=33.20.1.11-33.20.1.15,nconnect=8 33.20.1.15:/nfs_1/ /mount/vast
+# --- old elbencho service ports on cnodes ---
+# ansible -i ./inventory clients -a "elbencho --service"
+# ansible -i ./inventory cnodes -a "elbencho --service --port 1611"
 
-# 8 Nodes
-sudo mount -t nfs -o vers=3,remoteports=33.20.1.11-33.20.1.18,nconnect=8 33.20.1.11:/nfs_1/ /mount/vast
+# --- proxy lab (still useful pattern; verify paths) ---
+# ansible proxy -i ./inventory.ini -m apt -a "update_cache=yes name=python3-pip,python3-dev,libffi-dev,libssl-dev,gnutls-bin,nginx state=present" --become
+# ansible proxy -i ./inventory.ini -m pip -a "name=mitmproxy state=present" --become
+# ansible proxy -i ./inventory.ini -m sysctl -a "name=net.ipv4.ip_forward value=1 state=present reload=yes" --become
+# ansible proxy -i ./inventory.ini -m lineinfile -a "path=/etc/environment line='GODEBUG=x509negativeserial=1'" --become
+# ansible proxy -i ./inventory.ini -m copy -a "src=files/neg_serialnum.py dest=/home/labuser/neg_serialnum.py mode=0655"
 
-# 1 Nodes
-sudo mount -t nfs -o vers=3,remoteports=33.20.1.11-33.20.1.21,nconnect=8 33.20.1.11:/nfs_1/ /mount/vast
-sudo mount -t nfs -o vers=3,remoteports=33.20.1.11-33.20.1.21,nconnect=8 33.20.1.11:/nfs_1/ /mount/vast
-sudo mount -t nfs -o vers=3,remoteports=33.20.1.11-33.20.1.21,nconnect=8 33.20.1.12:/nfs_1/ /mount/vast
-sudo mount -t nfs -o vers=3,remoteports=33.20.1.11-33.20.1.21,nconnect=8 33.20.1.13:/nfs_1/ /mount/vast
-sudo mount -t nfs -o vers=3,remoteports=33.20.1.11-33.20.1.21,nconnect=8 33.20.1.14:/nfs_1/ /mount/vast
-sudo mount -t nfs -o vers=3,remoteports=33.20.1.11-33.20.1.21,nconnect=8 33.20.1.15:/nfs_1/ /mount/vast
-sudo mount -t nfs -o vers=3,remoteports=33.20.1.11-33.20.1.21,nconnect=8 33.20.1.16:/nfs_1/ /mount/vast
-sudo mount -t nfs -o vers=3,remoteports=33.20.1.11-33.20.1.21,nconnect=8 33.20.1.17:/nfs_1/ /mount/vast
-sudo mount -t nfs -o vers=3,remoteports=33.20.1.11-33.20.1.21,nconnect=8 33.20.1.18:/nfs_1/ /mount/vast
-sudo mount -t nfs -o vers=3,remoteports=33.20.1.11-33.20.1.21,nconnect=8 33.20.1.19:/nfs_1/ /mount/vast
-sudo mount -t nfs -o vers=3,remoteports=33.20.1.11-33.20.1.21,nconnect=8 33.20.1.20:/nfs_1/ /mount/vast
-sudo mount -t nfs -o vers=3,remoteports=33.20.1.11-33.20.1.21,nconnect=8 33.20.1.21:/nfs_1/ /mount/vast
-
-sudo mount -t nfs -o vers=3,remoteports=33.20.1.11,33.20.1.45,33.21.1.78,33.231.1.12,33.20.1.21,33.21.1.45,nconnect=8 33.20.1.21:/nfs_1/ /mount/vast
-
-sudo mount -t nfs -o vers=3,remoteports=33.20.1.11-33.20.1.21,nconnect=8 33.20.1.21:/nfs_1/ /mount/vast
-
-
-
-### Setup proxy server - 
-ansible proxy -i ./inventory -m apt -a "update_cache=yes name=python3-pip,python3-dev,libffi-dev,libssl-dev,gnutls-bin,nginx state=present" --become
-ansible proxy -i ./inventory -m pip -a "name=mitmproxy state=present" --become
-ansible proxy -i ./inventory -m sysctl -a "name=net.ipv4.ip_forward value=1 state=present reload=yes" --become
-ansible proxy -i ./inventory -m lineinfile -a "path=/etc/environment line='GODEBUG=x509negativeserial=1'" --become
-ansible proxy -i ./inventory -m copy -a "src=files/neg_serialnum.py dest=/home/labuser/neg_serialnum.py mode=0655"
-
-
-### Run Playbooks/Roles using tags.
-ansible-playbook -i ./inventory.ini site.yml --tags=install_driver
-
+# --- VIP-range mount cookbook (kept; prefer /mount/vast) ---
+# 3 nodes:  remoteports=33.20.1.11-33.20.1.13
+# 5 nodes:  remoteports=33.20.1.11-33.20.1.15
+# 8 nodes:  remoteports=33.20.1.11-33.20.1.18
+# 11 nodes: remoteports=33.20.1.11-33.20.1.21
+# sudo mount -t nfs -o vers=3,nconnect=8,remoteports=<RANGE> <VIP>:/nfs_1/ /mount/vast

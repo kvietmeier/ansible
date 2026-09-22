@@ -1,0 +1,75 @@
+---
+# Elbencho multi-client orchestration (project / long runs).
+# Quick one-off smash tests → use fio on the host:
+#   ~/tools/sys-perf-tools/fio-file/quick-smoke.sh /mount/vast/fio
+#
+# Usage:
+#   ansible-playbook -i inventory.ini playbooks/elbencho.yml --tags <tag>
+#
+# Tags:
+#   mkdirs        → Create /mount/vast directory
+#   mount         → Mount NFS share + elbencho-files subdir
+#   elbencho_serv → Start elbencho --service on all clients
+#   copy_scripts  → Copy scripts from files/elbencho_scripts/ to primary
+#   kill_all      → Stop elbencho service
+#
+# Canonical scripts: files/elbencho_scripts/  (roles/elbencho/files is a mirror)
+
+- name: Elbencho Benchmark Setup
+  hosts: clients
+  become: yes
+  vars:
+    num_clients: 11
+    num_shares: 3
+    primary_client: client01
+    port_range: "33.20.1.11-33.20.1.13"
+    dns_alias: "sharespool"
+    dns: "busab"
+    view_path: "nfs_share_1"
+    conns: 11
+    # Standard VAST mount root (never /mnt/vast)
+    mount_point: "/mount/vast"
+    elbencho_files_dir: "{{ mount_point }}/elbencho-files"
+
+  tasks:
+    - name: Ensure VAST mount point exists
+      ansible.builtin.file:
+        path: "{{ mount_point }}"
+        state: directory
+        mode: '0777'
+      tags: mkdirs
+
+    - name: Mount NFS share
+      ansible.posix.mount:
+        path: "{{ mount_point }}"
+        src: "{{ dns_alias }}.{{ dns }}.org:/{{ view_path }}"
+        fstype: nfs
+        opts: "proto=tcp,vers=3,nconnect={{ conns }},remoteports={{ port_range }}"
+        state: mounted
+      tags: mount
+
+    - name: Ensure elbencho-files directory exists on share
+      ansible.builtin.file:
+        path: "{{ elbencho_files_dir }}"
+        state: directory
+        mode: '0777'
+      tags: mount
+
+    - name: Start elbencho server on all clients
+      ansible.builtin.shell: "nohup elbencho --service &"
+      async: 0
+      poll: 0
+      tags: elbencho_serv
+
+    - name: Copy elbencho scripts to primary client
+      ansible.builtin.synchronize:
+        src: "{{ playbook_dir }}/../files/elbencho_scripts/"
+        dest: "{{ ansible_env.HOME }}/elbencho/"
+        recursive: yes
+      delegate_to: "{{ primary_client }}"
+      tags: copy_scripts
+
+    - name: Kill elbencho server on all clients
+      ansible.builtin.shell: "elbencho --quit --hosts localhost"
+      ignore_errors: yes
+      tags: kill_all

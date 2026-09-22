@@ -163,30 +163,32 @@
 
 
 # -------------------------------------------------------------------------
-# 8. UTILITY SCRIPTS (Git Clone)
+# 8. TOOL REPOS (Git Clone) — sys-perf-tools + system-tools
+#    Layout matches cloud-init: /home/labuser/tools/{sys-perf-tools,system-tools}
+#    fio quick jobs: ~/tools/sys-perf-tools/fio-file  (default dir /mount/vast/fio)
 # -------------------------------------------------------------------------
-- name: Clone scripts repository to base user
+- name: Ensure tools directory exists for base user
+  ansible.builtin.file:
+    path: "/home/{{ base_user }}/tools"
+    state: directory
+    owner: "{{ base_user }}"
+    group: "{{ base_user }}"
+    mode: '0755'
+  tags: ['git_tools', 'git_scripts', 'setup_env']
+
+- name: Clone tool repos for base user
   ansible.builtin.git:
-    repo: "{{ scripts_repo_url }}"
-    dest: "/home/{{ base_user }}/scripts"
-    version: main
+    repo: "{{ item.url }}"
+    dest: "/home/{{ base_user }}/tools/{{ item.name }}"
+    version: "{{ item.version | default('main') }}"
     clone: yes
     update: yes
+  loop: "{{ tools_repos }}"
+  loop_control:
+    label: "{{ item.name }}"
   become_user: "{{ base_user }}"
   ignore_errors: yes
-  tags: ['git_scripts', 'setup_env']
-
-- name: Clone scripts repository to all numbered user profiles
-  ansible.builtin.git:
-    repo: "{{ scripts_repo_url }}"
-    dest: "/home/{{ user_prefix }}{{ item }}/scripts"
-    version: main
-    clone: yes
-    update: yes
-  with_sequence: start=1 end="{{ num_user }}" format=%02d
-  become_user: "{{ user_prefix }}{{ item }}"
-  ignore_errors: yes
-  tags: ['git_scripts', 'setup_env']
+  tags: ['git_tools', 'git_scripts', 'setup_env']
 
 
 # -------------------------------------------------------------------------

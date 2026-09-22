@@ -14,7 +14,7 @@
 #
 # Notes:
 #   - NUM_CLIENTS determines the client range: client01..clientNN
-#   - Files will be created in /mount/share1/elbencho-files
+#   - Files will be created in /mount/vast/elbencho-files
 # ====================================================================
 #!/bin/bash
 # ====================================================================
@@ -24,7 +24,7 @@
 
 # Parameters with defaults
 NUM_CLIENTS=${1:-11}             # Number of clients (default 11)
-MOUNTPOINT=${2:-/mount/share1}   # Mount location (default /mount/share1)
+MOUNTPOINT=${2:-/mount/vast}   # Mount location (default /mount/vast)
 FILESIZE=${3:-100G}              # File size (default 100G)
 
 # Test files directory

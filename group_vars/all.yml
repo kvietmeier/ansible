@@ -15,8 +15,17 @@ num_user: '10'
 # -----------------------------------------------------------------------------
 # LAB ENVIRONMENT & STORAGE
 # -----------------------------------------------------------------------------
-scripts_repo_url: "https://github.com/kvietmeier/scripts.git"
 vast_mgmt_ip: "10.0.0.10" # Override this in your inventory per cluster if needed
+
+# Tool repos cloned to /home/{{ base_user }}/tools/ (matches cloud-init layout).
+# Old monolith kvietmeier/scripts.git was split into these repos.
+tools_repos:
+  - name: sys-perf-tools
+    url: "https://github.com/kvietmeier/sys-perf-tools.git"
+    version: main
+  - name: system-tools
+    url: "https://github.com/kvietmeier/system-tools.git"
+    version: main
 
 # -----------------------------------------------------------------------------
 # LAB ARCHITECTURE TOGGLES
@@ -24,7 +33,10 @@ vast_mgmt_ip: "10.0.0.10" # Override this in your inventory per cluster if neede
 # Set to 'true' to provision /mount/vast/labuser01 through labuser10
 create_individual_user_mounts: false
 
+# Convention: VAST mounts live under /mount/vast (never /mnt/vast).
+# fio-file jobs default to /mount/vast/fio as the work directory.
 vast_shared_directories:
   - /mount/vast/gns-dst
   - /mount/vast/gns-src
   - /mount/vast/data
+  - /mount/vast/fio

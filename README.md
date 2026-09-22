@@ -1,56 +1,85 @@
 ## Ansible Playbook Repository
 
-This repository contains Ansible playbooks and roles to bootstrap and configure servers for various workloads. It is designed for flexible environments and supports both RHEL and Ubuntu-based systems.
+Playbooks and roles to **polish** VAST lab / cloud test clients after
+Terraform + cloud-init birth the VM. Supports Debian/Ubuntu and RHEL-family.
 
-### Overview
+### Ownership boundary
 
-- **Purpose**: Prepare base server configurations to support application overlays (e.g., storage testing, databases, Kubernetes).
-- **Use Cases**:
-  - Bootstrapping nodes for internal testing (moved to cloud-init/Terraform).
-  - Polishing up/final configuration for clients used in labs/training (vast_clients)
-  - Preparing infrastructure for VAST NFS deployments (vast_nfs).
-  - Setting up database testing environments on Azure (Archive).
-- **Status**:
-  - VAST Data NFS driver - current.
-  - Client Setup - current
-  - RHEL-specific code archived (archive/).
-  - Volt_db Azure setup (archive/).
-
-### Repository Structure
+| Layer | Owns | Does **not** |
+|-------|------|----------------|
+| **Terraform + cloud-init** | VM, packages, fio/elbencho **binaries**, initial `~/tools` clone | Run I/O |
+| **ansible** (this repo) | Lab users, `/mount/vast` dirs, VAST NFS driver, elbencho **campaigns** | Replace cloud-init |
+| **sys-perf-tools** | fio jobfiles (`fio-file/`) for quick smoke / hammer | Fleet config |
+| **system-tools** | Shell env / host helpers | Bench orchestration |
 
 ```text
-├── archive/            # Legacy RHEL-specific code and scripts
-├── files/              # Static files used by roles/playbooks (e.g., elbencho binaries)
-├── filter_plugins/     # Custom Jinja2 filters for Ansible
-├── group_vars/         # Global variables (including private overrides)
-├── host_vars/          # Host-specific variables
-├── library/            # Custom Ansible modules
-├── library             # Custom Ansible modules
-├── playbooks           # Collection of single use playbooks 
-├── roles               # Reusable roles
-├── README.md           # This file
-├── inventory.ini       # Current inventory of hosts
-├── one_liners.txt      # Misc notes amd examples for running Playbooks/Ad Hoc commands
-├── ansible.cfg         # Ansible configuration
-└── site.yml            # Main entry-point playbook
+cloud-init  →  swiss-army client (tools ready)
+ansible     →  attach blades for this lab/cluster
+fio         →  quick smash (manual)
+elbencho    →  multi-client project runs (playbooks/elbencho.yml)
 ```
 
----
+### Use cases
 
-### TBD
+- Day-2 client polish for labs/training (`vast_client`)
+- VAST NFS driver install (`vast_nfs`)
+- Elbencho multi-client campaigns (`playbooks/elbencho.yml`)
+- App overlays (Trino, ClickHouse, …) under `playbooks/`
 
----
+Bootstrapping nodes for internal testing lives in **Terraform cloud-init**, not here.
 
-### Key Roles
+### Repository structure
 
-- vast_client
-  Sets up clients for a lab environment - users, mount points, etc.
-- vast_nfs
-  Builds and configures the VAST NFS driver on multi-OS environments.
+```text
+├── files/elbencho_scripts/   # Canonical elbencho helpers (+ optional static binary)
+├── group_vars/               # Global vars (tools_repos, /mount/vast dirs)
+├── playbooks/                # Single-purpose playbooks (elbencho, …)
+├── roles/
+│   ├── vast_client/          # Users, mounts, S3 cfg, ~/tools clones
+│   ├── vast_nfs/             # VAST NFS kernel driver
+│   └── elbencho/             # Docs + script mirror (orchestration → playbooks/)
+├── inventory.ini
+├── site.yml                  # Main entry (vast_client + vast_nfs, tagged never)
+└── one_liners.txt            # HISTORICAL notes — not current procedure
+```
 
----
+### Mount convention
 
-### Development Notes
+All VAST client mounts: **`/mount/vast`** (never `/mnt/vast`).
 
-- *Archive Directory*:
-  Legacy code
+| Path | Role |
+|------|------|
+| `/mount/vast` | NFS/SMB mount root |
+| `/mount/vast/fio` | Default FIO work directory |
+| `/mount/vast/elbencho-files` | Elbencho campaign files |
+| `/mount/vast/data`, `gns-*` | Shared lab dirs |
+
+### Key roles / playbooks
+
+| Name | Purpose |
+|------|---------|
+| `vast_client` | Lab users, mount dirs, refresh `~/tools/{sys-perf-tools,system-tools}` |
+| `vast_nfs` | Build/install VAST NFS driver |
+| `playbooks/elbencho.yml` | Mount, elbencho service, copy campaign scripts |
+
+```bash
+# Client polish
+ansible-playbook -i inventory.ini site.yml --tags client
+
+# Driver only
+ansible-playbook -i inventory.ini site.yml --tags install_driver
+
+# Elbencho campaign prep
+ansible-playbook -i inventory.ini playbooks/elbencho.yml --tags mount,elbencho_serv,copy_scripts
+```
+
+On the host (manual fio):
+
+```bash
+cd ~/tools/sys-perf-tools/fio-file
+./quick-smoke.sh /mount/vast/fio
+```
+
+### Author
+
+Karl Vietmeier — Apache 2.0

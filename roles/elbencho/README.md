@@ -1,38 +1,38 @@
-Role Name
-=========
+# elbencho
 
-A brief description of the role goes here.
+Multi-client **project** benchmarking against VAST (NFS/S3). Binary install is
+cloud-init / `lab_bootstrap.sh`; this repo orchestrates campaigns and ships
+helper scripts.
 
-Requirements
-------------
+For quick one-off smash tests, prefer **fio**:
+`~/tools/sys-perf-tools/fio-file/` (default dir `/mount/vast/fio`).
 
-Any pre-requisites that may not be covered by Ansible itself or the role should be mentioned here. For instance, if the role uses the EC2 module, it may be a good idea to mention in this section that the boto package is required.
+## Boundary
 
-Role Variables
---------------
+| Layer | Owns |
+|-------|------|
+| cloud-init | Compile/install `elbencho` binary |
+| **playbooks/elbencho.yml** | Mount, start/stop `--service`, copy scripts |
+| **files/elbencho_scripts/** | Canonical prep / block-size scripts (+ static binary) |
+| roles/elbencho/files/ | Mirror of the scripts (same content) |
+| sys-perf-tools | fio jobfiles for smoke / short hammer |
 
-A description of the settable variables for this role should go here, including any variables that are in defaults/main.yml, vars/main.yml, and any variables that can/should be set via parameters to the role. Any variables that are read from other roles and/or the global scope (ie. hostvars, group vars, etc.) should be mentioned here as well.
+## Mount convention
 
-Dependencies
-------------
+Use **`/mount/vast`** (standard). Workload files go under
+`/mount/vast/elbencho-files`. Override `mount_point` if needed.
 
-A list of other roles hosted on Galaxy should go here, plus any details in regards to parameters that may need to be set for other roles, or variables that are used from other roles.
+## Usage
 
-Example Playbook
-----------------
+```bash
+ansible-playbook -i inventory.ini playbooks/elbencho.yml --tags mkdirs
+ansible-playbook -i inventory.ini playbooks/elbencho.yml --tags mount
+ansible-playbook -i inventory.ini playbooks/elbencho.yml --tags elbencho_serv
+ansible-playbook -i inventory.ini playbooks/elbencho.yml --tags copy_scripts
+# run scripts manually on primary client, then:
+ansible-playbook -i inventory.ini playbooks/elbencho.yml --tags kill_all
+```
 
-Including an example of how to use your role (for instance, with variables passed in as parameters) is always nice for users too:
+## Author
 
-    - hosts: servers
-      roles:
-         - { role: username.rolename, x: 42 }
-
-License
--------
-
-BSD
-
-Author Information
-------------------
-
-An optional section for the role authors to include contact information, or a website (HTML is not allowed).
+Karl Vietmeier — Apache 2.0

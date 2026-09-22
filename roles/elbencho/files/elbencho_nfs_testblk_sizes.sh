@@ -8,7 +8,7 @@
 #
 # Assumes:
 #   * That the elbencho server is already running and the mount points are set up.
-#   * That /mount/share1/elbencho-files/ exists on all clients.
+#   * That /mount/vast/elbencho-files/ exists on all clients.
 #   * Hosts are named client01, client02, ..., client0n
 #
 # Usage:
@@ -31,7 +31,7 @@
 # Configuration Variables
 # --------------------------
 HOSTNAME="client"                      # Hostname prefix
-MOUNTPOINT="/mount/share1"             # Mount point for tests
+MOUNTPOINT="/mount/vast"             # Mount point for tests
 EB_FILES="elbencho-files"              # Directory for test files
 THREADS=32                             # Threads per client
 IODEPTH=4                              # IO depth

@@ -1,3 +1,6 @@
 #SPDX-License-Identifier: MIT-0
----
 # defaults file for roles/elbencho
+---
+mount_point: "/mount/vast"
+elbencho_files_dir: "/mount/vast/elbencho-files"
+primary_client: client01

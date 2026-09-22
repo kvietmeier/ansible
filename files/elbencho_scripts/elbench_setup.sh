@@ -94,9 +94,9 @@ CONNS="11"
 function mkdirs () {
   for i in $(seq 1 $NUM_CLIENTS); do
     client=$(printf "client%02d" "$i")
-    echo "Creating /mount/share1 on $client..."
-    ansible -i ./inventory all -l "$client" -a "mkdir -p /mount/share1"
-    ansible -i ./inventory "$client" -m shell -a "chmod 777 /mount/share1/"
+    echo "Creating /mount/vast on $client..."
+    ansible -i ./inventory all -l "$client" -a "mkdir -p /mount/vast"
+    ansible -i ./inventory "$client" -m shell -a "chmod 777 /mount/vast/"
   done
 }
 
@@ -106,9 +106,9 @@ function mount_all () {
     echo "Mounting /share1 and creating elbencho-files directory on $CLIENT..."
     ansible -i ./inventory "$CLIENT" -a \
       "mount -t nfs -o proto=tcp,vers=3,nconnect=${CONNS},remoteports=${PORT_RANGE} \
-      ${DNS_ALIAS}.${DNS}.org:/${VIEW_PATH} /mount/share1"
-    ansible -i ./inventory "$CLIENT" -m shell -a "mkdir -p /mount/share1/elbencho-files"
-    ansible -i ./inventory "$CLIENT" -m shell -a "chmod 777 /mount/share1/elbencho-files"
+      ${DNS_ALIAS}.${DNS}.org:/${VIEW_PATH} /mount/vast"
+    ansible -i ./inventory "$CLIENT" -m shell -a "mkdir -p /mount/vast/elbencho-files"
+    ansible -i ./inventory "$CLIENT" -m shell -a "chmod 777 /mount/vast/elbencho-files"
   done
 }
 
