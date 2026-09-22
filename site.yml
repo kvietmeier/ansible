@@ -6,8 +6,8 @@
 #     cloud-init / Terraform  → binaries + initial ~/tools clone (no I/O)
 #     vast_client             → users, /mount/vast dirs, S3 cfg, refresh tools
 #     vast_nfs                → VAST NFS kernel driver
-#     playbooks/elbencho.yml  → multi-client elbencho campaigns (manual)
-#     sys-perf-tools/fio-file → quick fio smoke/baseline (manual on host)
+#     playbooks/elbencho.yml  → multi-client benchmark platform examples (manual)
+#     sys-perf-tools/fio-file → fio demo / smoke / baseline (manual on host)
 #
 #   Created By:   Karl Vietmeier
 #

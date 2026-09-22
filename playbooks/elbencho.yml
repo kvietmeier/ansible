@@ -1,6 +1,6 @@
 ---
-# Elbencho multi-client orchestration (project / long runs).
-# Quick one-off smash tests → use fio on the host:
+# Elbencho multi-client benchmark platform examples (NFS/S3).
+# Short demos / baselines → use fio on the host:
 #   ~/tools/sys-perf-tools/fio-file/quick-smoke.sh /mount/vast/fio
 #
 # Usage:
@@ -10,7 +10,7 @@
 #   mkdirs        → Create /mount/vast directory
 #   mount         → Mount NFS share + elbencho-files subdir
 #   elbencho_serv → Start elbencho --service on all clients
-#   copy_scripts  → Copy scripts from files/elbencho_scripts/ to primary
+#   copy_scripts  → Copy example scripts from files/elbencho_scripts/ to primary
 #   kill_all      → Stop elbencho service
 #
 # Canonical scripts: files/elbencho_scripts/  (roles/elbencho/files is a mirror)

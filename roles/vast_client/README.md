@@ -13,8 +13,8 @@ VM into a usable lab client: users, mount dirs, shell/S3 config, tool repos.
 | Terraform + cloud-init | VM birth, packages, fio/elbencho binaries, initial `~/tools` clone |
 | **vast_client** (this role) | Lab users, `/mount/vast/*` dirs, bashrc, S3 cfg, refresh tool clones |
 | vast_nfs | VAST NFS kernel driver |
-| elbencho playbook | Multi-client campaign orchestration |
-| sys-perf-tools `fio-file/` | Quick smash / smoke / baseline jobfiles |
+| elbencho playbook | Multi-client benchmark platform examples |
+| sys-perf-tools `fio-file/` | Demo / smoke / baseline jobfiles |
 
 ## Mount convention
 
@@ -44,7 +44,7 @@ ansible-playbook -i inventory.ini site.yml --tags client
 ansible-playbook -i inventory.ini site.yml --tags git_tools
 ```
 
-Quick FIO after mount (manual):
+Quick FIO demo after mount (manual):
 
 ```bash
 cd ~/tools/sys-perf-tools/fio-file

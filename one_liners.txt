@@ -17,7 +17,7 @@ ansible -i ./inventory.ini clients -a date
 ansible -i ./inventory.ini clients -a "df -kh"
 
 # =============================================================================
-# 2. CURRENT — playbooks (swiss-army client polish)
+# 2. CURRENT — playbooks (client polish / platform wiring)
 # =============================================================================
 
 # Day-2 client polish (users, /mount/vast dirs, ~/tools clones)
@@ -35,7 +35,7 @@ ansible-playbook -i ./inventory.ini site.yml --tags mount_now \
   -e "mount_point=/mount/vast view_path=nfs_01 dns_alias=sharespool dns_domain=busab"
 
 # =============================================================================
-# 3. CURRENT — elbencho campaigns (project / multi-client)
+# 3. CURRENT — elbencho multi-client benchmark examples
 # =============================================================================
 
 ansible-playbook -i ./inventory.ini playbooks/elbencho.yml --tags mkdirs
@@ -49,7 +49,7 @@ ansible-playbook -i ./inventory.ini playbooks/elbencho.yml --tags kill_all
 #   ~/elbencho/elbencho_nfs_testblk_sizes.sh <NUM_CLIENTS>
 
 # =============================================================================
-# 4. CURRENT — fio quick smash (on the client, after mount)
+# 4. CURRENT — fio demos / baselines (on the client, after mount)
 # =============================================================================
 # Default work dir: /mount/vast/fio
 #

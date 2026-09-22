@@ -3,10 +3,10 @@
 # roles/elbencho — script/files carrier + docs.
 #
 # Orchestration lives in playbooks/elbencho.yml (not this role's main.yml).
-# Canonical static scripts + optional binary: files/elbencho_scripts/
+# Canonical example scripts + optional binary: files/elbencho_scripts/
 # This role's files/ directory is a mirror for packaging / ad-hoc copy.
 #
-# Quick smash tests are fio (sys-perf-tools/fio-file), not elbencho.
+# Short demos / baselines are fio (sys-perf-tools/fio-file), not elbencho.
 #
 # Usage:
 #   ansible-playbook -i inventory.ini playbooks/elbencho.yml --tags mount
