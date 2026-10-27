@@ -59,6 +59,7 @@ ansible -i ./inventory.ini clients -a "command -v fio; command -v elbencho; fio 
 
 ansible-playbook -i ./inventory.ini site.yml --tags client
 ansible-playbook -i ./inventory.ini site.yml --tags git_tools
+# Driver only (no mount). Mount helpers are opt-in tags on the same role.
 ansible-playbook -i ./inventory.ini site.yml --tags install_driver
 ansible-playbook -i ./inventory.ini site.yml --tags mountprep
 ansible-playbook -i ./inventory.ini site.yml --tags mount_now \

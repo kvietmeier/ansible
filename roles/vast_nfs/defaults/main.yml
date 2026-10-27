@@ -1,0 +1,17 @@
+#SPDX-License-Identifier: Apache-2.0
+# defaults file for roles/vast_nfs
+#
+# Lab placeholders (dns_domain / port_range) — override with -e or group_vars.
+# Mount command is written to the lab user's home (see mountprep.yml).
+---
+# Driver fetch / build
+download_script_url: "https://vastnfs.vastdata.com/download.sh"
+output_log: "/tmp/vast_nfs_build.log"
+
+# NFS mount defaults (mountprep / mount_now)
+port_range: "33.20.1.11-33.20.1.13"
+conns: 11
+mount_point: "/mount/vast"
+dns_alias: "sharespool"
+dns_domain: "busab"
+view_path: "nfs_01"

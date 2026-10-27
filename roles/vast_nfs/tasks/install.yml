@@ -4,26 +4,31 @@
 # =============================================================================
 
 - name: Install RPM (RedHat)
-  yum:
+  dnf:
     name: "{{ found_pkgs.files[0].path }}"
     state: present
     disable_gpg_check: true
   when: is_redhat and found_pkgs.files | length > 0
+  register: rpm_install
 
 - name: Regenerate initramfs (RedHat)
-  shell: dracut -f --regenerate-all  # Regenerates for all installed kernels, not just active one
-  when: is_redhat and found_pkgs.files | length > 0
+  shell: dracut -f --regenerate-all
+  when: is_redhat and found_pkgs.files | length > 0 and rpm_install is changed
 
 - name: Install DEB (Ubuntu)
   apt:
     deb: "{{ found_pkgs.files[0].path }}"
     state: present
   when: is_ubuntu and found_pkgs.files | length > 0
+  register: deb_install
 
 - name: Regenerate initramfs (Ubuntu)
-  shell: update-initramfs -u -k all  # Rebuilds initramfs for ALL installed kernels
-  when: is_ubuntu and found_pkgs.files | length > 0
+  shell: update-initramfs -u -k all
+  when: is_ubuntu and found_pkgs.files | length > 0 and deb_install is changed
 
-- name: Reboot host
+- name: Reboot host after driver install
   reboot:
     reboot_timeout: 600
+  when: >-
+    (rpm_install is defined and rpm_install is changed) or
+    (deb_install is defined and deb_install is changed)

@@ -47,7 +47,7 @@ Bootstrapping nodes for internal testing lives in **Terraform cloud-init**, not 
 ├── playbooks/                # Single-purpose playbooks (elbencho, …)
 ├── roles/
 │   ├── vast_client/          # Users, mounts, S3 cfg, ~/tools clones
-│   ├── vast_nfs/             # VAST NFS kernel driver
+│   ├── vast_nfs/             # VAST NFS kernel driver (+ opt-in mountprep)
 │   └── elbencho/             # Docs + script mirror (orchestration → playbooks/)
 ├── inventory.ini
 ├── site.yml                  # Main entry (vast_client + vast_nfs, tagged never)

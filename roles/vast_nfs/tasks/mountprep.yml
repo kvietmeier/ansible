@@ -7,9 +7,9 @@
 #   to nfs_mount_cmd.txt for manual or automated use.
 #
 # Tags:
-#   [mountprep], optional [mount_now] executes the mount immediately
+#   mountprep  – directory + saved command
+#   mount_now  – also executes the mount immediately
 # =============================================================================
-# Prepare NFS mount point
 
 - name: Ensure NFS mount point exists
   file:
@@ -22,14 +22,16 @@
     content: |
       sudo mount -t nfs -o proto=tcp,vers=3,nconnect={{ conns }},remoteports={{ port_range }} \
       {{ dns_alias }}.{{ dns_domain }}.org:/{{ view_path }} {{ mount_point }}
-    dest: "{{ ansible_env.HOME }}/nfs_mount_cmd.txt"
-    owner: "{{ ansible_user }}"
-    group: "{{ ansible_user }}"
+    dest: "/home/{{ base_user | default(ansible_user) }}/nfs_mount_cmd.txt"
+    owner: "{{ base_user | default(ansible_user) }}"
+    group: "{{ base_user | default(ansible_user) }}"
     mode: '0644'
 
-# Optional: run mount immediately
-#- name: Execute NFS mount command immediately
-#  shell: |
-#    mount -t nfs -o proto=tcp,vers=3,nconnect={{ conns }},remoteports={{ port_range }} \
-#    {{ dns_alias }}.{{ dns_domain }}.org:/{{ view_path }} {{ mount_point }}
-#  tags: [mount_now]
+- name: Execute NFS mount command immediately
+  ansible.posix.mount:
+    path: "{{ mount_point }}"
+    src: "{{ dns_alias }}.{{ dns_domain }}.org:/{{ view_path }}"
+    fstype: nfs
+    opts: "proto=tcp,vers=3,nconnect={{ conns }},remoteports={{ port_range }}"
+    state: mounted
+  when: "'mount_now' in ansible_run_tags"

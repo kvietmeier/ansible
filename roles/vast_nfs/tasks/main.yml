@@ -3,30 +3,24 @@
 # main.yml – Master task flow for VAST NFS driver role
 #
 # Description:
-#   Orchestrates all steps: prerequisites, download, build, install, and verify
-#   for the VAST NFS kernel driver. 
-#   Compatible with both Debian/Ubuntu and RHEL/CentOS systems; included 
-#   task files handle OS-specific package managers, kernel header paths, 
-#   and module installation differences.
+#   Orchestrates prerequisites, download, build, install, and verify for the
+#   VAST NFS kernel driver (Debian/Ubuntu and RHEL-family).
 #
-# Usage:
-#   Run entire flow or target specific sections using tags:
-#     - prereqs
-#     - download
-#     - build
-#     - install
-#     - verify
+# Tags (prefer these):
+#   install_driver  – full driver path via site.yml (prereqs → verify)
+#   mountprep       – create /mount/vast + write nfs_mount_cmd.txt (opt-in)
+#   mount_now       – mountprep + execute the mount (opt-in)
 #
-# Notes:
-#   The mountprep task is excluded by default as it is recommended to run it
-#   manually after installation, outside Ansible. It is kept here for archival reasons.
+# Stage tags (re-run after a partial failure; need prior stage outputs):
+#   prereqs, disable_upgrades, download, build, install, verify
 # =============================================================================
+
 - include_tasks: prereqs.yml
   tags: [prereqs]
 
 - include_tasks: disable_upgrades.yml
-  tags: [prereqs,disable_upgrades]
-  when: is_ubuntu
+  tags: [prereqs, disable_upgrades]
+  when: ansible_facts['distribution'] == 'Ubuntu'
 
 - include_tasks: download.yml
   tags: [download]
@@ -40,6 +34,9 @@
 - include_tasks: verify.yml
   tags: [verify]
 
-# Optional mount preparation
-#- include_tasks: mountprep.yml
-#  tags: [mountprep]
+# Opt-in only — skipped on --tags install_driver (role tag inheritance)
+- include_tasks: mountprep.yml
+  tags: [mountprep, mount_now]
+  when: >-
+    ('mountprep' in ansible_run_tags) or
+    ('mount_now' in ansible_run_tags)
