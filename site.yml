@@ -9,7 +9,7 @@
 #       --tags install_driver → build/install/verify (no mount)
 #       --tags mountprep|mount_now → opt-in mount helpers
 #     playbooks/elbencho.yml  → multi-client benchmark platform examples (manual)
-#     sys-perf-tools/fio-file → fio demo / smoke / baseline (manual on host)
+#     sys-perf-tools/fio-jobs → fio demo / smoke / baseline (manual on host)
 #
 #   Created By:   Karl Vietmeier
 #
@@ -24,4 +24,5 @@
     - role: vast_nfs
       tags: ['never', 'install_driver']
 
+    # stubs (untested): trino, specsfs, kubernetes — see README maturity model
     #- role: specsfs

@@ -5,7 +5,7 @@ Optional tags prepare **`/mount/vast`** and write a reusable mount command.
 
 **Does not** run elbencho or fio. After the driver is up:
 
-- Short demos / baselines → `~/tools/sys-perf-tools/fio-file/` (dir `/mount/vast/fio`)
+- Short demos / baselines → `~/tools/sys-perf-tools/fio-jobs/` (dir `/mount/vast/fio`)
 - Multi-client benchmark examples → `playbooks/elbencho.yml` + `files/elbencho_scripts/`
 
 ## Scope
@@ -74,7 +74,7 @@ Via `site.yml` (`tags: install_driver`) or:
 ## After the driver
 
 1. Mount under `/mount/vast` (`mountprep` / `mount_now`, elbencho playbook, or manual).
-2. **fio (demo / baseline):** `cd ~/tools/sys-perf-tools/fio-file && ./quick-smoke.sh /mount/vast/fio`
+2. **fio (demo / baseline):** `cd ~/tools/sys-perf-tools/fio-jobs && ./quick-smoke.sh /mount/vast/fio`
 3. **elbencho (multi-client example):**  
    `ansible-playbook -i inventory.ini playbooks/elbencho.yml --tags mount,elbencho_serv,copy_scripts`  
    then run scripts from `files/elbencho_scripts/` on the primary client.

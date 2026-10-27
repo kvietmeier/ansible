@@ -7,7 +7,7 @@ Binary install is cloud-init / `lab_bootstrap.sh`. This repo wires mounts,
 starts `elbencho --service`, and ships ready-to-run example scripts.
 
 For short demos, smoke, and baselines, prefer **fio**:
-`~/tools/sys-perf-tools/fio-file/` (default dir `/mount/vast/fio`).
+`~/tools/sys-perf-tools/fio-jobs/` (default dir `/mount/vast/fio`).
 
 ## Boundary
 

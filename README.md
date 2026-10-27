@@ -11,7 +11,7 @@ solutions on top. Day-2 polish after Terraform + cloud-init births the VM
 |-------|------|
 | **Cloud client (cloud-init)** | Tools-ready host: fio + elbencho binaries, `~/tools` clones — no auto I/O |
 | **This repo (ansible)** | Wire the host for a lab/cluster: users, `/mount/vast`, NFS driver, example bench orchestration |
-| **fio (`sys-perf-tools/fio-file`)** | Short demo / smoke / baseline jobfiles — first proof the platform works |
+| **fio (`sys-perf-tools/fio-jobs`)** | Short demo / smoke / baseline jobfiles — first proof the platform works |
 | **elbencho (playbook + scripts)** | Multi-client benchmark **examples** you copy and extend into a full test solution |
 
 ```text
@@ -27,15 +27,25 @@ elbencho    →  multi-client benchmark examples (manual)
 |-------|------|----------------|
 | **Terraform + cloud-init** | VM, packages, fio/elbencho **binaries**, initial `~/tools` clone | Run I/O |
 | **ansible** (this repo) | Lab users, `/mount/vast` dirs, VAST NFS driver, elbencho **examples** | Replace cloud-init |
-| **sys-perf-tools** | fio jobfiles (`fio-file/`) for smoke / baseline demos | Fleet config |
+| **sys-perf-tools** | fio jobfiles (`fio-jobs/`) for smoke / baseline demos | Fleet config |
 | **system-tools** | Shell env / host helpers | Bench orchestration |
+
+### Maturity model
+
+| Stage | Where | Intent |
+|-------|-------|--------|
+| **Concept / get-started** | `playbooks/` | Try an idea, teach a pattern, smoke a stack |
+| **Mature** | `roles/` | Reusable, tagged, documented — promoted from a playbook |
+
+Playbooks are the sandbox. When something is solid enough to reuse across labs,
+it graduates into a role (and may keep a thin playbook as the entrypoint).
 
 ### Use cases
 
 - Lab / training client polish (`vast_client`)
 - VAST NFS driver install (`vast_nfs`)
 - Multi-client benchmark platform examples (`playbooks/elbencho.yml`)
-- App overlays (Trino, ClickHouse, …) under `playbooks/`
+- Concept overlays under `playbooks/` (e.g. ClickHouse, Trino cluster)
 
 Bootstrapping nodes for internal testing lives in **Terraform cloud-init**, not here.
 
@@ -44,11 +54,12 @@ Bootstrapping nodes for internal testing lives in **Terraform cloud-init**, not 
 ```text
 ├── files/elbencho_scripts/   # Canonical elbencho example scripts (+ optional binary)
 ├── group_vars/               # Global vars (tools_repos, /mount/vast dirs)
-├── playbooks/                # Single-purpose playbooks (elbencho, …)
+├── playbooks/                # Concept / get-started work (graduate → roles)
 ├── roles/
-│   ├── vast_client/          # Users, mounts, S3 cfg, ~/tools clones
-│   ├── vast_nfs/             # VAST NFS kernel driver (+ opt-in mountprep)
-│   └── elbencho/             # Docs + script mirror (orchestration → playbooks/)
+│   ├── vast_client/          # Mature — users, mounts, S3 cfg, ~/tools clones
+│   ├── vast_nfs/             # Mature — VAST NFS kernel driver (+ opt-in mountprep)
+│   ├── elbencho/             # Docs + script mirror (orchestration → playbooks/)
+│   ├── trino/ specsfs/ kubernetes/  # Untested stubs — do not treat as ready
 ├── inventory.ini
 ├── site.yml                  # Main entry (vast_client + vast_nfs, tagged never)
 └── one_liners.txt            # Learn Ansible via ad-hoc + lab cheat sheet
@@ -77,11 +88,13 @@ All VAST client mounts: **`/mount/vast`** (never `/mnt/vast`).
 
 ### Key roles / playbooks
 
-| Name | Purpose |
-|------|---------|
-| `vast_client` | Lab users, mount dirs, refresh `~/tools/{sys-perf-tools,system-tools}` |
-| `vast_nfs` | Build/install VAST NFS driver |
-| `playbooks/elbencho.yml` | Mount, elbencho service, copy example scripts |
+| Name | Status | Purpose |
+|------|--------|---------|
+| `vast_client` | Mature | Lab users, mount dirs, refresh `~/tools/{sys-perf-tools,system-tools}` |
+| `vast_nfs` | Mature | Build/install VAST NFS driver |
+| `playbooks/elbencho.yml` | Concept → platform example | Mount, elbencho service, copy example scripts |
+| `playbooks/clickhouse.yml`, `trino_cluster.yml` | Concept | Get-started / testing sketches |
+| `roles/trino`, `specsfs`, `kubernetes` | Stub | Untested vibe-coded sketches — not supported yet |
 
 ```bash
 # Client polish
@@ -97,7 +110,7 @@ ansible-playbook -i inventory.ini playbooks/elbencho.yml --tags mount,elbencho_s
 On the host (manual fio demo):
 
 ```bash
-cd ~/tools/sys-perf-tools/fio-file
+cd ~/tools/sys-perf-tools/fio-jobs
 ./quick-smoke.sh /mount/vast/fio
 ```
 

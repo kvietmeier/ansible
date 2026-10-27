@@ -1,7 +1,7 @@
 ---
 # Elbencho multi-client benchmark platform examples (NFS/S3).
 # Short demos / baselines → use fio on the host:
-#   ~/tools/sys-perf-tools/fio-file/quick-smoke.sh /mount/vast/fio
+#   ~/tools/sys-perf-tools/fio-jobs/quick-smoke.sh /mount/vast/fio
 #
 # Usage:
 #   ansible-playbook -i inventory.ini playbooks/elbencho.yml --tags <tag>

@@ -14,7 +14,7 @@ VM into a usable lab client: users, mount dirs, shell/S3 config, tool repos.
 | **vast_client** (this role) | Lab users, `/mount/vast/*` dirs, bashrc, S3 cfg, refresh tool clones |
 | vast_nfs | VAST NFS kernel driver |
 | elbencho playbook | Multi-client benchmark platform examples |
-| sys-perf-tools `fio-file/` | Demo / smoke / baseline jobfiles |
+| sys-perf-tools `fio-jobs/` | Demo / smoke / baseline jobfiles |
 
 ## Mount convention
 
@@ -23,7 +23,7 @@ All VAST mounts use **`/mount/vast`** (never `/mnt/vast`).
 | Path | Role |
 |------|------|
 | `/mount/vast` | NFS/SMB mount root |
-| `/mount/vast/fio` | Default FIO work dir (`sys-perf-tools/fio-file`) |
+| `/mount/vast/fio` | Default FIO work dir (`sys-perf-tools/fio-jobs`) |
 | `/mount/vast/data`, `gns-*` | Shared lab dirs |
 
 ## What it does
@@ -47,9 +47,9 @@ ansible-playbook -i inventory.ini site.yml --tags git_tools
 Quick FIO demo after mount (manual):
 
 ```bash
-cd ~/tools/sys-perf-tools/fio-file
+cd ~/tools/sys-perf-tools/fio-jobs
 ./quick-smoke.sh /mount/vast/fio
-./runfio.sh -j ./vast-p01-p06-p09-baseline.ini -d /mount/vast/fio
+./runfio.sh -j ./baseline-bs-spectrum.ini -d /mount/vast/fio
 ```
 
 ## Variables

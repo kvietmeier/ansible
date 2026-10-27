@@ -165,7 +165,7 @@
 # -------------------------------------------------------------------------
 # 8. TOOL REPOS (Git Clone) — sys-perf-tools + system-tools
 #    Layout matches cloud-init: /home/labuser/tools/{sys-perf-tools,system-tools}
-#    fio quick jobs: ~/tools/sys-perf-tools/fio-file  (default dir /mount/vast/fio)
+#    fio quick jobs: ~/tools/sys-perf-tools/fio-jobs  (default dir /mount/vast/fio)
 # -------------------------------------------------------------------------
 - name: Ensure tools directory exists for base user
   ansible.builtin.file:

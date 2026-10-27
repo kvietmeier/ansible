@@ -1,4 +1,5 @@
 ---
+# STUB — untested concept sketch. Prefer playbooks/ until this graduates.
 # Copy ISO to remote host
 - name: Copy SPECstorage ISO to remote host
   copy:

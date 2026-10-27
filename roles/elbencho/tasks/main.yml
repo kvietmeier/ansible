@@ -6,7 +6,7 @@
 # Canonical example scripts + optional binary: files/elbencho_scripts/
 # This role's files/ directory is a mirror for packaging / ad-hoc copy.
 #
-# Short demos / baselines are fio (sys-perf-tools/fio-file), not elbencho.
+# Short demos / baselines are fio (sys-perf-tools/fio-jobs), not elbencho.
 #
 # Usage:
 #   ansible-playbook -i inventory.ini playbooks/elbencho.yml --tags mount
