@@ -60,6 +60,13 @@ ansible-playbook -i inventory.ini site.yml --tags mount_now \
 
 For multi-client bench mounts, prefer `playbooks/elbencho.yml --tags mount`.
 
+## Clients from Terraform
+
+Provision VMs with the per-cloud `multi_vm` stacks in
+[kvietmeier/Terraform](https://github.com/kvietmeier/Terraform) (AWS / GCP / Azure),
+then point `inventory.ini` at the outputs. See the root [README](../../README.md)
+§ *Provision clients first*. SSH user: **`strata`**.
+
 ## Integration
 
 Via `site.yml` (`tags: install_driver`) or:

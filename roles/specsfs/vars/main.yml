@@ -2,7 +2,7 @@
 # roles/specsfs/vars/main.yml
 
 # Remote user to install SPEC SFS
-specsfs_user: labuser
+specsfs_user: strata
 
 # Path to the ISO on the control node
 local_iso_path: files/SPECstorage2020.iso

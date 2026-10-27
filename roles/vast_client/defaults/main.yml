@@ -2,8 +2,8 @@
 # defaults file for roles/vast_client
 ---
 # Overridden by group_vars/all.yml in this repo; kept here for standalone use.
-base_user: labuser
-user_prefix: labuser
+base_user: strata
+user_prefix: strata
 num_user: '10'
 create_individual_user_mounts: false
 

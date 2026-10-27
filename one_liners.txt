@@ -10,12 +10,14 @@
 #   Profile: https://gist.github.com/kvietmeier
 #
 # Lab flow (VAST benchmark platform examples):
-#   1) site.yml --tags client|install_driver
-#   2) mount under /mount/vast
+#   0) Terraform multi_vm (AWS/GCP/Azure) → inventory.ini
+#   1) site.yml --tags client,install_driver
+#   2) mount under /mount/vast (mountprep / mount_now)
 #   3) fio smoke  →  ~/tools/sys-perf-tools/fio-jobs/
 #   4) elbencho   →  playbooks/elbencho.yml
 #
-# Inventory default: ./inventory.ini   group: clients   user: labuser
+# Inventory default: ./inventory.ini   group: clients   user: strata
+# Day-0 TF fleets: github.com/kvietmeier/Terraform .../multi_vm (AWS/GCP/Azure)
 ################################################################################
 
 # =============================================================================
@@ -139,4 +141,4 @@ ansible-playbook -i ./inventory.ini playbooks/elbencho.yml --tags kill_all
 # ansible proxy -i ./inventory.ini -b -m pip -a "name=mitmproxy state=present"
 # ansible proxy -i ./inventory.ini -b -m sysctl -a "name=net.ipv4.ip_forward value=1 state=present reload=yes"
 # ansible proxy -i ./inventory.ini -b -m lineinfile -a "path=/etc/environment line='GODEBUG=x509negativeserial=1'"
-# ansible proxy -i ./inventory.ini -m copy -a "src=files/neg_serialnum.py dest=/home/labuser/neg_serialnum.py mode=0655"
+# ansible proxy -i ./inventory.ini -m copy -a "src=files/neg_serialnum.py dest=/home/strata/neg_serialnum.py mode=0655"

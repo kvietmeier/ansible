@@ -7,8 +7,8 @@
 # -----------------------------------------------------------------------------
 # USER & IDENTITY CONFIGURATION
 # -----------------------------------------------------------------------------
-base_user: 'labuser'
-user_prefix: 'labuser'
+base_user: 'strata'
+user_prefix: 'strata'
 default_lab_password: 'Ge2Sb2Te5'
 num_user: '10'
 
@@ -30,7 +30,7 @@ tools_repos:
 # -----------------------------------------------------------------------------
 # LAB ARCHITECTURE TOGGLES
 # -----------------------------------------------------------------------------
-# Set to 'true' to provision /mount/vast/labuser01 through labuser10
+# Set to 'true' to provision /mount/vast/strata01 through strata10
 create_individual_user_mounts: false
 
 # Convention: VAST mounts live under /mount/vast (never /mnt/vast).

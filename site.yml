@@ -3,7 +3,8 @@
 #   Top-level playbook for VAST lab clients
 #
 #   Boundaries:
-#     cloud-init / Terraform  → binaries + initial ~/tools clone (no I/O)
+#     cloud-init / Terraform multi_vm → binaries + strata user + ~/tools (no I/O)
+#     https://github.com/kvietmeier/Terraform (aws|gcp|azure .../multi_vm)
 #     vast_client             → users, /mount/vast dirs, S3 cfg, refresh tools
 #     vast_nfs                → VAST NFS kernel driver
 #       --tags install_driver → build/install/verify (no mount)

@@ -49,6 +49,34 @@ it graduates into a role (and may keep a thin playbook as the entrypoint).
 
 Bootstrapping nodes for internal testing lives in **Terraform cloud-init**, not here.
 
+### Provision clients first (Terraform)
+
+Day-0 Linux fleets live in [kvietmeier/Terraform](https://github.com/kvietmeier/Terraform) — one stack per cloud (not a cross-cloud orchestrator):
+
+| Cloud | Identical pool | Unique map |
+|-------|----------------|------------|
+| AWS | [`aws/ec2/multi_vm`](https://github.com/kvietmeier/Terraform/tree/main/aws/ec2/multi_vm) | [`multi_vm_map`](https://github.com/kvietmeier/Terraform/tree/main/aws/ec2/multi_vm_map) |
+| GCP | [`gcp/VMs/multi_vm`](https://github.com/kvietmeier/Terraform/tree/main/gcp/VMs/multi_vm) | [`multi_vm_map`](https://github.com/kvietmeier/Terraform/tree/main/gcp/VMs/multi_vm_map) |
+| Azure | [`azure/VMs/multi_vm`](https://github.com/kvietmeier/Terraform/tree/main/azure/VMs/multi_vm) | [`multi_vm_map`](https://github.com/kvietmeier/Terraform/tree/main/azure/VMs/multi_vm_map) |
+
+Shared bootstrap: [`scripts/cloud-init`](https://github.com/kvietmeier/Terraform/tree/main/scripts/cloud-init) (packages + user **`strata`** — not the VAST NFS kernel driver).
+
+**Handoff**
+
+1. `terraform apply` in the chosen `multi_vm` (or `multi_vm_map`) stack
+2. Copy `vm_private_ips` (AWS/GCP) or `vm_public_ips` (Azure) into `[clients]` in `inventory.ini`
+3. Set `ansible_ssh_user=strata` (matches cloud-init)
+4. POC / demo ready:
+
+```bash
+ansible-playbook -i inventory.ini site.yml --tags client,install_driver
+# optional live mount:
+ansible-playbook -i inventory.ini site.yml --tags mountprep
+# or: --tags mount_now -e 'view_path=nfs_01 dns_alias=sharespool dns_domain=example'
+```
+
+Default hostnames from TF examples: `kv-copper`, `kv-lead`, `kv-zinc`, `kv-moly`, `kv-silver`, `kv-gold` (`vm_name_prefix = "kv-"` + `vm_names` list).
+
 ### Repository structure
 
 ```text
@@ -97,7 +125,10 @@ All VAST client mounts: **`/mount/vast`** (never `/mnt/vast`).
 | `roles/trino`, `specsfs`, `kubernetes` | Stub | Untested vibe-coded sketches — not supported yet |
 
 ```bash
-# Client polish
+# POC / demo (client polish + VAST NFS driver)
+ansible-playbook -i inventory.ini site.yml --tags client,install_driver
+
+# Client polish only
 ansible-playbook -i inventory.ini site.yml --tags client
 
 # Driver only

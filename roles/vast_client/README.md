@@ -10,7 +10,7 @@ VM into a usable lab client: users, mount dirs, shell/S3 config, tool repos.
 
 | Layer | Owns |
 |-------|------|
-| Terraform + cloud-init | VM birth, packages, fio/elbencho binaries, initial `~/tools` clone |
+| Terraform + cloud-init ([multi_vm](https://github.com/kvietmeier/Terraform) stacks) | VM birth, packages, fio/elbencho binaries, initial `~/tools` clone, user `strata` |
 | **vast_client** (this role) | Lab users, `/mount/vast/*` dirs, bashrc, S3 cfg, refresh tool clones |
 | vast_nfs | VAST NFS kernel driver |
 | elbencho playbook | Multi-client benchmark platform examples |
@@ -29,10 +29,10 @@ All VAST mounts use **`/mount/vast`** (never `/mnt/vast`).
 ## What it does
 
 1. Install `nfs-common` / `rpcbind`
-2. Create numbered lab users (`labuser01`…) with passwordless sudo (optional)
+2. Create numbered lab users (`strata01`…) with passwordless sudo (optional)
 3. Ensure `/mount/vast/...` directories exist
 4. Distribute bashrc, dircolors, SSH keys, `.s3cfg`
-5. Clone **`sys-perf-tools`** + **`system-tools`** → `/home/labuser/tools/`
+5. Clone **`sys-perf-tools`** + **`system-tools`** → `/home/strata/tools/`
 
 ## Usage
 
