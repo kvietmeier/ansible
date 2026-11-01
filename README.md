@@ -2,21 +2,21 @@
 
 Robust **demo- and benchmark-ready examples** for standing up VAST test
 clients, then building foundational benchmark platforms and larger testing
-solutions on top. Day-2 polish after Terraform + cloud-init births the VM
+solutions on top. Day-2 polish after Terraform + cloud-init creates the VM
 (Debian/Ubuntu and RHEL-family).
 
 ### Positioning
 
 | Piece | Role |
 |-------|------|
-| **Cloud client (cloud-init)** | Tools-ready host: fio + elbencho binaries, `~/tools` clones — no auto I/O |
+| **Cloud client (cloud-init)** | Tools-ready host: fio + elbencho binaries, `~/tools` clones |
 | **This repo (ansible)** | Wire the host for a lab/cluster: users, `/mount/vast`, NFS driver, example bench orchestration |
 | **fio (`sys-perf-tools/fio-jobs`)** | Short demo / smoke / baseline jobfiles — first proof the platform works |
 | **elbencho (playbook + scripts)** | Multi-client benchmark **examples** you copy and extend into a full test solution |
 
 ```text
 cloud-init  →  tools-ready client
-ansible     →  lab/cluster wiring + benchmark platform examples
+ansible     →  test client wiring + benchmark platform examples
 fio         →  short demos & baselines (manual)
 elbencho    →  multi-client benchmark examples (manual)
 ```
@@ -26,7 +26,7 @@ elbencho    →  multi-client benchmark examples (manual)
 | Layer | Owns | Does **not** |
 |-------|------|----------------|
 | **Terraform + cloud-init** | VM, packages, fio/elbencho **binaries**, initial `~/tools` clone | Run I/O |
-| **ansible** (this repo) | Lab users, `/mount/vast` dirs, VAST NFS driver, elbencho **examples** | Replace cloud-init |
+| **ansible** (this repo) | Lab users, `/mount/vast` dirs, VAST NFS driver, elbencho **examples** | does not replace cloud-init |
 | **sys-perf-tools** | fio jobfiles (`fio-jobs/`) for smoke / baseline demos | Fleet config |
 | **system-tools** | Shell env / host helpers | Bench orchestration |
 
@@ -34,7 +34,7 @@ elbencho    →  multi-client benchmark examples (manual)
 
 | Stage | Where | Intent |
 |-------|-------|--------|
-| **Concept / get-started** | `playbooks/` | Try an idea, teach a pattern, smoke a stack |
+| **Concept / get-started** | `playbooks/` | Try an idea, teach a pattern, test a stack |
 | **Mature** | `roles/` | Reusable, tagged, documented — promoted from a playbook |
 
 Playbooks are the sandbox. When something is solid enough to reuse across labs,
@@ -42,16 +42,16 @@ it graduates into a role (and may keep a thin playbook as the entrypoint).
 
 ### Use cases
 
-- Lab / training client polish (`vast_client`)
+- Lab/training client polish (`vast_client`)
 - VAST NFS driver install (`vast_nfs`)
 - Multi-client benchmark platform examples (`playbooks/elbencho.yml`)
 - Concept overlays under `playbooks/` (e.g. ClickHouse, Trino cluster)
 
-Bootstrapping nodes for internal testing lives in **Terraform cloud-init**, not here.
+Bootstrapping nodes lives in **Terraform cloud-init**, not here.
 
 ### Provision clients first (Terraform)
 
-Day-0 Linux fleets live in [kvietmeier/Terraform](https://github.com/kvietmeier/Terraform) — one stack per cloud (not a cross-cloud orchestrator):
+Day-0 Linux clients live in [kvietmeier/Terraform](https://github.com/kvietmeier/Terraform) — one stack per cloud (not a cross-cloud orchestrator):
 
 | Cloud | Identical pool | Unique map |
 |-------|----------------|------------|
@@ -64,7 +64,7 @@ Shared bootstrap: [`scripts/cloud-init`](https://github.com/kvietmeier/Terraform
 **Handoff**
 
 1. `terraform apply` in the chosen `multi_vm` (or `multi_vm_map`) stack
-2. Copy `vm_private_ips` (AWS/GCP) or `vm_public_ips` (Azure) into `[clients]` in `inventory.ini`
+2. Copy `vm_private_ips` (AWS/GCP/Azure) into `[clients]` in `inventory.ini`
 3. Set `ansible_ssh_user=strata` (matches cloud-init)
 4. POC / demo ready:
 
