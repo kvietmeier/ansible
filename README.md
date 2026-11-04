@@ -1,11 +1,8 @@
 ## Ansible Playbook Repository
 
-Robust **demo- and benchmark-ready examples** for standing up VAST test
-clients, then building foundational benchmark platforms and larger testing
-solutions on top. Day-2 polish after Terraform + cloud-init creates the VM
-(Debian/Ubuntu and RHEL-family).
+Complete demo and benchmark-ready examples for standing up VAST test clients, then building foundational benchmark platforms and larger testing solutions on top. Day-2 polish after Terraform + cloud-init creates the VM (Debian/Ubuntu and RHEL-family).
 
-### Positioning
+### Description
 
 | Piece | Role |
 |-------|------|
@@ -21,7 +18,7 @@ fio         →  short demos & baselines (manual)
 elbencho    →  multi-client benchmark examples (manual)
 ```
 
-### Ownership boundary
+### Workflows
 
 | Layer | Owns | Does **not** |
 |-------|------|----------------|
@@ -30,7 +27,7 @@ elbencho    →  multi-client benchmark examples (manual)
 | **sys-perf-tools** | fio jobfiles (`fio-jobs/`) for smoke / baseline demos | Fleet config |
 | **system-tools** | Shell env / host helpers | Bench orchestration |
 
-### Maturity model
+### State of modules
 
 | Stage | Where | Intent |
 |-------|-------|--------|
@@ -61,7 +58,7 @@ Day-0 Linux clients live in [kvietmeier/Terraform](https://github.com/kvietmeier
 
 Shared bootstrap: [`scripts/cloud-init`](https://github.com/kvietmeier/Terraform/tree/main/scripts/cloud-init) (packages + user **`strata`** — not the VAST NFS kernel driver).
 
-**Handoff**
+**Terraform/Ansible Handoff**
 
 1. `terraform apply` in the chosen `multi_vm` (or `multi_vm_map`) stack
 2. Copy `vm_private_ips` (AWS/GCP/Azure) into `[clients]` in `inventory.ini`
@@ -103,7 +100,7 @@ elbencho examples.
 Deeper ad-hoc walkthrough: [Ansible AdHoc Commands gist](https://gist.github.com/kvietmeier/d497360a0e304286285220066ff0b53c)
 ([all gists](https://gist.github.com/kvietmeier)).
 
-### Mount convention
+### Conventions
 
 All VAST client mounts: **`/mount/vast`** (never `/mnt/vast`).
 
