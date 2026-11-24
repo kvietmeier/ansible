@@ -1,0 +1,43 @@
+# =============================================================================
+# tasks/storage_clients.yml — NFS + awscli + s3cmd
+# Tags: [bootstrap, storage_clients]
+# =============================================================================
+---
+- name: Install storage / S3 clients (Ubuntu/Debian)
+  ansible.builtin.apt:
+    name: "{{ item }}"
+    state: present
+    update_cache: true
+  loop: "{{ bootstrap_packages_ubuntu_storage }}"
+  when: is_ubuntu or is_debian
+  failed_when: false
+
+- name: Install storage / S3 clients (RedHat)
+  ansible.builtin.dnf:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ bootstrap_packages_redhat_storage }}"
+  when: is_redhat
+  failed_when: false
+
+- name: Check whether aws CLI is present (RedHat fallback path)
+  ansible.builtin.command: command -v aws
+  register: bootstrap_aws_check
+  changed_when: false
+  failed_when: false
+  when: is_redhat
+
+- name: Install AWS CLI v2 from official zip (RedHat fallback)
+  ansible.builtin.shell: |
+    set -euo pipefail
+    cd /tmp
+    curl -fsSL "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o awscliv2.zip
+    unzip -qo awscliv2.zip
+    ./aws/install -i /usr/local/aws-cli -b /usr/local/bin
+  args:
+    executable: /bin/bash
+    creates: /usr/local/bin/aws
+  when:
+    - is_redhat
+    - bootstrap_aws_check.rc | default(1) != 0
+  failed_when: false

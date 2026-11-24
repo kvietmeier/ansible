@@ -1,0 +1,59 @@
+# =============================================================================
+# tasks/disable_noise.yml — disable auto-updates and host firewalls
+# Tags: [bootstrap, disable_noise]
+# =============================================================================
+---
+# --- Ubuntu / Debian ---
+- name: Stop, disable, and mask unattended upgrade services (Debian/Ubuntu)
+  ansible.builtin.systemd:
+    name: "{{ item.name }}"
+    state: stopped
+    enabled: false
+    masked: "{{ item.masked | default(false) }}"
+  loop:
+    - { name: unattended-upgrades, masked: true }
+    - { name: apt-daily.service, masked: true }
+    - { name: apt-daily-upgrade.service, masked: true }
+  when: is_ubuntu or is_debian
+  failed_when: false
+
+- name: Stop and disable apt daily timers (Debian/Ubuntu)
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+    state: stopped
+    enabled: false
+  loop:
+    - apt-daily.timer
+    - apt-daily-upgrade.timer
+  when: is_ubuntu or is_debian
+  failed_when: false
+
+- name: Disable periodic apt updates (Debian/Ubuntu)
+  ansible.builtin.copy:
+    dest: /etc/apt/apt.conf.d/20auto-upgrades
+    content: |
+      APT::Periodic::Update-Package-Lists "0";
+      APT::Periodic::Unattended-Upgrade "0";
+    owner: root
+    group: root
+    mode: "0644"
+  when: is_ubuntu or is_debian
+
+- name: Disable UFW if present (Debian/Ubuntu)
+  ansible.builtin.command: ufw disable
+  when: is_ubuntu or is_debian
+  changed_when: false
+  failed_when: false
+
+# --- RHEL family ---
+- name: Stop and disable dnf-automatic / firewalld / nftables (RedHat)
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+    state: stopped
+    enabled: false
+  loop:
+    - dnf-automatic.timer
+    - firewalld
+    - nftables
+  when: is_redhat
+  failed_when: false

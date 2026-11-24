@@ -1,0 +1,144 @@
+#SPDX-License-Identifier: Apache-2.0
+# defaults file for roles/bootstrap
+#
+# Ansible equivalent of Terraform lab_bootstrap.sh + cloud-init packages.
+# Override with -e, inventory, or group_vars. Prefer base_user from group_vars
+# when present (see lab_user fact in tasks/facts.yml).
+---
+# Lab SSH / Ansible user (LAB_USER in lab_bootstrap.sh)
+bootstrap_lab_user: strata
+
+# Toggles matching lab_bootstrap.sh env knobs
+bootstrap_install_bench_tools: true
+bootstrap_clone_tools_repos: true
+bootstrap_prep_nfs_driver: true
+
+# Tool repos → /home/<lab_user>/tools/
+bootstrap_tools_repos:
+  - name: sys-perf-tools
+    url: "https://github.com/kvietmeier/sys-perf-tools.git"
+    version: main
+  - name: system-tools
+    url: "https://github.com/kvietmeier/system-tools.git"
+    version: main
+
+# Portable packages from cloud-init-universal.yaml
+bootstrap_packages_common:
+  - vim
+  - git
+  - curl
+  - wget
+  - unzip
+  - ca-certificates
+  - less
+  - python3
+  - tmux
+  - tree
+  - jq
+  - htop
+  - numactl
+  - sysstat
+  - traceroute
+  - nmap
+  - bc
+  - pkg-config
+  - libtool
+  - psmisc
+  - rpcbind
+  - stress-ng
+
+# Distro-specific core utils (dns / bcc / perf)
+bootstrap_packages_ubuntu_extra:
+  - dnsutils
+  - bpfcc-tools
+  - linux-perf
+
+bootstrap_packages_redhat_extra:
+  - bind-utils
+  - bcc-tools
+  - perf
+
+# Storage / S3 clients
+bootstrap_packages_ubuntu_storage:
+  - nfs-common
+  - awscli
+  - s3cmd
+
+bootstrap_packages_redhat_storage:
+  - nfs-utils
+  - awscli
+  - s3cmd
+
+# Bench build dependencies
+bootstrap_packages_ubuntu_build:
+  - build-essential
+  - debhelper
+  - cmake
+  - autoconf
+  - pkg-config
+  - libtool
+  - libboost-dev
+  - libboost-program-options-dev
+  - libboost-system-dev
+  - libboost-thread-dev
+  - libssl-dev
+  - libncurses-dev
+  - libnuma-dev
+  - libaio-dev
+  - librdmacm1
+  - libcurl4-openssl-dev
+  - uuid-dev
+  - zlib1g-dev
+  - libarchive-dev
+  - git
+  - python3-dev
+  - chrony
+  - psmisc
+  - curl
+
+bootstrap_packages_redhat_build:
+  - cmake
+  - autoconf
+  - libtool
+  - pkgconf-pkg-config
+  - numactl-devel
+  - libaio-devel
+  - boost-devel
+  - ncurses-devel
+  - openssl-devel
+  - rdma-core
+  - libcurl-devel
+  - libuuid-devel
+  - zlib
+  - zlib-devel
+  - libarchive-devel
+  - git
+  - python3-devel
+  - chrony
+  - psmisc
+  - curl
+
+# Bench tool source clones (under /root/git)
+bootstrap_bench_git_dir: /root/git
+
+bootstrap_bench_tools:
+  - name: dool
+    url: "https://github.com/scottchiefbaker/dool.git"
+    build_cmd: "./install.py"
+  - name: fio
+    url: "https://github.com/axboe/fio.git"
+    build_cmd: "./configure && make -j$(nproc) && make install"
+  - name: iperf
+    url: "https://github.com/esnet/iperf.git"
+    build_cmd: >-
+      ./configure && make -j$(nproc) && make install &&
+      echo /usr/local/lib > /etc/ld.so.conf.d/iperf.conf && ldconfig
+  - name: sockperf
+    url: "https://github.com/mellanox/sockperf"
+    build_cmd: "./autogen.sh && ./configure && make -j$(nproc) && make install"
+  - name: elbencho
+    url: "https://github.com/breuner/elbencho.git"
+    # build_cmd set per-OS in bench_tools.yml
+
+# Marker written when bootstrap completes (matches script spirit)
+bootstrap_configured_marker: /root/CONFIGURED_BY_LAB_BOOTSTRAP

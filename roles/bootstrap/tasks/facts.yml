@@ -1,0 +1,19 @@
+# =============================================================================
+# tasks/facts.yml — OS family flags and effective lab user
+# Tags: [bootstrap, facts]
+# =============================================================================
+---
+- name: Set OS family flags
+  ansible.builtin.set_fact:
+    is_redhat: "{{ ansible_facts['distribution'] in ['RedHat', 'CentOS', 'Rocky', 'AlmaLinux'] }}"
+    is_ubuntu: "{{ ansible_facts['distribution'] == 'Ubuntu' }}"
+    is_debian: "{{ ansible_facts['os_family'] == 'Debian' }}"
+
+- name: Set effective lab user
+  ansible.builtin.set_fact:
+    bootstrap_effective_user: "{{ bootstrap_lab_user | default(base_user | default('strata')) }}"
+
+- name: Set chrony service and config path facts
+  ansible.builtin.set_fact:
+    bootstrap_chrony_service: "{{ 'chrony' if (is_ubuntu or is_debian) else 'chronyd' }}"
+    bootstrap_chrony_conf: "{{ '/etc/chrony/chrony.conf' if (is_ubuntu or is_debian) else '/etc/chrony.conf' }}"

@@ -1,0 +1,26 @@
+# =============================================================================
+# tasks/tools_repos.yml — clone sys-perf-tools + system-tools for lab user
+# Tags: [bootstrap, tools_repos, git_tools]
+# =============================================================================
+---
+- name: Ensure tools directory exists for lab user
+  ansible.builtin.file:
+    path: "/home/{{ bootstrap_effective_user }}/tools"
+    state: directory
+    owner: "{{ bootstrap_effective_user }}"
+    group: "{{ bootstrap_effective_user }}"
+    mode: "0755"
+
+- name: Clone tool repos for lab user
+  ansible.builtin.git:
+    repo: "{{ item.url }}"
+    dest: "/home/{{ bootstrap_effective_user }}/tools/{{ item.name }}"
+    version: "{{ item.version | default('main') }}"
+    depth: 1
+    clone: true
+    update: true
+  loop: "{{ bootstrap_tools_repos }}"
+  loop_control:
+    label: "{{ item.name }}"
+  become_user: "{{ bootstrap_effective_user }}"
+  failed_when: false

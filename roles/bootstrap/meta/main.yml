@@ -1,0 +1,24 @@
+#SPDX-License-Identifier: Apache-2.0
+---
+galaxy_info:
+  author: Karl Vietmeier
+  description: >-
+    Day-0 bootstrap for lab/CI Linux VMs (Ubuntu + Rocky/CentOS). Ansible
+    equivalent of Terraform lab_bootstrap.sh + cloud-init packages. Preps for
+    VAST NFS driver; does not install it (use vast_nfs).
+  license: Apache-2.0
+  min_ansible_version: "2.14"
+  platforms:
+    - name: Ubuntu
+      versions: [all]
+    - name: EL
+      versions: [all]
+  galaxy_tags:
+    - bootstrap
+    - vast
+    - lab
+    - centos
+    - rocky
+    - ubuntu
+
+dependencies: []

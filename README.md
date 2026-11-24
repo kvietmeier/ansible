@@ -1,19 +1,20 @@
 ## Ansible Playbook Repository
 
-Complete demo and benchmark-ready examples for standing up VAST test clients, then building foundational benchmark platforms and larger testing solutions on top. Day-2 polish after Terraform + cloud-init creates the VM (Debian/Ubuntu and RHEL-family).
+Complete demo and benchmark-ready examples for standing up VAST test clients, then building foundational benchmark platforms and larger testing solutions on top. Day-0 via Terraform cloud-init **or** the `bootstrap` role (OOB / CI VMs); day-2 polish with `vast_client` / `vast_nfs` (Debian/Ubuntu and RHEL-family).
 
 ### Description
 
 | Piece | Role |
 |-------|------|
 | **Cloud client (cloud-init)** | Tools-ready host: fio + elbencho binaries, `~/tools` clones |
+| **bootstrap (ansible)** | Same day-0 path for OOB / CI VMs; NFS driver prep only (idempotent with cloud-init) |
 | **This repo (ansible)** | Wire the host for a lab/cluster: users, `/mount/vast`, NFS driver, example bench orchestration |
 | **fio (`sys-perf-tools/fio-jobs`)** | Short demo / smoke / baseline jobfiles — first proof the platform works |
 | **elbencho (playbook + scripts)** | Multi-client benchmark **examples** you copy and extend into a full test solution |
 
 ```text
-cloud-init  →  tools-ready client
-ansible     →  test client wiring + benchmark platform examples
+cloud-init  or  bootstrap  →  tools-ready client
+ansible (vast_client / vast_nfs) →  test client wiring + driver + bench examples
 fio         →  short demos & baselines (manual)
 elbencho    →  multi-client benchmark examples (manual)
 ```
@@ -23,7 +24,8 @@ elbencho    →  multi-client benchmark examples (manual)
 | Layer | Owns | Does **not** |
 |-------|------|----------------|
 | **Terraform + cloud-init** | VM, packages, fio/elbencho **binaries**, initial `~/tools` clone | Run I/O |
-| **ansible** (this repo) | Lab users, `/mount/vast` dirs, VAST NFS driver, elbencho **examples** | does not replace cloud-init |
+| **bootstrap** | Same day-0 via Ansible (OOB / CI); NFS driver **prep** + install stub | Install VAST NFS driver |
+| **ansible** (`vast_client` / `vast_nfs`) | Lab users, `/mount/vast`, VAST NFS driver install, elbencho **examples** | Replace cloud-init when TF owns birth |
 | **sys-perf-tools** | fio jobfiles (`fio-jobs/`) for smoke / baseline demos | Fleet config |
 | **system-tools** | Shell env / host helpers | Bench orchestration |
 
@@ -39,12 +41,13 @@ it graduates into a role (and may keep a thin playbook as the entrypoint).
 
 ### Use cases
 
+- Day-0 bootstrap for OOB / CI VMs (`bootstrap`) — same end state as cloud-init
 - Lab/training client polish (`vast_client`)
 - VAST NFS driver install (`vast_nfs`)
 - Multi-client benchmark platform examples (`playbooks/elbencho.yml`)
 - Concept overlays under `playbooks/` (e.g. ClickHouse, Trino cluster)
 
-Bootstrapping nodes lives in **Terraform cloud-init**, not here.
+Day-0 bootstrapping: **Terraform cloud-init** when you own user-data, or **`roles/bootstrap`** when the VM is handed to you bare (CI / OOB images). Overlap is intentional and idempotent.
 
 ### Provision clients first (Terraform)
 
@@ -66,6 +69,10 @@ Shared bootstrap: [`scripts/cloud-init`](https://github.com/kvietmeier/Terraform
 4. POC / demo ready:
 
 ```bash
+# OOB / CI VM (no cloud-init lab bootstrap yet):
+ansible-playbook -i inventory.ini site.yml --tags bootstrap
+
+# After bootstrap or cloud-init — client polish + driver:
 ansible-playbook -i inventory.ini site.yml --tags client,install_driver
 # optional live mount:
 ansible-playbook -i inventory.ini site.yml --tags mountprep
@@ -81,12 +88,13 @@ Default hostnames from TF examples: `kv-copper`, `kv-lead`, `kv-zinc`, `kv-moly`
 ├── group_vars/               # Global vars (tools_repos, /mount/vast dirs)
 ├── playbooks/                # Concept / get-started work (graduate → roles)
 ├── roles/
+│   ├── bootstrap/            # Day-0 — cloud-init parity for OOB/CI; NFS prep stub
 │   ├── vast_client/          # Mature — users, mounts, S3 cfg, ~/tools clones
 │   ├── vast_nfs/             # Mature — VAST NFS kernel driver (+ opt-in mountprep)
 │   ├── elbencho/             # Docs + script mirror (orchestration → playbooks/)
 │   ├── trino/ specsfs/ kubernetes/  # Untested stubs — do not treat as ready
 ├── inventory.ini
-├── site.yml                  # Main entry (vast_client + vast_nfs, tagged never)
+├── site.yml                  # Main entry (bootstrap + vast_client + vast_nfs)
 └── one_liners.txt            # Learn Ansible via ad-hoc + lab cheat sheet
 ```
 
@@ -115,6 +123,7 @@ All VAST client mounts: **`/mount/vast`** (never `/mnt/vast`).
 
 | Name | Status | Purpose |
 |------|--------|---------|
+| `bootstrap` | Mature | Day-0 packages/user/tools/bench; NFS driver prep (install stub → `vast_nfs`) |
 | `vast_client` | Mature | Lab users, mount dirs, refresh `~/tools/{sys-perf-tools,system-tools}` |
 | `vast_nfs` | Mature | Build/install VAST NFS driver |
 | `playbooks/elbencho.yml` | Concept → platform example | Mount, elbencho service, copy example scripts |
@@ -122,13 +131,16 @@ All VAST client mounts: **`/mount/vast`** (never `/mnt/vast`).
 | `roles/trino`, `specsfs`, `kubernetes` | Stub | Untested vibe-coded sketches — not supported yet |
 
 ```bash
+# Day-0 for OOB / CI VMs (cloud-init parity)
+ansible-playbook -i inventory.ini site.yml --tags bootstrap
+
 # POC / demo (client polish + VAST NFS driver)
 ansible-playbook -i inventory.ini site.yml --tags client,install_driver
 
 # Client polish only
 ansible-playbook -i inventory.ini site.yml --tags client
 
-# Driver only
+# Driver only (prereqs roll over if bootstrap already ran them)
 ansible-playbook -i inventory.ini site.yml --tags install_driver
 
 # Elbencho benchmark platform example (prep)

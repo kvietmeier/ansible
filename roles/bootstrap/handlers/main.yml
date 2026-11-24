@@ -1,0 +1,10 @@
+#SPDX-License-Identifier: Apache-2.0
+---
+# handlers file for roles/bootstrap
+
+- name: Restart chrony
+  ansible.builtin.systemd:
+    name: "{{ bootstrap_chrony_service }}"
+    state: restarted
+    enabled: true
+  when: bootstrap_chrony_service is defined

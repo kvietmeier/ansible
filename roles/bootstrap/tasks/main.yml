@@ -1,0 +1,69 @@
+# =============================================================================
+# main.yml — Master task flow for bootstrap role
+#
+# Ansible equivalent of Terraform lab_bootstrap.sh + cloud-init packages.
+# Preps for VAST NFS driver; does not install it (stub only → use vast_nfs).
+#
+# Tags:
+#   bootstrap          – full role via site.yml
+#   Stage tags: facts, disable_noise, lab_user, packages, storage_clients,
+#               chrony, build_deps, bench_tools, tools_repos,
+#               nfs_driver_prep, nfs_driver / stub
+# =============================================================================
+---
+- name: Include OS facts and lab user resolution
+  ansible.builtin.include_tasks: facts.yml
+  tags: [bootstrap, facts]
+
+- name: Include disable auto-updates and host firewalls
+  ansible.builtin.include_tasks: disable_noise.yml
+  tags: [bootstrap, disable_noise]
+
+- name: Include lab user / sudo / SSH / aliases
+  ansible.builtin.include_tasks: lab_user.yml
+  tags: [bootstrap, lab_user]
+
+- name: Include portable and distro packages
+  ansible.builtin.include_tasks: packages.yml
+  tags: [bootstrap, packages]
+
+- name: Include storage / S3 clients
+  ansible.builtin.include_tasks: storage_clients.yml
+  tags: [bootstrap, storage_clients]
+
+- name: Include chrony configuration
+  ansible.builtin.include_tasks: chrony.yml
+  tags: [bootstrap, chrony]
+
+- name: Include build dependencies for bench tools
+  ansible.builtin.include_tasks: build_deps.yml
+  tags: [bootstrap, build_deps]
+  when: bootstrap_install_bench_tools | bool
+
+- name: Include bench tool compiles
+  ansible.builtin.include_tasks: bench_tools.yml
+  tags: [bootstrap, bench_tools]
+  when: bootstrap_install_bench_tools | bool
+
+- name: Include tool repo clones
+  ansible.builtin.include_tasks: tools_repos.yml
+  tags: [bootstrap, tools_repos, git_tools]
+  when: bootstrap_clone_tools_repos | bool
+
+- name: Include VAST NFS driver prep
+  ansible.builtin.include_tasks: nfs_driver_prep.yml
+  tags: [bootstrap, nfs_driver_prep, prereqs]
+  when: bootstrap_prep_nfs_driver | bool
+
+- name: Include VAST NFS driver install stub
+  ansible.builtin.include_tasks: nfs_driver_install.yml
+  tags: [bootstrap, nfs_driver, stub]
+
+- name: Write bootstrap completion marker
+  ansible.builtin.copy:
+    dest: "{{ bootstrap_configured_marker }}"
+    content: "bootstrap role completed at {{ ansible_date_time.iso8601 | default('unknown') }}\n"
+    owner: root
+    group: root
+    mode: "0644"
+  tags: [bootstrap]

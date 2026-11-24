@@ -1,0 +1,52 @@
+# =============================================================================
+# tasks/bench_tools.yml — compile fio / iperf / dool / sockperf / elbencho
+# Soft-fail per tool (matches lab_bootstrap.sh). Tags: [bootstrap, bench_tools]
+# =============================================================================
+---
+- name: Ensure bench git directory exists
+  ansible.builtin.file:
+    path: "{{ bootstrap_bench_git_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Set elbencho build command for this OS
+  ansible.builtin.set_fact:
+    bootstrap_elbencho_build_cmd: >-
+      {% if is_redhat %}
+      find . -name CMakeCache.txt -delete;
+      export OPENSSL_ROOT_DIR=/usr OPENSSL_LIBRARIES=/usr/lib64 OPENSSL_INCLUDE_DIR=/usr/include;
+      make S3_SUPPORT=1 -j$(nproc) && make rpm &&
+      dnf install -y ./packaging/RPMS/x86_64/elbencho*.rpm
+      {% else %}
+      make S3_SUPPORT=1 -j$(nproc) && make install
+      {% endif %}
+
+- name: Check whether each bench tool source tree already exists
+  ansible.builtin.stat:
+    path: "{{ bootstrap_bench_git_dir }}/{{ item.name }}"
+  loop: "{{ bootstrap_bench_tools }}"
+  loop_control:
+    label: "{{ item.name }}"
+  register: bootstrap_bench_dirs
+
+- name: Clone and build missing bench tools
+  ansible.builtin.shell: |
+    set -u
+    dest="{{ bootstrap_bench_git_dir }}/{{ item.item.name }}"
+    git clone "{{ item.item.url }}" "$dest" || exit 0
+    cd "$dest" || exit 0
+    {% if item.item.name == 'elbencho' %}
+    {{ bootstrap_elbencho_build_cmd }}
+    {% else %}
+    {{ item.item.build_cmd }}
+    {% endif %}
+  args:
+    executable: /bin/bash
+    chdir: "{{ bootstrap_bench_git_dir }}"
+  loop: "{{ bootstrap_bench_dirs.results }}"
+  loop_control:
+    label: "{{ item.item.name }}"
+  when: not (item.stat.exists | default(false))
+  register: bootstrap_bench_builds
+  failed_when: false
+  changed_when: bootstrap_bench_builds.rc is defined and bootstrap_bench_builds.rc == 0

@@ -5,8 +5,10 @@
 #   Boundaries:
 #     cloud-init / Terraform multi_vm → binaries + strata user + ~/tools (no I/O)
 #     https://github.com/kvietmeier/Terraform (aws|gcp|azure .../multi_vm)
+#     bootstrap               → same day-0 path via Ansible (OOB / CI VMs);
+#                               idempotent with cloud-init; NFS driver prep only
 #     vast_client             → users, /mount/vast dirs, S3 cfg, refresh tools
-#     vast_nfs                → VAST NFS kernel driver
+#     vast_nfs                → VAST NFS kernel driver (standalone install)
 #       --tags install_driver → build/install/verify (no mount)
 #       --tags mountprep|mount_now → opt-in mount helpers
 #     playbooks/elbencho.yml  → multi-client benchmark platform examples (manual)
@@ -19,6 +21,9 @@
   become: true
 
   roles:
+    - role: bootstrap
+      tags: ['never', 'bootstrap']
+
     - role: vast_client
       tags: ['never', 'base', 'client']
 

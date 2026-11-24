@@ -1,0 +1,13 @@
+# =============================================================================
+# tasks/nfs_driver_install.yml — STUB only (no download/build/install)
+# Real path: roles/vast_nfs via site.yml --tags install_driver
+# Tags: [bootstrap, nfs_driver, stub]
+# =============================================================================
+---
+- name: STUB - VAST NFS driver download/build/install not run by bootstrap
+  ansible.builtin.debug:
+    msg: >-
+      Bootstrap stops at prep (kernel modules, RDMA, headers, toolchain).
+      Use role vast_nfs (site.yml --tags install_driver) for
+      download/build/install/verify. Shared prereqs are idempotent and will
+      roll over if you run install_driver later.

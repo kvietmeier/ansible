@@ -1,0 +1,42 @@
+# =============================================================================
+# tasks/packages.yml — portable + distro-specific core packages
+# Tags: [bootstrap, packages]
+# =============================================================================
+---
+- name: Install portable packages (Ubuntu/Debian)
+  ansible.builtin.apt:
+    name: "{{ bootstrap_packages_common }}"
+    state: present
+    update_cache: true
+  when: is_ubuntu or is_debian
+
+- name: Ensure EPEL is available (RedHat)
+  ansible.builtin.dnf:
+    name: epel-release
+    state: present
+  when: is_redhat
+  failed_when: false
+
+- name: Install portable packages (RedHat)
+  ansible.builtin.dnf:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ bootstrap_packages_common }}"
+  when: is_redhat
+  failed_when: false
+
+- name: Install distro-specific core utils (Ubuntu/Debian)
+  ansible.builtin.apt:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ bootstrap_packages_ubuntu_extra }}"
+  when: is_ubuntu or is_debian
+  failed_when: false
+
+- name: Install distro-specific core utils (RedHat)
+  ansible.builtin.dnf:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ bootstrap_packages_redhat_extra }}"
+  when: is_redhat
+  failed_when: false

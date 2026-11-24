@@ -1,0 +1,99 @@
+# =============================================================================
+# tasks/nfs_driver_prep.yml — prep for VAST NFS driver (no install)
+# Adapted from vast_nfs prereqs; idempotent overlap is intentional.
+# Tags: [bootstrap, nfs_driver_prep, prereqs]
+# =============================================================================
+---
+- name: Check cloud-init service
+  ansible.builtin.systemd:
+    name: cloud-init
+  register: bootstrap_cloudinit_status
+  failed_when: false
+  changed_when: false
+
+- name: Wait for cloud-init to finish
+  ansible.builtin.wait_for:
+    path: /var/lib/cloud/instance/boot-finished
+    state: present
+    timeout: 600
+  when: >-
+    bootstrap_cloudinit_status.status is defined and
+    bootstrap_cloudinit_status.status.ActiveState == 'active'
+
+- name: Ensure /root directory exists
+  ansible.builtin.file:
+    path: /root
+    state: directory
+
+- name: Install extra kernel modules, RDMA core, and build toolchains (Ubuntu)
+  ansible.builtin.apt:
+    name:
+      - "linux-modules-extra-{{ ansible_kernel }}"
+      - "linux-headers-{{ ansible_kernel }}"
+      - rdma-core
+      - build-essential
+      - make
+      - debhelper
+      - devscripts
+      - pkg-config
+      - dkms
+    state: present
+    update_cache: true
+  when: is_ubuntu
+  register: bootstrap_ubuntu_kernel_ext
+
+- name: Install extra kernel modules, RDMA core, and build toolchains (RedHat)
+  ansible.builtin.dnf:
+    name:
+      - kernel-modules-extra
+      - "kernel-devel-{{ ansible_kernel }}"
+      - rdma-core
+      - gcc
+      - gcc-c++
+      - make
+      - elfutils-libelf-devel
+      - rpm-build
+      - dkms
+    state: present
+  when: is_redhat
+  register: bootstrap_redhat_kernel_ext
+
+- name: Reboot if extra kernel modules were newly installed
+  ansible.builtin.reboot:
+    pre_reboot_delay: 5
+    reboot_timeout: 600
+  when: >-
+    (bootstrap_ubuntu_kernel_ext.changed | default(false) if is_ubuntu else false) or
+    (bootstrap_redhat_kernel_ext.changed | default(false) if is_redhat else false)
+
+- name: Wait for SSH after kernel-module reboot
+  ansible.builtin.wait_for_connection:
+    delay: 10
+    timeout: 300
+  when: >-
+    (bootstrap_ubuntu_kernel_ext.changed | default(false) if is_ubuntu else false) or
+    (bootstrap_redhat_kernel_ext.changed | default(false) if is_redhat else false)
+
+- name: Force load rpcrdma module
+  community.general.modprobe:
+    name: rpcrdma
+    state: present
+  failed_when: false
+
+- name: Install GCC 12 and set default (Ubuntu only)
+  when: is_ubuntu
+  block:
+    - name: Install GCC 12
+      ansible.builtin.apt:
+        name:
+          - gcc-12
+          - g++-12
+        state: present
+
+    - name: Set GCC 12 as default
+      ansible.builtin.shell: |
+        update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-12 100
+        update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-12 100
+      args:
+        executable: /bin/bash
+      changed_when: false

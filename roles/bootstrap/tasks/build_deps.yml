@@ -1,0 +1,31 @@
+# =============================================================================
+# tasks/build_deps.yml — build dependencies for bench tool compiles
+# Tags: [bootstrap, build_deps]
+# =============================================================================
+---
+- name: Install build dependencies (Ubuntu/Debian)
+  ansible.builtin.apt:
+    name: "{{ bootstrap_packages_ubuntu_build }}"
+    state: present
+    update_cache: true
+  when: is_ubuntu or is_debian
+
+- name: Install Development Tools group (RedHat)
+  ansible.builtin.dnf:
+    name: "@Development Tools"
+    state: present
+  when: is_redhat
+  failed_when: false
+
+- name: Ensure EPEL is available for build deps (RedHat)
+  ansible.builtin.dnf:
+    name: epel-release
+    state: present
+  when: is_redhat
+  failed_when: false
+
+- name: Install build dependencies (RedHat)
+  ansible.builtin.dnf:
+    name: "{{ bootstrap_packages_redhat_build }}"
+    state: present
+  when: is_redhat

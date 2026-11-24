@@ -1,0 +1,137 @@
+# =============================================================================
+# tasks/lab_user.yml — strata user, sudo, dirs, SSH keys, bash aliases
+# Tags: [bootstrap, lab_user]
+# =============================================================================
+---
+- name: Ensure passwordless sudo for wheel / sudo / google-sudoers
+  ansible.builtin.template:
+    src: sudoers_lab.j2
+    dest: /etc/sudoers.d/90-lab-nopasswd
+    owner: root
+    group: root
+    mode: "0440"
+    validate: /usr/sbin/visudo -cf %s
+
+- name: Ensure lab user exists
+  ansible.builtin.user:
+    name: "{{ bootstrap_effective_user }}"
+    state: present
+    shell: /bin/bash
+    create_home: true
+    groups: "{{ 'sudo' if (is_ubuntu or is_debian) else 'wheel' }}"
+    append: true
+
+- name: Ensure passwordless sudo for lab user
+  ansible.builtin.copy:
+    dest: "/etc/sudoers.d/{{ bootstrap_effective_user }}"
+    content: "{{ bootstrap_effective_user }} ALL=(ALL) NOPASSWD:ALL\n"
+    owner: root
+    group: root
+    mode: "0440"
+    validate: /usr/sbin/visudo -cf %s
+
+- name: Ensure lab user home directories exist
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ bootstrap_effective_user }}"
+    group: "{{ bootstrap_effective_user }}"
+    mode: "0755"
+  loop:
+    - "/home/{{ bootstrap_effective_user }}/output"
+    - "/home/{{ bootstrap_effective_user }}/git"
+    - "/home/{{ bootstrap_effective_user }}/tools"
+
+- name: Ensure /root/git exists
+  ansible.builtin.file:
+    path: /root/git
+    state: directory
+    mode: "0755"
+
+- name: Ensure .bashrc exists for lab user and root
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: touch
+    modification_time: preserve
+    access_time: preserve
+    owner: "{{ bootstrap_effective_user if 'home' in item else 'root' }}"
+    group: "{{ bootstrap_effective_user if 'home' in item else 'root' }}"
+    mode: "0644"
+  loop:
+    - "/home/{{ bootstrap_effective_user }}/.bashrc"
+    - /root/.bashrc
+
+- name: Append lab bash aliases once (lab user)
+  ansible.builtin.blockinfile:
+    path: "/home/{{ bootstrap_effective_user }}/.bashrc"
+    marker: "# {mark} lab_bootstrap aliases"
+    block: "{{ lookup('template', 'bashrc_aliases.j2') }}"
+    owner: "{{ bootstrap_effective_user }}"
+    group: "{{ bootstrap_effective_user }}"
+    mode: "0644"
+
+- name: Append lab bash aliases once (root)
+  ansible.builtin.blockinfile:
+    path: /root/.bashrc
+    marker: "# {mark} lab_bootstrap aliases"
+    block: "{{ lookup('template', 'bashrc_aliases.j2') }}"
+    owner: root
+    group: root
+    mode: "0644"
+
+# Copy cloud SSH key onto lab user (AWS/Azure/GCP inject into default user only)
+- name: Discover cloud authorized_keys candidates
+  ansible.builtin.stat:
+    path: "{{ item }}"
+  loop:
+    - /home/ubuntu/.ssh/authorized_keys
+    - /home/ec2-user/.ssh/authorized_keys
+    - /home/azureuser/.ssh/authorized_keys
+    - /home/opc/.ssh/authorized_keys
+    - /home/karlv/.ssh/authorized_keys
+    - /root/.ssh/authorized_keys
+  register: bootstrap_ssh_key_candidates
+
+- name: Set SSH key source from first non-empty candidate
+  ansible.builtin.set_fact:
+    bootstrap_ssh_key_src: "{{ item.stat.path }}"
+  loop: "{{ bootstrap_ssh_key_candidates.results }}"
+  when:
+    - item.stat.exists | default(false)
+    - item.stat.size | default(0) > 0
+    - bootstrap_ssh_key_src is not defined
+  loop_control:
+    label: "{{ item.stat.path | default(item.item) }}"
+
+- name: Ensure lab user .ssh directory exists
+  ansible.builtin.file:
+    path: "/home/{{ bootstrap_effective_user }}/.ssh"
+    state: directory
+    owner: "{{ bootstrap_effective_user }}"
+    group: "{{ bootstrap_effective_user }}"
+    mode: "0700"
+
+- name: Merge cloud SSH keys into lab user authorized_keys
+  ansible.builtin.shell: |
+    set -euo pipefail
+    src="{{ bootstrap_ssh_key_src }}"
+    dest="/home/{{ bootstrap_effective_user }}/.ssh/authorized_keys"
+    touch "$dest"
+    while IFS= read -r line; do
+      [[ -z "$line" || "$line" == \#* ]] && continue
+      grep -qxF "$line" "$dest" || echo "$line" >> "$dest"
+    done < "$src"
+    chmod 600 "$dest"
+    chown "{{ bootstrap_effective_user }}:{{ bootstrap_effective_user }}" "$dest"
+  args:
+    executable: /bin/bash
+  when: bootstrap_ssh_key_src is defined
+  changed_when: true
+  register: bootstrap_ssh_merge
+
+- name: Warn if no cloud SSH key found for lab user
+  ansible.builtin.debug:
+    msg: >-
+      WARN: no cloud SSH key found; {{ bootstrap_effective_user }} may not be
+      reachable by Ansible until a key is added.
+  when: bootstrap_ssh_key_src is not defined
